@@ -10,7 +10,17 @@ body { background-color: #f8f9fa; }
 .kanban-columns-container { display: flex; gap: 1rem; }
 .kanban-column { min-width: 280px; max-width: 320px; background-color: #e9ecef; border-radius: 0.5rem; padding: 0.5rem; flex-shrink: 0; height: fit-content; }
 .kanban-column h5 { text-align: center; padding: 0.5rem; background-color: #dee2e6; border-radius: 0.3rem; margin-bottom: 1rem; font-size: 0.9rem; word-break: break-word; }
-.kanban-card { background-color: white; border: 1px solid #dee2e6; border-radius: 0.3rem; padding: 0.75rem; margin-bottom: 0.75rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); cursor: grab; }
+.kanban-card { 
+    background-color: white; 
+    border: 1px solid #dee2e6; 
+    border-radius: 0.3rem; 
+    padding: 0.75rem; 
+    margin-bottom: 0.75rem; 
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
+    cursor: grab;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.2s ease;
+    user-select: none; /* Prevenir selección de texto durante el arrastre */
+}
 .kanban-card:active { cursor: grabbing; }
 .kanban-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
 .kanban-card-header h6 { font-size: 0.9rem; font-weight: bold; margin-bottom: 0; word-break: break-all; }
@@ -18,7 +28,54 @@ body { background-color: #f8f9fa; }
 .kanban-card-footer { margin-top: 0.75rem; text-align: center; }
 .kanban-card-footer .btn { width: 100%; }
 .etapas-display { font-size: 0.75rem; color: #495057; margin-top: 5px; word-break: break-word; }
-.drag-over { border: 2px dashed #0d6efd; background-color: #cfe2ff; }
+
+/* Estilos mejorados para Drag & Drop */
+.kanban-card.dragging, 
+.kanban-card.touch-dragging {
+    transform: scale(1.02);
+    box-shadow: 0 6px 10px rgba(0,0,0,0.12);
+    border: 1px solid #adb5bd;
+}
+
+#dragging-clone {
+    transform: rotate(3deg) scale(1.03);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.15), 0 8px 8px rgba(0,0,0,0.1);
+    border: 2px solid #0d6efd;
+    opacity: 0.9 !important;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+.drag-over { 
+    border: 2px dashed #0d6efd; 
+    background-color: #e6effc;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { background-color: #e6effc; }
+    50% { background-color: #cfe2ff; }
+    100% { background-color: #e6effc; }
+}
+
+/* Mejoras del scrollbar para mejor experiencia */
+#kanban-board::-webkit-scrollbar {
+    height: 8px;
+}
+
+#kanban-board::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+#kanban-board::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+#kanban-board::-webkit-scrollbar-thumb:hover {
+    background: #a1a1a1;
+}
 
 /* List View Styles */
 #list-view .table th, #list-view .table td { font-size: 0.9rem; vertical-align: middle; }
@@ -29,4 +86,36 @@ body { background-color: #f8f9fa; }
 #etapas-secuencia-container label { margin-right: 10px; }
 
 /* Style for delete/return buttons */
-.modal-footer .btn-danger, .modal-footer .btn-warning { margin-right: auto; } /* Push buttons to the left */
+.modal-footer .btn-danger, .modal-footer .btn-warning { margin-right: auto; }
+
+/* Media queries para móviles */
+@media (max-width: 768px) {
+    .kanban-column {
+        min-width: 250px;
+    }
+    
+    .d-flex.justify-content-between {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .d-flex.align-items-center {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    #search-input {
+        width: 100% !important;
+        margin-right: 0 !important;
+    }
+    
+    #add-pedido-btn {
+        width: 100%;
+    }
+    
+    /* Mejorar interacción táctil */
+    .kanban-card {
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+}
