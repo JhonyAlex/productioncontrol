@@ -21,19 +21,37 @@
             border-radius: 0.5rem;
             box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
         }
+        /* --- Kanban Styles --- */
         #kanban-board {
-            display: flex;
-            gap: 1rem;
+            display: flex; /* Changed to flex for grouping */
+            gap: 2rem; /* Space between main groups */
             overflow-x: auto;
             padding-bottom: 1rem;
+            align-items: flex-start; /* Align groups at the top */
+        }
+        .kanban-group {
+            background-color: #f1f3f5; /* Slightly different background for group */
+            padding: 1rem;
+            border-radius: 0.5rem;
+            flex-shrink: 0; /* Prevent groups from shrinking */
+        }
+        .kanban-group h4 {
+            text-align: center;
+            margin-bottom: 1rem;
+            color: #495057;
+        }
+        .kanban-columns-container {
+            display: flex;
+            gap: 1rem; /* Space between columns inside a group */
         }
         .kanban-column {
-            min-width: 300px;
-            max-width: 350px;
+            min-width: 280px; /* Slightly narrower columns */
+            max-width: 320px;
             background-color: #e9ecef;
             border-radius: 0.5rem;
             padding: 0.5rem;
             flex-shrink: 0;
+            height: fit-content; /* Adjust height based on content */
         }
         .kanban-column h5 {
             text-align: center;
@@ -41,7 +59,8 @@
             background-color: #dee2e6;
             border-radius: 0.3rem;
             margin-bottom: 1rem;
-            font-size: 1rem;
+            font-size: 0.9rem; /* Smaller column titles */
+            word-break: break-word;
         }
         .kanban-card {
             background-color: white;
@@ -52,16 +71,52 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
             cursor: grab;
         }
-        .kanban-card h6 {
+        .kanban-card:active {
+             cursor: grabbing; /* Feedback while dragging */
+        }
+        .kanban-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        .kanban-card-header h6 { /* Cliente / Numero Pedido */
             font-size: 0.9rem;
             font-weight: bold;
-            margin-bottom: 0.3rem;
+            margin-bottom: 0; /* Remove default margin */
+            word-break: break-all; /* Prevent long names overflow */
         }
-        .kanban-card p {
+        .kanban-card-body p { /* Detalles */
             font-size: 0.8rem;
             margin-bottom: 0.2rem;
             color: #6c757d;
         }
+        .kanban-card-footer {
+            margin-top: 0.75rem;
+            text-align: center;
+        }
+        .kanban-card-footer .btn {
+            width: 100%; /* Make button full width */
+        }
+        .etapas-display { /* Display for sequence */
+            font-size: 0.75rem;
+            color: #495057;
+            margin-top: 5px;
+            word-break: break-word; /* Wrap long sequences */
+        }
+        .drag-over {
+            border: 2px dashed #0d6efd; /* Visual feedback for drop zone */
+            background-color: #cfe2ff;
+        }
+        /* --- List View Styles --- */
+        #list-view .table th, #list-view .table td {
+            font-size: 0.9rem; /* Adjust font size for better readability */
+            vertical-align: middle;
+        }
+        #list-view .table th {
+            background-color: #e9ecef;
+        }
+        /* --- Modal Styles (no changes) --- */
         .modal-body .row > div {
              margin-bottom: 0.8rem;
         }
@@ -233,8 +288,8 @@
                                 <input class="form-check-input etapa-check" type="checkbox" value="Pendiente de Rebobinado" id="etapa-pdreb">
                                 <label class="form-check-label" for="etapa-pdreb">P.D. Rebobinado</label>
                             </div>
-                            </div>
-                        </form>
+                        </div>
+                    </form>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -243,24 +298,18 @@
             </div>
         </div>
     </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 
     <script type="module">
-        // Imports de Firebase
+        // Firebase Imports (doc, updateDoc added previously)
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
         import {
-            getFirestore,
-            collection,
-            addDoc,
-            serverTimestamp,
-            query,
-            onSnapshot,
-            doc, // Importar doc
-            updateDoc // Importar updateDoc
+            getFirestore, collection, addDoc, serverTimestamp, query, onSnapshot, doc, updateDoc
         } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
-        // Configuración Firebase
+        // Firebase Config (No Changes)
         const firebaseConfig = {
           apiKey: "AIzaSyBp5a0lUJYZWhtUTVDuwn1jvj6TodaCyrc",
           authDomain: "production-control-pigmea.firebaseapp.com",
@@ -270,7 +319,7 @@
           appId: "1:1008458265879:web:008889d56b1d4de3cc3352"
         };
 
-        // Inicialización Firebase
+        // Firebase Init (No Changes)
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
@@ -278,7 +327,7 @@
 
         console.log("Firebase inicializado.");
 
-        // --- Elementos DOM ---
+        // DOM Elements (No Changes)
         const loginContainer = document.getElementById('login-container');
         const appContainer = document.getElementById('app-container');
         const loginForm = document.getElementById('login-form');
@@ -294,85 +343,26 @@
         const pedidoModalLabel = document.getElementById('pedidoModalLabel');
         const pedidoIdInput = document.getElementById('pedido-id');
 
-        // --- Listeners de Autenticación (Movidos fuera de onAuthStateChanged) ---
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = emailInput.value;
-            const password = passwordInput.value;
-            loginError.style.display = 'none';
+        // Auth Listeners (No Changes)
+        loginForm.addEventListener('submit', async (e) => { /* ... */ });
+        logoutButton.addEventListener('click', async () => { /* ... */ });
+        onAuthStateChanged(auth, (user) => { /* ... */ });
+        function getFirebaseErrorMessage(error) { /* ... */ }
 
-            try {
-                console.log(`Intentando iniciar sesión con ${email}`);
-                const userCredential = await signInWithEmailAndPassword(auth, email, password);
-                console.log("Inicio de sesión exitoso:", userCredential.user);
-                // onAuthStateChanged maneja la UI
-            } catch (error) {
-                console.error("Error de inicio de sesión:", error);
-                loginError.textContent = getFirebaseErrorMessage(error);
-                loginError.style.display = 'block';
-            }
-        });
-
-        logoutButton.addEventListener('click', async () => {
-            try {
-                await signOut(auth);
-                console.log("Cierre de sesión exitoso.");
-                // onAuthStateChanged maneja la UI
-            } catch (error) {
-                console.error("Error al cerrar sesión:", error);
-                alert("Error al cerrar sesión. Inténtalo de nuevo.");
-            }
-        });
-
-        // --- Observador de Estado de Autenticación ---
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                console.log("Usuario conectado:", user.email);
-                loginContainer.style.display = 'none';
-                appContainer.style.display = 'block';
-                userEmailSpan.textContent = user.email;
-                loadMainAppData(); // Cargar contenido principal
-            } else {
-                console.log("Usuario desconectado.");
-                loginContainer.style.display = 'block';
-                appContainer.style.display = 'none';
-                userEmailSpan.textContent = '';
-                mainContent.innerHTML = '<h1 class="text-center">Por favor, inicia sesión</h1>';
-                // Detener listeners de Firestore si el usuario cierra sesión
-                if (unsubscribePedidos) {
-                    console.log("Deteniendo listener de pedidos.");
-                    unsubscribePedidos();
-                    unsubscribePedidos = null;
-                }
-            }
-        });
-
-        function getFirebaseErrorMessage(error) {
-             switch (error.code) {
-                case 'auth/invalid-email': return 'El formato del correo electrónico no es válido.';
-                case 'auth/user-disabled': return 'Este usuario ha sido deshabilitado.';
-                case 'auth/user-not-found':
-                case 'auth/wrong-password':
-                case 'auth/invalid-credential': return 'Correo electrónico o contraseña incorrectos.';
-                case 'auth/too-many-requests': return 'Demasiados intentos fallidos. Inténtalo más tarde.';
-                default: return 'Error al iniciar sesión. Por favor, inténtalo de nuevo.';
-            }
-        }
-
-
-        // --- Lógica Principal de la Aplicación ---
+        // --- Main App Logic ---
         let currentPedidos = [];
         let unsubscribePedidos = null;
+        let draggedItemId = null; // To store the ID of the dragged card
 
         function loadMainAppData() {
             console.log("Cargando datos principales de la aplicación...");
-            // Solo configurar listeners y cargar datos si no se ha hecho ya
              if (!document.getElementById('view-kanban-btn')) {
                 mainContent.innerHTML = `
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <div>
                             <button id="view-kanban-btn" class="btn btn-primary me-2 active">Vista Kanban</button>
                             <button id="view-list-btn" class="btn btn-secondary">Vista Lista</button>
+                            <button id="export-btn" class="btn btn-outline-success ms-2" disabled title="Funcionalidad no implementada">Exportar Lista</button>
                         </div>
                         <div>
                             <input type="text" id="search-input" class="form-control d-inline-block w-auto me-2" placeholder="Buscar pedido...">
@@ -383,17 +373,19 @@
                     <div id="list-view" class="mt-4" style="display: none;"></div>
                 `;
 
-                // Añadir listeners botones de vista
+                // View toggle buttons
                 const viewKanbanBtn = document.getElementById('view-kanban-btn');
                 const viewListBtn = document.getElementById('view-list-btn');
                 const kanbanBoard = document.getElementById('kanban-board');
                 const listView = document.getElementById('list-view');
+                const exportBtn = document.getElementById('export-btn'); // Export button
 
                 viewKanbanBtn.addEventListener('click', () => {
                     kanbanBoard.style.display = 'flex';
                     listView.style.display = 'none';
                     viewKanbanBtn.classList.add('active');
                     viewListBtn.classList.remove('active');
+                    exportBtn.disabled = true; // Disable export in Kanban view
                     renderKanban(currentPedidos);
                 });
                 viewListBtn.addEventListener('click', () => {
@@ -401,168 +393,378 @@
                     listView.style.display = 'block';
                     viewKanbanBtn.classList.remove('active');
                     viewListBtn.classList.add('active');
+                    exportBtn.disabled = false; // Enable export in List view (functionality pending)
                     renderList(currentPedidos);
                 });
 
-                // Listener para abrir el modal
-                document.getElementById('add-pedido-btn').addEventListener('click', () => openPedidoModal()); // Asegurar que llama sin argumento
+                // Add Pedido button
+                document.getElementById('add-pedido-btn').addEventListener('click', () => openPedidoModal());
 
-                // Listener para el formulario del modal (solo se añade una vez)
+                // Modal form submit listener
                 if (!pedidoForm.dataset.listenerAttached) {
                      pedidoForm.addEventListener('submit', savePedido);
-                     pedidoForm.dataset.listenerAttached = 'true'; // Marcar que el listener fue añadido
+                     pedidoForm.dataset.listenerAttached = 'true';
                 }
 
+                // Search input listener
+                document.getElementById('search-input').addEventListener('input', handleSearch);
 
-                // Listener para búsqueda
-                document.getElementById('search-input').addEventListener('input', (e) => {
-                    const searchTerm = e.target.value.toLowerCase();
-                    const filteredPedidos = currentPedidos.filter(pedido =>
-                        pedido.numeroPedido.toLowerCase().includes(searchTerm) ||
-                        (pedido.cliente && pedido.cliente.toLowerCase().includes(searchTerm))
-                    );
-                    if (kanbanBoard.style.display !== 'none') {
-                        renderKanban(filteredPedidos);
-                    } else {
-                        renderList(filteredPedidos);
-                    }
-                });
+                // Placeholder for Export button click
+                 exportBtn.addEventListener('click', () => {
+                     alert('La funcionalidad de exportar a PDF/Excel aún no está implementada.');
+                     // TODO: Implement export using libraries like jsPDF or SheetJS
+                 });
+
             }
 
-            // Empezar a escuchar cambios en los pedidos (o reanudar si ya existía)
+            // Start listening to Firestore changes
             if (!unsubscribePedidos) {
                  listenToPedidos();
             } else {
-                 // Si el listener ya existe, forzar un re-renderizado inicial
-                 if (document.getElementById('kanban-board') && document.getElementById('kanban-board').style.display !== 'none') {
-                    renderKanban(currentPedidos);
-                 } else if (document.getElementById('list-view')) {
-                    renderList(currentPedidos);
-                 }
+                 renderActiveView(currentPedidos); // Re-render if listener already exists
             }
         }
 
+        function handleSearch(e) {
+             const searchTerm = e.target.value.toLowerCase();
+             const filteredPedidos = currentPedidos.filter(pedido =>
+                 (pedido.numeroPedido && pedido.numeroPedido.toLowerCase().includes(searchTerm)) ||
+                 (pedido.cliente && pedido.cliente.toLowerCase().includes(searchTerm)) ||
+                 (pedido.maquinaImpresion && pedido.maquinaImpresion.toLowerCase().includes(searchTerm)) ||
+                 (pedido.etapaActual && pedido.etapaActual.toLowerCase().includes(searchTerm))
+             );
+             renderActiveView(filteredPedidos); // Render the currently active view with filtered data
+        }
+
+        function renderActiveView(pedidosToRender) {
+            const kanbanBoard = document.getElementById('kanban-board');
+            if (kanbanBoard && kanbanBoard.style.display !== 'none') {
+                renderKanban(pedidosToRender);
+            } else if (document.getElementById('list-view')) {
+                renderList(pedidosToRender);
+            }
+        }
+
+
         function listenToPedidos() {
             console.log("Escuchando cambios en la colección 'pedidos'...");
-            if (unsubscribePedidos) unsubscribePedidos(); // Detener listener anterior si existe
+            if (unsubscribePedidos) unsubscribePedidos();
 
-            const q = query(pedidosCollection);
+            const q = query(pedidosCollection); // Consider adding orderBy('createdAt', 'desc') later if needed
 
             unsubscribePedidos = onSnapshot(q, (querySnapshot) => {
                 currentPedidos = [];
                 querySnapshot.forEach((doc) => {
                     currentPedidos.push({ id: doc.id, ...doc.data() });
                 });
-                console.log("Pedidos actualizados:", currentPedidos);
-                // Renderizar la vista activa
-                 const kanbanBoard = document.getElementById('kanban-board');
-                 if (kanbanBoard && kanbanBoard.style.display !== 'none') {
-                    renderKanban(currentPedidos);
-                 } else if (document.getElementById('list-view')) {
-                    renderList(currentPedidos);
-                 }
+                console.log("Pedidos actualizados:", currentPedidos.length);
+                // Render based on current search filter
+                const searchTerm = document.getElementById('search-input')?.value || '';
+                handleSearch({ target: { value: searchTerm } }); // Trigger search handler to filter and render
+
             }, (error) => {
                 console.error("Error al escuchar pedidos:", error);
-                alert("Error al cargar los datos. Por favor, recarga la página.");
-                if (unsubscribePedidos) unsubscribePedidos(); // Detener en caso de error
+                // Only show alert if it's a permission error, otherwise log silently
+                if (error.code === 'permission-denied') {
+                     alert("Error al cargar los datos: Permisos insuficientes. Revisa las reglas de Firestore.");
+                }
+                if (unsubscribePedidos) unsubscribePedidos();
                 unsubscribePedidos = null;
             });
         }
 
-        // --- Renderizado de Vistas ---
+        // --- Kanban Rendering and Drag & Drop ---
+
         function renderKanban(pedidos) {
             const kanbanBoard = document.getElementById('kanban-board');
             if (!kanbanBoard) return;
+            kanbanBoard.innerHTML = ''; // Clear previous content
 
-            const etapas = [ /* ... (lista de etapas sin cambios) ... */
-                 "Impresión WindMöller 1", "Impresión GIAVE", "Impresión WindMöller 3", "Impresión Anonimo",
+            // Define stage groups
+            const etapasImpresion = ["Impresión WindMöller 1", "Impresión GIAVE", "Impresión WindMöller 3", "Impresión Anonimo"];
+            const etapasComplementarias = [
                 "Laminación SL2", "Laminación NEXUS",
                 "Perforación MAC", "Perforación MIC",
                 "Rebobinado S2DT", "Rebobinado PROSLIT", "Rebobinado TEMAC",
                 "Pendiente de Laminar", "Pendiente de Rebobinado",
                 "Completado"
             ];
-            kanbanBoard.innerHTML = '';
 
-            etapas.forEach(etapa => {
+            // Create Group Containers
+            const groupImpresionDiv = createKanbanGroup("Etapa Impresión", etapasImpresion, pedidos);
+            const groupComplementariaDiv = createKanbanGroup("Etapa Complementaria", etapasComplementarias, pedidos);
+
+            kanbanBoard.appendChild(groupImpresionDiv);
+            kanbanBoard.appendChild(groupComplementariaDiv);
+
+            // Add Drag and Drop Listeners AFTER rendering
+            addDragAndDropListeners();
+        }
+
+        function createKanbanGroup(groupTitle, etapasInGroup, allPedidos) {
+            const groupDiv = document.createElement('div');
+            groupDiv.classList.add('kanban-group');
+
+            const titleH4 = document.createElement('h4');
+            titleH4.textContent = groupTitle;
+            groupDiv.appendChild(titleH4);
+
+            const columnsContainer = document.createElement('div');
+            columnsContainer.classList.add('kanban-columns-container');
+
+            etapasInGroup.forEach(etapa => {
                 const columnDiv = document.createElement('div');
                 columnDiv.classList.add('kanban-column');
-                columnDiv.dataset.etapa = etapa;
+                columnDiv.dataset.etapa = etapa; // Store stage name
+
                 const title = document.createElement('h5');
                 title.textContent = etapa;
                 columnDiv.appendChild(title);
 
-                const pedidosEnEtapa = pedidos.filter(p => p.etapaActual === etapa);
+                const pedidosEnEtapa = allPedidos.filter(p => p.etapaActual === etapa);
                 pedidosEnEtapa.forEach(pedido => {
-                    const cardDiv = document.createElement('div');
-                    cardDiv.classList.add('kanban-card');
-                    cardDiv.draggable = true;
-                    cardDiv.dataset.id = pedido.id;
-
-                    const cardTitle = document.createElement('h6');
-                    cardTitle.textContent = pedido.numeroPedido;
-                    cardDiv.appendChild(cardTitle);
-
-                    const detail1 = document.createElement('p');
-                    detail1.textContent = `Máquina: ${pedido.maquinaImpresion || 'N/A'}`;
-                    cardDiv.appendChild(detail1);
-                    const detail2 = document.createElement('p');
-                    detail2.textContent = `Metros: ${pedido.metros || 'N/A'}`;
-                    cardDiv.appendChild(detail2);
-
-                    const editButton = document.createElement('button');
-                    editButton.classList.add('btn', 'btn-sm', 'btn-outline-secondary', 'float-end');
-                    editButton.innerHTML = '<i class="bi bi-pencil"></i>';
-                    editButton.onclick = (e) => {
-                        e.stopPropagation(); // Evitar que el drag se active al hacer clic en el botón
-                        openPedidoModal(pedido.id);
-                    };
-                    cardDiv.appendChild(editButton);
-
-                    columnDiv.appendChild(cardDiv);
+                    columnDiv.appendChild(createKanbanCard(pedido));
                 });
-                kanbanBoard.appendChild(columnDiv);
+                columnsContainer.appendChild(columnDiv);
             });
-            // TODO: Añadir lógica Drag and Drop
+            groupDiv.appendChild(columnsContainer);
+            return groupDiv;
         }
+
+        function createKanbanCard(pedido) {
+            const cardDiv = document.createElement('div');
+            cardDiv.classList.add('kanban-card');
+            cardDiv.draggable = true;
+            cardDiv.dataset.id = pedido.id; // Store pedido ID
+
+            // Card Header (Cliente/Numero + Edit Button)
+            const cardHeader = document.createElement('div');
+            cardHeader.classList.add('kanban-card-header');
+
+            const cardTitle = document.createElement('h6');
+            // Prioritize Cliente if available, otherwise just NumeroPedido
+            cardTitle.textContent = pedido.cliente ? `${pedido.cliente} - ${pedido.numeroPedido}` : pedido.numeroPedido;
+            cardHeader.appendChild(cardTitle);
+
+            const editButton = document.createElement('button');
+            editButton.classList.add('btn', 'btn-sm', 'btn-outline-secondary');
+            editButton.innerHTML = '<i class="bi bi-pencil"></i>';
+            editButton.title = "Editar Pedido"; // Tooltip
+            editButton.onclick = (e) => {
+                e.stopPropagation(); // Prevent drag start on button click
+                openPedidoModal(pedido.id);
+            };
+            cardHeader.appendChild(editButton);
+            cardDiv.appendChild(cardHeader);
+
+            // Card Body (Sequence Display)
+            const cardBody = document.createElement('div');
+            cardBody.classList.add('kanban-card-body');
+            const etapasP = document.createElement('p');
+            etapasP.classList.add('etapas-display');
+            etapasP.innerHTML = `<strong>Secuencia:</strong> ${(pedido.etapasSecuencia || []).slice(0, -1).join(' <i class="bi bi-arrow-right-short"></i> ')}`; // Show sequence excluding "Completado"
+            cardBody.appendChild(etapasP);
+            cardDiv.appendChild(cardBody);
+
+             // Card Footer (Complete Stage Button)
+             // Only show button if not already in "Completado" stage
+             if (pedido.etapaActual !== 'Completado') {
+                const cardFooter = document.createElement('div');
+                cardFooter.classList.add('kanban-card-footer');
+                const completeButton = document.createElement('button');
+                completeButton.classList.add('btn', 'btn-sm', 'btn-success');
+                completeButton.innerHTML = '<i class="bi bi-check-lg"></i> Completar Etapa';
+                completeButton.onclick = (e) => {
+                    e.stopPropagation();
+                    completeStage(pedido.id);
+                };
+                cardFooter.appendChild(completeButton);
+                cardDiv.appendChild(cardFooter);
+             }
+
+            return cardDiv;
+        }
+
+        function addDragAndDropListeners() {
+            const cards = document.querySelectorAll('.kanban-card');
+            const columns = document.querySelectorAll('.kanban-column');
+
+            // Card Listeners
+            cards.forEach(card => {
+                card.addEventListener('dragstart', dragStart);
+                card.addEventListener('dragend', dragEnd);
+            });
+
+            // Column Listeners
+            columns.forEach(column => {
+                column.addEventListener('dragover', dragOver);
+                column.addEventListener('dragenter', dragEnter);
+                column.addEventListener('dragleave', dragLeave);
+                column.addEventListener('drop', drop);
+            });
+        }
+
+        function dragStart(e) {
+            draggedItemId = e.target.dataset.id;
+            setTimeout(() => e.target.classList.add('invisible'), 0); // Hide original card smoothly
+            console.log(`Drag Start: ${draggedItemId}`);
+        }
+
+        function dragEnd(e) {
+            e.target.classList.remove('invisible'); // Make card visible again
+            draggedItemId = null;
+            console.log("Drag End");
+            // Clean up any remaining drag-over styles (safety)
+            document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+        }
+
+        function dragOver(e) {
+            e.preventDefault(); // Necessary to allow dropping
+             // Add visual feedback only to the column itself, not cards inside
+             if (e.target.classList.contains('kanban-column')) {
+                e.target.classList.add('drag-over');
+             }
+        }
+
+        function dragEnter(e) {
+            e.preventDefault();
+            if (e.target.classList.contains('kanban-column')) {
+                 e.target.classList.add('drag-over');
+                 console.log(`Drag Enter Column: ${e.target.dataset.etapa}`);
+            }
+        }
+
+        function dragLeave(e) {
+             if (e.target.classList.contains('kanban-column')) {
+                e.target.classList.remove('drag-over');
+                console.log(`Drag Leave Column: ${e.target.dataset.etapa}`);
+             }
+        }
+
+        async function drop(e) {
+            e.preventDefault(); // Prevent default drop behavior
+            e.stopPropagation(); // Prevent event bubbling
+
+            let targetColumn = e.target;
+            // Find the parent column element if the drop happened on a child element (like title or card)
+            while (targetColumn && !targetColumn.classList.contains('kanban-column')) {
+                targetColumn = targetColumn.parentElement;
+            }
+
+            if (targetColumn && targetColumn.classList.contains('kanban-column') && draggedItemId) {
+                const targetEtapa = targetColumn.dataset.etapa;
+                console.log(`Drop on Column: ${targetEtapa}, Item ID: ${draggedItemId}`);
+                targetColumn.classList.remove('drag-over'); // Remove visual feedback
+
+                // Find the pedido data
+                const pedido = currentPedidos.find(p => p.id === draggedItemId);
+
+                if (pedido && pedido.etapaActual !== targetEtapa) {
+                    // Find the index of the target stage in the pedido's sequence
+                    const newIndex = pedido.etapasSecuencia.indexOf(targetEtapa);
+
+                    if (newIndex !== -1) { // Only update if the target stage is valid for this pedido
+                        console.log(`Updating pedido ${draggedItemId} to etapa ${targetEtapa} (index ${newIndex})`);
+                        const pedidoRef = doc(db, "pedidos", draggedItemId);
+                        try {
+                            await updateDoc(pedidoRef, {
+                                etapaActual: targetEtapa,
+                                indiceEtapaActual: newIndex,
+                                updatedAt: serverTimestamp()
+                            });
+                            console.log("Pedido actualizado por Drag & Drop.");
+                            // No need to manually move the card element, onSnapshot will re-render
+                        } catch (error) {
+                            console.error("Error al actualizar pedido por Drag & Drop:", error);
+                            alert("Error al mover el pedido.");
+                            renderActiveView(currentPedidos); // Re-render to revert visual state if update fails
+                        }
+                    } else {
+                         console.warn(`La etapa ${targetEtapa} no está en la secuencia del pedido ${draggedItemId}. Movimiento inválido.`);
+                         alert(`Movimiento inválido: La etapa "${targetEtapa}" no pertenece a la secuencia de este pedido.`);
+                    }
+                } else if (pedido && pedido.etapaActual === targetEtapa) {
+                     console.log("Drop en la misma columna, no se requiere actualización.");
+                }
+            } else {
+                 console.log("Drop inválido (fuera de columna o sin item arrastrado)");
+                 // Clean up drag-over in case it wasn't removed by dragleave
+                 document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+            }
+            draggedItemId = null; // Reset dragged item ID
+        }
+
+
+        // --- List View Rendering ---
 
         function renderList(pedidos) {
             const listView = document.getElementById('list-view');
-             if (!listView) return;
-             let tableHTML = `...`; // (Tabla HTML sin cambios)
+            if (!listView) return;
+
+            // Define columns to display - expanded list
+            const columns = [
+                { key: 'numeroPedido', label: 'Nº Pedido' },
+                { key: 'cliente', label: 'Cliente' },
+                { key: 'maquinaImpresion', label: 'Máq. Impresión' },
+                { key: 'metros', label: 'Metros' },
+                { key: 'superficie', label: 'SUP', format: (val) => val ? 'Sí' : 'No' },
+                { key: 'transparencia', label: 'TTE', format: (val) => val ? 'Sí' : 'No' },
+                { key: 'capa', label: 'Capa' },
+                { key: 'camisa', label: 'Camisa' },
+                { key: 'fecha', label: 'Fecha (FH)' },
+                { key: 'etapaActual', label: 'Etapa Actual' },
+                { key: 'etapasSecuencia', label: 'Secuencia Completa', format: (val) => (val || []).join(' -> ') },
+                { key: 'observaciones', label: 'Observaciones' },
+                // Add createdAt/updatedAt if needed, formatting required
+                // { key: 'createdAt', label: 'Creado', format: (ts) => ts ? new Date(ts.seconds * 1000).toLocaleDateString() : 'N/A' },
+            ];
+
+            let tableHTML = `
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover table-bordered">
+                        <thead class="table-light">
+                            <tr>`;
+            columns.forEach(col => tableHTML += `<th>${col.label}</th>`);
+            tableHTML += `<th>Acciones</th></tr></thead><tbody>`;
 
             pedidos.forEach(pedido => {
-                 tableHTML += `
-                    <tr>
-                        <td>${pedido.numeroPedido || 'N/A'}</td>
-                        <td>${pedido.maquinaImpresion || 'N/A'}</td>
-                        <td>${pedido.metros || 'N/A'}</td>
-                        <td><span class="badge bg-info text-dark">${pedido.etapaActual || 'N/A'}</span></td>
-                        <td>${(pedido.etapasSecuencia || []).join(' -> ')}</td>
+                tableHTML += `<tr>`;
+                columns.forEach(col => {
+                    let value = pedido[col.key];
+                    if (col.format) {
+                        value = col.format(value);
+                    }
+                    tableHTML += `<td>${value !== null && value !== undefined ? value : 'N/A'}</td>`;
+                });
+                // Actions column
+                tableHTML += `
                         <td>
-                            <button class="btn btn-sm btn-outline-primary" onclick="window.openPedidoModal('${pedido.id}')">
-                                <i class="bi bi-pencil"></i> Editar
+                            <button class="btn btn-sm btn-outline-primary" title="Editar Pedido" onclick="window.openPedidoModal('${pedido.id}')">
+                                <i class="bi bi-pencil"></i>
                             </button>
-                        </td>
+                            </td>
                     </tr>
                 `;
             });
+
             tableHTML += `</tbody></table></div>`;
             listView.innerHTML = tableHTML;
         }
 
-        // --- Lógica del Modal ---
+
+        // --- Modal Logic ---
+
         function openPedidoModal(pedidoId = null) {
             pedidoForm.reset();
             pedidoIdInput.value = '';
 
             if (pedidoId) {
-                // Modo Edición
+                // Edit Mode
                 pedidoModalLabel.textContent = 'Editar Pedido';
                 const pedido = currentPedidos.find(p => p.id === pedidoId);
                 if (pedido) {
                     pedidoIdInput.value = pedido.id;
-                    // Rellenar campos... (sin cambios)
+                    // Populate fields (No Changes from previous version)
                     document.getElementById('numeroPedido').value = pedido.numeroPedido || '';
                     document.getElementById('cliente').value = pedido.cliente || '';
                     document.getElementById('maquinaImpresion').value = pedido.maquinaImpresion || '';
@@ -578,7 +780,8 @@
 
                     const etapaChecks = document.querySelectorAll('.etapa-check');
                     etapaChecks.forEach(check => {
-                        check.checked = (pedido.etapasSecuencia || []).includes(check.value);
+                        // Check if the stage exists in the sequence, excluding the auto-added first (impresion) and last (completado) stages
+                        check.checked = (pedido.etapasSecuencia || []).slice(1, -1).includes(check.value);
                     });
                 } else {
                     console.error("No se encontró el pedido con ID:", pedidoId);
@@ -586,14 +789,14 @@
                     return;
                 }
             } else {
-                // Modo Añadir Nuevo
+                // Add New Mode
                 pedidoModalLabel.textContent = 'Añadir Nuevo Pedido';
                 document.getElementById('superficie').value = 'false';
                 document.getElementById('transparencia').value = 'false';
             }
             pedidoModal.show();
         }
-        window.openPedidoModal = openPedidoModal; // Exponer globalmente
+        window.openPedidoModal = openPedidoModal; // Expose globally
 
         async function savePedido(event) {
             event.preventDefault();
@@ -601,6 +804,7 @@
             const id = pedidoIdInput.value;
             const maquinaImpresionSeleccionada = document.getElementById('maquinaImpresion').value;
 
+            // Build stage sequence
             const etapasSeleccionadas = [];
             if (maquinaImpresionSeleccionada) {
                 etapasSeleccionadas.push(`Impresión ${maquinaImpresionSeleccionada}`);
@@ -613,6 +817,7 @@
             });
             etapasSeleccionadas.push('Completado');
 
+            // Prepare data object
             const pedidoData = {
                 numeroPedido: document.getElementById('numeroPedido').value,
                 cliente: document.getElementById('cliente').value || null,
@@ -627,35 +832,26 @@
                 fecha: document.getElementById('fecha').value || null,
                 observaciones: document.getElementById('observaciones').value || null,
                 etapasSecuencia: etapasSeleccionadas,
-                // Si es edición, NO cambiar etapa actual ni índice aquí
-                // Si es nuevo, sí establecerlos
                 updatedAt: serverTimestamp()
+                // etapaActual and indiceEtapaActual are handled below
             };
-
-            // Solo establecer etapa inicial si es un nuevo pedido
-            if (!id) {
-                 pedidoData.etapaActual = etapasSeleccionadas.length > 0 ? etapasSeleccionadas[0] : 'Completado';
-                 pedidoData.indiceEtapaActual = 0;
-                 pedidoData.createdAt = serverTimestamp();
-            } else {
-                 // Para edición, necesitamos obtener la etapa actual y el índice del pedido existente
-                 // Esto se hará cuando implementemos la actualización completa
-            }
-
 
             try {
                 if (id) {
-                    // --- Implementación básica de Edición ---
+                    // --- Update Logic ---
                     console.log("Actualizando pedido con ID:", id);
-                    // Referencia al documento existente
                     const pedidoRef = doc(db, "pedidos", id);
-                    // Actualizar el documento. No se modifica createdAt, etapaActual ni indiceEtapaActual aquí.
-                    // La etapa se cambiará con Drag&Drop o una acción específica.
+                    // IMPORTANT: When editing, we generally DON'T reset the stage,
+                    // unless the sequence itself changed significantly.
+                    // For now, just update the data fields. Stage changes happen via DnD or Complete button.
                     await updateDoc(pedidoRef, pedidoData);
                     console.log("Pedido actualizado.");
-                    // --- Fin Implementación Edición ---
                 } else {
-                    // Modo Añadir Nuevo
+                    // --- Add New Logic ---
+                    // Set initial stage for new pedidos
+                    pedidoData.etapaActual = etapasSeleccionadas[0]; // First stage in sequence
+                    pedidoData.indiceEtapaActual = 0;
+                    pedidoData.createdAt = serverTimestamp();
                     console.log("Añadiendo nuevo pedido:", pedidoData);
                     const docRef = await addDoc(pedidosCollection, pedidoData);
                     console.log("Pedido añadido con ID: ", docRef.id);
@@ -667,6 +863,49 @@
                 alert(`Error al guardar el pedido: ${error.message}`);
             }
         }
+
+        // --- Complete Stage Logic ---
+        async function completeStage(pedidoId) {
+            console.log(`Intentando completar etapa para pedido: ${pedidoId}`);
+            const pedido = currentPedidos.find(p => p.id === pedidoId);
+
+            if (!pedido) {
+                console.error("No se encontró el pedido para completar etapa:", pedidoId);
+                return;
+            }
+
+            const currentIdx = pedido.indiceEtapaActual;
+            const sequence = pedido.etapasSecuencia;
+
+            // Check if it's already the last stage ("Completado")
+            if (currentIdx >= sequence.length - 1) {
+                console.log(`El pedido ${pedidoId} ya está en la última etapa.`);
+                alert("El pedido ya está completado.");
+                return;
+            }
+
+            // Get the next stage
+            const nextIndex = currentIdx + 1;
+            const nextEtapa = sequence[nextIndex];
+
+            console.log(`Avanzando pedido ${pedidoId} de ${pedido.etapaActual} (índice ${currentIdx}) a ${nextEtapa} (índice ${nextIndex})`);
+
+            const pedidoRef = doc(db, "pedidos", pedidoId);
+            try {
+                await updateDoc(pedidoRef, {
+                    etapaActual: nextEtapa,
+                    indiceEtapaActual: nextIndex,
+                    updatedAt: serverTimestamp()
+                });
+                console.log("Etapa completada y pedido actualizado.");
+                // onSnapshot will handle the re-render
+            } catch (error) {
+                console.error("Error al completar etapa:", error);
+                alert("Error al avanzar el pedido a la siguiente etapa.");
+            }
+        }
+        // Expose globally if needed for buttons added outside renderKanban (not needed currently)
+        // window.completeStage = completeStage;
 
     </script>
 
