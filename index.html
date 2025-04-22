@@ -4,40 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Control de Producción</title>
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <style>
-        body { background-color: #f8f9fa; }
-        #app-container { display: none; }
-        .login-container { max-width: 400px; margin: 5rem auto; padding: 2rem; background-color: white; border-radius: 0.5rem; box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1); }
-        /* Kanban Styles */
-        #kanban-board { display: flex; gap: 2rem; overflow-x: auto; padding-bottom: 1rem; align-items: flex-start; }
-        .kanban-group { background-color: #f1f3f5; padding: 1rem; border-radius: 0.5rem; flex-shrink: 0; }
-        .kanban-group h4 { text-align: center; margin-bottom: 1rem; color: #495057; }
-        .kanban-columns-container { display: flex; gap: 1rem; }
-        .kanban-column { min-width: 280px; max-width: 320px; background-color: #e9ecef; border-radius: 0.5rem; padding: 0.5rem; flex-shrink: 0; height: fit-content; }
-        .kanban-column h5 { text-align: center; padding: 0.5rem; background-color: #dee2e6; border-radius: 0.3rem; margin-bottom: 1rem; font-size: 0.9rem; word-break: break-word; }
-        .kanban-card { background-color: white; border: 1px solid #dee2e6; border-radius: 0.3rem; padding: 0.75rem; margin-bottom: 0.75rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); cursor: grab; }
-        .kanban-card:active { cursor: grabbing; }
-        .kanban-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
-        .kanban-card-header h6 { font-size: 0.9rem; font-weight: bold; margin-bottom: 0; word-break: break-all; }
-        .kanban-card-body p { font-size: 0.8rem; margin-bottom: 0.2rem; color: #6c757d; }
-        .kanban-card-footer { margin-top: 0.75rem; text-align: center; }
-        .kanban-card-footer .btn { width: 100%; }
-        .etapas-display { font-size: 0.75rem; color: #495057; margin-top: 5px; word-break: break-word; }
-        .drag-over { border: 2px dashed #0d6efd; background-color: #cfe2ff; }
-        /* List View Styles */
-        #list-view .table th, #list-view .table td { font-size: 0.9rem; vertical-align: middle; }
-        #list-view .table th { background-color: #e9ecef; }
-        /* Modal Styles */
-        .modal-body .row > div { margin-bottom: 0.8rem; }
-        #etapas-secuencia-container label { margin-right: 10px; }
-        /* Style for delete/return buttons */
-        .modal-footer .btn-danger, .modal-footer .btn-warning { margin-right: auto; } /* Push buttons to the left */
-    </style>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+    <!-- Login Container -->
     <div id="login-container" class="login-container">
         <h2 class="text-center mb-4">Iniciar Sesión</h2>
         <form id="login-form">
@@ -56,7 +32,9 @@
         </form>
     </div>
 
+    <!-- App Container (Initially Hidden) -->
     <div id="app-container" class="container-fluid mt-4">
+        <!-- Navbar -->
         <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4 rounded">
             <div class="container-fluid">
                 <a class="navbar-brand" href="#">Control Producción</a>
@@ -76,11 +54,13 @@
             </div>
         </nav>
 
+        <!-- Main Content Area (Populated by JavaScript) -->
         <div id="main-content">
             <h1 class="text-center">Por favor, inicia sesión</h1>
         </div>
     </div>
 
+    <!-- Pedido Modal -->
     <div class="modal fade" id="pedidoModal" tabindex="-1" aria-labelledby="pedidoModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
@@ -91,6 +71,7 @@
                 <div class="modal-body">
                     <form id="pedido-form">
                         <input type="hidden" id="pedido-id">
+                        <!-- Row 1: Numero Pedido & Cliente -->
                         <div class="row">
                             <div class="col-md-6">
                                 <label for="numeroPedido" class="form-label">Número Pedido (Cliente - Número)*</label>
@@ -102,6 +83,7 @@
                             </div>
                         </div>
                         <hr>
+                        <!-- Row 2: Main Features -->
                         <h6>Características Principales</h6>
                         <div class="row">
                             <div class="col-md-4">
@@ -120,11 +102,11 @@
                             </div>
                             <div class="col-md-4">
                                 <label for="desarrNumero" class="form-label">Desarr. (Número)</label>
-                                <input type="number" class="form-control" id="desarrNumero">
+                                <input type="number" class="form-control" id="desarrNumero" step="any"> <!-- Allow decimals if needed -->
                             </div>
                             <div class="col-md-4">
                                 <label for="metros" class="form-label">Metros</label>
-                                <input type="number" class="form-control" id="metros">
+                                <input type="number" class="form-control" id="metros" step="any"> <!-- Allow decimals if needed -->
                             </div>
                             <div class="col-md-4">
                                 <label for="superficie" class="form-label">Superficie (SUP)</label>
@@ -153,6 +135,7 @@
                                 <input type="text" class="form-control" id="fecha" placeholder="DD/MM">
                             </div>
                         </div>
+                         <!-- Row 3: Observaciones -->
                          <div class="row">
                              <div class="col-12">
                                 <label for="observaciones" class="form-label">Observaciones</label>
@@ -160,374 +143,66 @@
                             </div>
                         </div>
                         <hr>
-                        <h6>Secuencia de Etapas (Seleccionar en orden)</h6>
-                        <p class="form-text text-muted">La etapa de impresión seleccionada arriba se añadirá automáticamente al inicio.</p>
-                        <div id="etapas-secuencia-container" class="mb-3">
+                        <!-- Row 4: Etapas Sequence -->
+                        <h6>Secuencia de Etapas Complementarias (Seleccionar en orden)</h6>
+                        <p class="form-text text-muted">La etapa de impresión seleccionada arriba se añadirá automáticamente al inicio de la secuencia.</p>
+                        <div id="etapas-secuencia-container" class="mb-3 d-flex flex-wrap gap-3">
+                            <!-- Use more descriptive IDs for checkboxes -->
                             <div class="form-check form-check-inline">
-                                <input class="form-check-input etapa-check" type="checkbox" value="Laminación SL2" id="etapa-sl2">
-                                <label class="form-check-label" for="etapa-sl2">Laminación SL2</label>
+                                <input class="form-check-input etapa-check" type="checkbox" value="Laminación SL2" id="etapa-laminacion-sl2">
+                                <label class="form-check-label" for="etapa-laminacion-sl2">Laminación SL2</label>
                             </div>
                              <div class="form-check form-check-inline">
-                                <input class="form-check-input etapa-check" type="checkbox" value="Laminación NEXUS" id="etapa-nexus">
-                                <label class="form-check-label" for="etapa-nexus">Laminación NEXUS</label>
+                                <input class="form-check-input etapa-check" type="checkbox" value="Laminación NEXUS" id="etapa-laminacion-nexus">
+                                <label class="form-check-label" for="etapa-laminacion-nexus">Laminación NEXUS</label>
                             </div>
                              <div class="form-check form-check-inline">
-                                <input class="form-check-input etapa-check" type="checkbox" value="Perforación MAC" id="etapa-mac">
-                                <label class="form-check-label" for="etapa-mac">Perforación MAC</label>
+                                <input class="form-check-input etapa-check" type="checkbox" value="Perforación MAC" id="etapa-perforacion-mac">
+                                <label class="form-check-label" for="etapa-perforacion-mac">Perforación MAC</label>
                             </div>
                              <div class="form-check form-check-inline">
-                                <input class="form-check-input etapa-check" type="checkbox" value="Perforación MIC" id="etapa-mic">
-                                <label class="form-check-label" for="etapa-mic">Perforación MIC</label>
+                                <input class="form-check-input etapa-check" type="checkbox" value="Perforación MIC" id="etapa-perforacion-mic">
+                                <label class="form-check-label" for="etapa-perforacion-mic">Perforación MIC</label>
                             </div>
                              <div class="form-check form-check-inline">
-                                <input class="form-check-input etapa-check" type="checkbox" value="Rebobinado S2DT" id="etapa-s2dt">
-                                <label class="form-check-label" for="etapa-s2dt">Rebobinado S2DT</label>
+                                <input class="form-check-input etapa-check" type="checkbox" value="Rebobinado S2DT" id="etapa-rebobinado-s2dt">
+                                <label class="form-check-label" for="etapa-rebobinado-s2dt">Rebobinado S2DT</label>
                             </div>
                              <div class="form-check form-check-inline">
-                                <input class="form-check-input etapa-check" type="checkbox" value="Rebobinado PROSLIT" id="etapa-proslit">
-                                <label class="form-check-label" for="etapa-proslit">Rebobinado PROSLIT</label>
+                                <input class="form-check-input etapa-check" type="checkbox" value="Rebobinado PROSLIT" id="etapa-rebobinado-proslit">
+                                <label class="form-check-label" for="etapa-rebobinado-proslit">Rebobinado PROSLIT</label>
                             </div>
                              <div class="form-check form-check-inline">
-                                <input class="form-check-input etapa-check" type="checkbox" value="Rebobinado TEMAC" id="etapa-temac">
-                                <label class="form-check-label" for="etapa-temac">Rebobinado TEMAC</label>
+                                <input class="form-check-input etapa-check" type="checkbox" value="Rebobinado TEMAC" id="etapa-rebobinado-temac">
+                                <label class="form-check-label" for="etapa-rebobinado-temac">Rebobinado TEMAC</label>
                             </div>
                              <div class="form-check form-check-inline">
-                                <input class="form-check-input etapa-check" type="checkbox" value="Pendiente de Laminar" id="etapa-pdlam">
-                                <label class="form-check-label" for="etapa-pdlam">P.D. Laminar</label>
+                                <input class="form-check-input etapa-check" type="checkbox" value="Pendiente de Laminar" id="etapa-pendiente-de-laminar">
+                                <label class="form-check-label" for="etapa-pendiente-de-laminar">P.D. Laminar</label>
                             </div>
                              <div class="form-check form-check-inline">
-                                <input class="form-check-input etapa-check" type="checkbox" value="Pendiente de Rebobinado" id="etapa-pdreb">
-                                <label class="form-check-label" for="etapa-pdreb">P.D. Rebobinado</label>
+                                <input class="form-check-input etapa-check" type="checkbox" value="Pendiente de Rebobinado" id="etapa-pendiente-de-rebobinado">
+                                <label class="form-check-label" for="etapa-pendiente-de-rebobinado">P.D. Rebobinado</label>
                             </div>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" id="delete-pedido-btn" class="btn btn-danger" style="display: none;">Eliminar Registro</button>
-                    <button type="button" id="return-to-print-btn" class="btn btn-warning ms-2" style="display: none;">Regresar a Impresión</button>
-                    <button type="button" class="btn btn-secondary ms-auto" data-bs-dismiss="modal">Cancelar</button>
+                    <!-- Buttons pushed to sides using Bootstrap margin utilities -->
+                    <button type="button" id="delete-pedido-btn" class="btn btn-danger me-auto" style="display: none;">Eliminar Registro</button>
+                    <button type="button" id="return-to-print-btn" class="btn btn-warning" style="display: none;">Regresar a Impresión</button> <!-- Removed ms-2, me-auto on delete pushes this right -->
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                     <button type="submit" class="btn btn-primary" form="pedido-form">Guardar Pedido</button>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Bootstrap Bundle JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 
-    <script type="module">
-        // Firebase Imports - Corregidas URLs
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
-        import {
-            getFirestore, collection, addDoc, serverTimestamp, query, onSnapshot, doc, updateDoc, deleteDoc
-        } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
-
-        // Firebase Config (no changes)
-        const firebaseConfig = {
-          apiKey: "AIzaSyBp5a0lUJYZWhtUTVDuwn1jvj6TodaCyrc",
-          authDomain: "production-control-pigmea.firebaseapp.com",
-          projectId: "production-control-pigmea",
-          storageBucket: "production-control-pigmea.firebasestorage.app",
-          messagingSenderId: "1008458265879",
-          appId: "1:1008458265879:web:008889d56b1d4de3cc3352"
-        };
-
-        // Firebase Init (no changes)
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const pedidosCollection = collection(db, "pedidos");
-
-        console.log("Firebase inicializado.");
-
-        // DOM Elements (Obtenidos después de DOMContentLoaded)
-        let loginContainer, appContainer, loginForm, emailInput, passwordInput, loginError,
-            logoutButton, userEmailSpan, mainContent, pedidoModalElement, pedidoModal,
-            pedidoForm, pedidoModalLabel, pedidoIdInput, deletePedidoBtn, returnToPrintBtn;
-
-        // --- State Variables ---
-        let currentPedidos = [];
-        let unsubscribePedidos = null;
-        let draggedItemId = null;
-        let appLoaded = false;
-
-        // Define printing stages globally
-        const etapasImpresion = ["Impresión WindMöller 1", "Impresión GIAVE", "Impresión WindMöller 3", "Impresión Anonimo"];
-        const etapasComplementarias = [
-            "Laminación SL2", "Laminación NEXUS", "Perforación MAC", "Perforación MIC",
-            "Rebobinado S2DT", "Rebobinado PROSLIT", "Rebobinado TEMAC",
-            "Pendiente de Laminar", "Pendiente de Rebobinado", "Completado"
-        ];
-
-        // --- Function to Initialize DOM Elements and Add Listeners ---
-        function initializeAppEventListeners() {
-            console.log("DOMContentLoaded disparado. Inicializando elementos y listeners...");
-
-            // Get DOM Elements
-            loginContainer = document.getElementById('login-container');
-            appContainer = document.getElementById('app-container');
-            loginForm = document.getElementById('login-form');
-            emailInput = document.getElementById('email');
-            passwordInput = document.getElementById('password');
-            loginError = document.getElementById('login-error');
-            logoutButton = document.getElementById('logout-button');
-            userEmailSpan = document.getElementById('user-email');
-            mainContent = document.getElementById('main-content');
-            pedidoModalElement = document.getElementById('pedidoModal');
-            pedidoModal = new bootstrap.Modal(pedidoModalElement);
-            pedidoForm = document.getElementById('pedido-form');
-            pedidoModalLabel = document.getElementById('pedidoModalLabel');
-            pedidoIdInput = document.getElementById('pedido-id');
-            deletePedidoBtn = document.getElementById('delete-pedido-btn');
-            returnToPrintBtn = document.getElementById('return-to-print-btn');
-
-            if (!loginForm || !logoutButton || !pedidoForm || !deletePedidoBtn || !returnToPrintBtn) {
-                 console.error("¡Error crítico! No se encontraron todos los elementos esenciales para los listeners.");
-                 alert("Error al cargar la página. Faltan elementos esenciales.");
-                 return;
-            }
-
-            // --- Auth Listeners ---
-            console.log("Añadiendo listener al formulario de login...");
-            if (loginForm) {
-                loginForm.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    console.log("Login form submit event intercepted.");
-                    const email = emailInput.value;
-                    const password = passwordInput.value;
-                    loginError.style.display = 'none';
-                    try {
-                        console.log(`Intentando iniciar sesión con ${email}`);
-                        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-                        console.log("Inicio de sesión exitoso:", userCredential.user?.email);
-                    } catch (error) {
-                        console.error("Error de inicio de sesión:", error);
-                        loginError.textContent = getFirebaseErrorMessage(error);
-                        loginError.style.display = 'block';
-                    }
-                });
-            } else {
-                 console.error("No se pudo añadir listener a loginForm porque no existe.");
-            }
-
-
-            console.log("Añadiendo listener al botón de logout...");
-            if(logoutButton) {
-                logoutButton.addEventListener('click', async () => {
-                    try {
-                        appLoaded = false;
-                        await signOut(auth);
-                        console.log("Cierre de sesión exitoso.");
-                    } catch (error) {
-                        console.error("Error al cerrar sesión:", error);
-                        alert("Error al cerrar sesión. Inténtalo de nuevo.");
-                    }
-                });
-            } else {
-                 console.error("No se pudo añadir listener a logoutButton porque no existe.");
-            }
-
-
-             // Attach modal form submit listener
-            if (pedidoForm && !pedidoForm.dataset.listenerAttached) {
-                 pedidoForm.addEventListener('submit', savePedido);
-                 pedidoForm.dataset.listenerAttached = 'true';
-                 console.log("Listener de submit del modal añadido.");
-            }
-            // Attach delete button listener
-            if (deletePedidoBtn && !deletePedidoBtn.dataset.listenerAttached) {
-                 deletePedidoBtn.addEventListener('click', deletePedido);
-                 deletePedidoBtn.dataset.listenerAttached = 'true';
-                 console.log("Listener del botón eliminar añadido.");
-            }
-            // Attach return button listener
-            if (returnToPrintBtn && !returnToPrintBtn.dataset.listenerAttached) {
-                 returnToPrintBtn.addEventListener('click', returnToPrintStage);
-                 returnToPrintBtn.dataset.listenerAttached = 'true';
-                 console.log("Listener del botón regresar a impresión añadido.");
-            }
-
-             console.log("initializeAppEventListeners completado.");
-        }
-
-        // --- Wait for DOM to be fully loaded before adding listeners ---
-        document.addEventListener('DOMContentLoaded', initializeAppEventListeners);
-
-
-        // --- Auth State Observer ---
-        onAuthStateChanged(auth, (user) => {
-            if (!loginContainer) {
-                 console.log("onAuthStateChanged: DOM no listo aún (loginContainer nulo), esperando...");
-                 setTimeout(() => onAuthStateChanged(auth, user), 100);
-                 return;
-            }
-
-            if (user) {
-                console.log("onAuthStateChanged: Usuario conectado:", user.email);
-                if (!appLoaded) {
-                    appLoaded = true;
-                    console.log("onAuthStateChanged: App no cargada, llamando a loadMainAppData...");
-                    loginContainer.style.display = 'none';
-                    appContainer.style.display = 'block';
-                    userEmailSpan.textContent = user.email;
-                    try {
-                        loadMainAppData();
-                    } catch (error) {
-                         console.error("Error CRÍTICO durante loadMainAppData:", error);
-                         alert("Error al cargar la aplicación principal. Por favor, recarga la página.");
-                         appLoaded = false;
-                         signOut(auth);
-                    }
-                } else {
-                     console.log("onAuthStateChanged: App ya cargada, omitiendo loadMainAppData.");
-                }
-            } else {
-                console.log("onAuthStateChanged: Usuario desconectado.");
-                appLoaded = false;
-                loginContainer.style.display = 'block';
-                appContainer.style.display = 'none';
-                 if(userEmailSpan) userEmailSpan.textContent = '';
-                 if(mainContent) mainContent.innerHTML = '<h1 class="text-center">Por favor, inicia sesión</h1>';
-                if (unsubscribePedidos) {
-                    console.log("Deteniendo listener de pedidos por logout.");
-                    unsubscribePedidos();
-                    unsubscribePedidos = null;
-                }
-            }
-        });
-
-        function getFirebaseErrorMessage(error) {
-             switch (error.code) {
-                case 'auth/invalid-email': return 'El formato del correo electrónico no es válido.';
-                case 'auth/user-disabled': return 'Este usuario ha sido deshabilitado.';
-                case 'auth/user-not-found':
-                case 'auth/wrong-password':
-                case 'auth/invalid-credential': return 'Correo electrónico o contraseña incorrectos.';
-                case 'auth/too-many-requests': return 'Demasiados intentos fallidos. Inténtalo más tarde.';
-                default: return 'Error al iniciar sesión. Por favor, inténtalo de nuevo.';
-            }
-         }
-
-        // --- Main App Logic ---
-        function loadMainAppData() {
-            console.log("Iniciando loadMainAppData (Versión Completa)...");
-            try {
-                const mainContentContainer = document.getElementById('main-content');
-                if (!mainContentContainer) {
-                     console.error("loadMainAppData: No se encontró el contenedor #main-content.");
-                     throw new Error("Fallo crítico: Contenedor principal no encontrado.");
-                }
-
-                if (!mainContentContainer.querySelector('#view-kanban-btn')) {
-                    console.log("loadMainAppData: Creando HTML principal...");
-                    mainContentContainer.innerHTML = `
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <div>
-                                <button id="view-kanban-btn" class="btn btn-primary me-2 active">Vista Kanban</button>
-                                <button id="view-list-btn" class="btn btn-secondary">Vista Lista</button>
-                                <button id="export-btn" class="btn btn-outline-success ms-2" disabled title="Funcionalidad no implementada">Exportar Lista</button>
-                            </div>
-                            <div>
-                                <input type="text" id="search-input" class="form-control d-inline-block w-auto me-2" placeholder="Buscar pedido...">
-                                <button id="add-pedido-btn" class="btn btn-success">+ Añadir Pedido</button>
-                            </div>
-                        </div>
-                        <div id="kanban-board" class="mt-4"></div>
-                        <div id="list-view" class="mt-4" style="display: none;"></div>
-                    `;
-                    console.log("loadMainAppData: HTML principal creado.");
-
-                    const viewKanbanBtn = mainContentContainer.querySelector('#view-kanban-btn');
-                    const viewListBtn = mainContentContainer.querySelector('#view-list-btn');
-                    const kanbanBoard = mainContentContainer.querySelector('#kanban-board');
-                    const listView = mainContentContainer.querySelector('#list-view');
-                    const exportBtn = mainContentContainer.querySelector('#export-btn');
-                    const addPedidoBtn = mainContentContainer.querySelector('#add-pedido-btn');
-                    const searchInput = mainContentContainer.querySelector('#search-input');
-
-                    if (viewKanbanBtn && viewListBtn && kanbanBoard && listView && exportBtn && addPedidoBtn && searchInput) {
-                        console.log("loadMainAppData: Añadiendo listeners para vistas y acciones...");
-
-                        viewKanbanBtn.addEventListener('click', () => {
-                            kanbanBoard.style.display = 'flex';
-                            listView.style.display = 'none';
-                            viewKanbanBtn.classList.add('active');
-                            viewListBtn.classList.remove('active');
-                            exportBtn.disabled = true;
-                            renderKanban(currentPedidos);
-                        });
-                        viewListBtn.addEventListener('click', () => {
-                            kanbanBoard.style.display = 'none';
-                            listView.style.display = 'block';
-                            viewKanbanBtn.classList.remove('active');
-                            viewListBtn.classList.add('active');
-                            exportBtn.disabled = false;
-                            renderList(currentPedidos);
-                        });
-                        addPedidoBtn.addEventListener('click', () => openPedidoModal());
-                        searchInput.addEventListener('input', handleSearch);
-                        exportBtn.addEventListener('click', () => {
-                             alert('La funcionalidad de exportar a PDF/Excel aún no está implementada.');
-                        });
-                        console.log("loadMainAppData: Listeners de vistas y acciones añadidos.");
-                    } else {
-                         console.error("loadMainAppData: ¡Error! No se encontraron elementos creados dinámicamente para añadir listeners.");
-                         throw new Error("Fallo al inicializar elementos de la interfaz principal.");
-                    }
-                } else {
-                    console.log("loadMainAppData: HTML principal ya existe.");
-                }
-
-                // --- RESTORED Firestore Listener Call ---
-                if (!unsubscribePedidos) {
-                     console.log("loadMainAppData: Iniciando listener de Firestore...");
-                     listenToPedidos();
-                } else {
-                     console.log("loadMainAppData: Listener de Firestore ya activo, renderizando vista actual.");
-                     renderActiveView(currentPedidos);
-                }
-                 console.log("Finalizando loadMainAppData (Completa) exitosamente.");
-            } catch (error) {
-                 console.error("Error DENTRO de loadMainAppData (Completa):", error);
-                 alert("Ocurrió un error al configurar la interfaz principal.");
-                 throw error;
-            }
-        }
-
-        function handleSearch(e) { /* ... (no changes) ... */ }
-        function renderActiveView(pedidosToRender) { /* ... (no changes) ... */ }
-        function listenToPedidos() { /* ... (no changes) ... */ }
-
-        // --- Kanban Rendering and Drag & Drop ---
-        function renderKanban(pedidos) { /* ... (no changes) ... */ }
-        function createKanbanGroup(groupTitle, etapasInGroup, allPedidos) { /* ... (no changes) ... */ }
-        function createKanbanCard(pedido) { /* ... (no changes) ... */ }
-        function addDragAndDropListeners() { /* ... (no changes) ... */ }
-        function dragStart(e) { /* ... (no changes) ... */ }
-        function dragEnd(e) { /* ... (no changes) ... */ }
-        function dragOver(e) { /* ... (no changes) ... */ }
-        function dragEnter(e) { /* ... (no changes) ... */ }
-        function dragLeave(e) { /* ... (no changes) ... */ }
-        async function drop(e) { /* ... (no changes) ... */ }
-
-        // --- List View Rendering ---
-        function renderList(pedidos) { /* ... (no changes) ... */ }
-
-        // --- Modal Logic ---
-        function openPedidoModal(pedidoId = null) { /* ... (no changes) ... */ }
-        window.openPedidoModal = openPedidoModal;
-        async function savePedido(event) { /* ... (no changes) ... */ }
-
-        // --- Complete Stage Logic ---
-        async function completeStage(pedidoId) { /* ... (no changes) ... */ }
-
-        // --- Delete Pedido Logic ---
-        async function deletePedido() { /* ... (no changes) ... */ }
-
-        // --- Return to Print Stage Logic (with Debugging) ---
-        async function returnToPrintStage() { /* ... (no changes) ... */ }
-
-    </script>
+    <!-- Custom App Logic (Module) -->
+    <script type="module" src="app.js"></script>
 
 </body>
 </html>
