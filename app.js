@@ -436,17 +436,8 @@ function addDragAndDropListeners() {
     const columns = document.querySelectorAll('.kanban-column');
 
     cards.forEach(card => {
-        // Eventos estándar de arrastre
         card.addEventListener('dragstart', dragStart);
         card.addEventListener('dragend', dragEnd);
-        
-        // Eventos táctiles y de clic sostenido
-        card.addEventListener('touchstart', touchStart, { passive: false });
-        card.addEventListener('touchmove', touchMove, { passive: false });
-        card.addEventListener('touchend', touchEnd);
-        
-        // Eventos de ratón para clic sostenido
-        card.addEventListener('mousedown', mouseDown);
     });
 
     columns.forEach(column => {
@@ -455,340 +446,131 @@ function addDragAndDropListeners() {
         column.addEventListener('dragleave', dragLeave);
         column.addEventListener('drop', drop);
     });
-    console.log(`Listeners D&D añadidos a ${cards.length} tarjetas y ${columns.length} columnas.`);
-    
-    // Añadir listeners globales para mouse
-    document.addEventListener('mousemove', mouseMove);
-    document.addEventListener('mouseup', mouseUp);
+     console.log(`Listeners D&D añadidos a ${cards.length} tarjetas y ${columns.length} columnas.`);
 }
 
-// Variables para la funcionalidad de clic sostenido
-let isDragging = false;
-let draggedCard = null;
-let initialX, initialY;
-let offsetX, offsetY;
-let scrollInterval = null;
-let lastTouchColumn = null;
-
-function mouseDown(e) {
-    if (e.button !== 0) return; // Solo botón izquierdo
-    
-    const card = e.currentTarget;
-    initialX = e.clientX;
-    initialY = e.clientY;
-    
-    // Guardar la posición inicial para determinar si es un clic o un arrastre
-    card.dataset.initialX = initialX;
-    card.dataset.initialY = initialY;
-    card.dataset.mouseDownTime = Date.now();
-}
-
-function mouseMove(e) {
-    if (!document.querySelector('.kanban-card[data-mouse-down-time]')) return;
-    
-    const card = document.querySelector('.kanban-card[data-mouse-down-time]');
-    const initialX = parseInt(card.dataset.initialX);
-    const initialY = parseInt(card.dataset.initialY);
-    const mouseDownTime = parseInt(card.dataset.mouseDownTime);
-    
-    // Determinar si es un clic o un arrastre basado en el movimiento y tiempo
-    const hasMoved = Math.abs(e.clientX - initialX) > 10 || Math.abs(e.clientY - initialY) > 10;
-    const hasBeenHeldLongEnough = Date.now() - mouseDownTime > 150;
-    
-    if (hasMoved && hasBeenHeldLongEnough && !isDragging) {
-        startDragging(card, e.clientX, e.clientY);
-    }
-    
-    if (isDragging) {
-        moveElement(e.clientX, e.clientY);
-        handleAutoscroll(e.clientX, e.clientY);
-    }
-}
-
-function mouseUp(e) {
-    if (!isDragging) {
-        // Limpiar cualquier dato de mouseDown si no se convirtió en arrastre
-        const card = document.querySelector('.kanban-card[data-mouse-down-time]');
-        if (card) {
-            delete card.dataset.mouseDownTime;
-            delete card.dataset.initialX;
-            delete card.dataset.initialY;
-        }
-        return;
-    }
-    
-    finishDragging(e.clientX, e.clientY);
-}
-
-function touchStart(e) {
-    if (e.touches.length !== 1) return;
-    e.preventDefault(); // Prevenir scroll en táctil al intentar arrastrar
-    
-    const touch = e.touches[0];
-    const card = e.currentTarget;
-    
-    initialX = touch.clientX;
-    initialY = touch.clientY;
-    
-    // Iniciar el arrastre después de un breve retraso (para no confundir con scroll)
-    card.dataset.touchStartTime = Date.now();
-    card.dataset.initialTouchX = initialX;
-    card.dataset.initialTouchY = initialY;
-    
-    // Mostrar feedback visual inmediato
-    setTimeout(() => {
-        if (card.dataset.touchStartTime) {
-            card.classList.add('touch-dragging');
-        }
-    }, 150);
-}
-
-function touchMove(e) {
-    if (e.touches.length !== 1) return;
-    
-    const card = e.currentTarget;
-    const touch = e.touches[0];
-    
-    if (card.classList.contains('touch-dragging') || isDragging) {
-        e.preventDefault();
-        
-        if (!isDragging) {
-            startDragging(card, touch.clientX, touch.clientY);
-        }
-        
-        moveElement(touch.clientX, touch.clientY);
-        handleAutoscroll(touch.clientX, touch.clientY);
-        
-        // Detectar columna debajo del touch
-        const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
-        const columnBelow = elemBelow ? elemBelow.closest('.kanban-column') : null;
-        
-        // Gestionar destacado visual de columna
-        if (columnBelow && columnBelow !== lastTouchColumn) {
-            if (lastTouchColumn) {
-                lastTouchColumn.classList.remove('drag-over');
-            }
-            columnBelow.classList.add('drag-over');
-            lastTouchColumn = columnBelow;
-        } else if (!columnBelow && lastTouchColumn) {
-            lastTouchColumn.classList.remove('drag-over');
-            lastTouchColumn = null;
-        }
-    } else {
-        // Determinar si el touch se ha movido lo suficiente para iniciar arrastre
-        const initialX = parseInt(card.dataset.initialTouchX);
-        const initialY = parseInt(card.dataset.initialTouchY);
-        const touchStartTime = parseInt(card.dataset.touchStartTime);
-        
-        const hasMoved = Math.abs(touch.clientX - initialX) > 10 || Math.abs(touch.clientY - initialY) > 10;
-        const hasBeenHeldLongEnough = Date.now() - touchStartTime > 150;
-        
-        if (hasMoved && hasBeenHeldLongEnough) {
-            e.preventDefault();
-            card.classList.add('touch-dragging');
-        }
-    }
-}
-
-function touchEnd(e) {
-    const card = e.currentTarget;
-    card.classList.remove('touch-dragging');
-    
-    delete card.dataset.touchStartTime;
-    delete card.dataset.initialTouchX;
-    delete card.dataset.initialTouchY;
-    
-    if (!isDragging) return;
-    
-    const touch = e.changedTouches[0];
-    finishDragging(touch.clientX, touch.clientY);
-}
-
-function startDragging(card, clientX, clientY) {
-    draggedCard = card;
-    draggedItemId = card.dataset.id;
-    
-    // Crear clon visual para arrastrar
-    const clone = card.cloneNode(true);
-    clone.id = 'dragging-clone';
-    clone.style.position = 'fixed';
-    clone.style.width = card.offsetWidth + 'px';
-    clone.style.pointerEvents = 'none';
-    clone.style.zIndex = '1000';
-    clone.style.opacity = '0.8';
-    clone.style.transform = 'rotate(3deg)';
-    clone.style.boxShadow = '0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23)';
-    document.body.appendChild(clone);
-    
-    // Calcular offset desde donde se está agarrando la tarjeta
-    const rect = card.getBoundingClientRect();
-    offsetX = clientX - rect.left;
-    offsetY = clientY - rect.top;
-    
-    // Mover el clon a la posición inicial
-    clone.style.left = (clientX - offsetX) + 'px';
-    clone.style.top = (clientY - offsetY) + 'px';
-    
-    // Marcar original como oculto o semi-transparente
-    card.style.opacity = '0.3';
-    
-    isDragging = true;
-    
-    console.log(`Drag iniciado para: ${draggedItemId}`);
-}
-
-function moveElement(clientX, clientY) {
-    const clone = document.getElementById('dragging-clone');
-    if (!clone) return;
-    
-    clone.style.left = (clientX - offsetX) + 'px';
-    clone.style.top = (clientY - offsetY) + 'px';
-}
-
-function handleAutoscroll(clientX, clientY) {
-    // Limpiar cualquier intervalo de autoscroll existente
-    if (scrollInterval) {
-        clearInterval(scrollInterval);
-        scrollInterval = null;
-    }
-    
-    const scrollThreshold = 80; // px desde el borde para iniciar autoscroll
-    const scrollSpeed = 15; // px por intervalo
-    const scrollContainer = document.getElementById('kanban-board');
-    
-    const containerRect = scrollContainer.getBoundingClientRect();
-    
-    // Determinar si estamos cerca del borde izquierdo o derecho
-    if (clientX < containerRect.left + scrollThreshold) {
-        // Scroll hacia la izquierda
-        scrollInterval = setInterval(() => {
-            scrollContainer.scrollLeft -= scrollSpeed;
-        }, 30);
-    } else if (clientX > containerRect.right - scrollThreshold) {
-        // Scroll hacia la derecha
-        scrollInterval = setInterval(() => {
-            scrollContainer.scrollLeft += scrollSpeed;
-        }, 30);
-    }
-}
-
-function finishDragging(clientX, clientY) {
-    // Limpiar intervalo de autoscroll si existe
-    if (scrollInterval) {
-        clearInterval(scrollInterval);
-        scrollInterval = null;
-    }
-    
-    const clone = document.getElementById('dragging-clone');
-    if (!clone || !draggedCard) {
-        isDragging = false;
-        return;
-    }
-    
-    // Buscar la columna debajo del punto de soltar
-    const elemBelow = document.elementFromPoint(clientX, clientY);
-    if (!elemBelow) {
-        restoreOriginalCardState();
-        return;
-    }
-    
-    const columnBelow = elemBelow.closest('.kanban-column');
-    if (columnBelow && columnBelow.dataset.etapa) {
-        handleCardDropToColumn(columnBelow);
-    } else {
-        restoreOriginalCardState();
-    }
-    
-    // Limpiar cualquier columna resaltada
-    if (lastTouchColumn) {
-        lastTouchColumn.classList.remove('drag-over');
-        lastTouchColumn = null;
-    }
-    
-    // Eliminar el clon
-    document.body.removeChild(clone);
-    isDragging = false;
-}
-
-function handleCardDropToColumn(column) {
-    const nuevaEtapa = column.dataset.etapa;
-    const pedidoId = draggedItemId;
-    
-    console.log(`Drop: Pedido ${pedidoId} en columna ${nuevaEtapa}`);
-    
-    // Realizar las mismas validaciones que tenemos en la función drop
-    const pedido = currentPedidos.find(p => p.id === pedidoId);
-    if (!pedido) {
-        console.error(`Drop fallido: No se encontró el pedido con ID ${pedidoId} en el estado actual.`);
-        restoreOriginalCardState();
-        return;
-    }
-    
-    // Lógica de validación (copiada de la función drop existente)
-    const currentStageIndex = pedido.etapasSecuencia ? pedido.etapasSecuencia.indexOf(pedido.etapaActual) : -1;
-    
-    const isLastStage = currentStageIndex === (pedido.etapasSecuencia?.length || 0) - 1;
-    if (nuevaEtapa === "Completado" && !isLastStage && pedido.etapaActual !== "Completado") {
-        alert(`El pedido debe pasar por todas las etapas (${pedido.etapasSecuencia.join(', ')}) antes de completarse.`);
-        restoreOriginalCardState();
-        return;
-    }
-    
-    if (pedido.etapasSecuencia && pedido.etapasSecuencia.length > 0 && nuevaEtapa !== "Completado") {
-        const nextExpectedStage = pedido.etapasSecuencia[currentStageIndex + 1];
-        if (nuevaEtapa !== nextExpectedStage && !etapasImpresion.includes(nuevaEtapa)) {
-            const isInitialDrop = !pedido.etapaActual || etapasImpresion.includes(pedido.etapaActual);
-            if (!isInitialDrop || !etapasImpresion.includes(nuevaEtapa)) {
-                alert(`Movimiento inválido. La siguiente etapa esperada es '${nextExpectedStage || 'Completado'}'. Use el botón 'Regresar a Impresión' si es necesario.`);
-                restoreOriginalCardState();
-                return;
-            }
-        }
-    }
-    
-    // Actualizar en Firestore
-    const pedidoRef = doc(db, "pedidos", pedidoId);
-    updateDoc(pedidoRef, {
-        etapaActual: nuevaEtapa,
-        lastMoved: serverTimestamp()
-    }).then(() => {
-        console.log(`Pedido ${pedidoId} actualizado en Firestore a etapa: ${nuevaEtapa}`);
-        
-        // Actualización optimista de la UI (mover tarjeta visualmente)
-        if (draggedCard) {
-            draggedCard.style.opacity = '1'; // Restaurar opacidad
-            column.appendChild(draggedCard); // Mover la tarjeta a la nueva columna
-        }
-    }).catch(error => {
-        console.error("Error al actualizar el pedido en Firestore:", error);
-        alert("Error al mover el pedido. Inténtalo de nuevo.");
-        restoreOriginalCardState();
-    });
-}
-
-function restoreOriginalCardState() {
-    if (draggedCard) {
-        draggedCard.style.opacity = '1'; // Restaurar opacidad
-    }
-    draggedCard = null;
-    draggedItemId = null;
-}
-
-// Reemplazar funciones originales de drag & drop con versiones que usan nuestras nuevas funcionalidades
 function dragStart(e) {
-    // Esta función seguirá manejando el drag & drop nativo para navegadores de escritorio
     draggedItemId = e.target.dataset.id;
     e.dataTransfer.setData('text/plain', draggedItemId);
     setTimeout(() => e.target.classList.add('dragging'), 0); // Visual feedback
-    console.log(`Drag Start nativo: ${draggedItemId}`);
+    console.log(`Drag Start: ${draggedItemId}`);
 }
 
 function dragEnd(e) {
     e.target.classList.remove('dragging');
-    if (!isDragging) { // Solo limpiamos si no estamos en modo de arrastre táctil/mouse
-        draggedItemId = null;
+    draggedItemId = null;
+    console.log("Drag End");
+}
+
+function dragOver(e) {
+    e.preventDefault(); // Necessary to allow dropping
+    const column = e.target.closest('.kanban-column');
+    if (column) {
+        // Optional: Add visual feedback only when over a valid column
+        // column.classList.add('drag-over'); // Be careful with dragEnter/Leave for this
     }
-    console.log("Drag End nativo");
+}
+
+function dragEnter(e) {
+    e.preventDefault();
+    const column = e.target.closest('.kanban-column');
+    if (column) {
+        column.classList.add('drag-over');
+        console.log(`Drag Enter: Column ${column.dataset.etapa}`);
+    }
+}
+
+function dragLeave(e) {
+    const column = e.target.closest('.kanban-column');
+    if (column) {
+        // Check if the relatedTarget (where the mouse is going) is still within the column
+        if (!column.contains(e.relatedTarget)) {
+            column.classList.remove('drag-over');
+            console.log(`Drag Leave: Column ${column.dataset.etapa}`);
+        }
+    } else {
+        // If leaving something that isn't a column, remove from any column that might have the class
+         document.querySelectorAll('.kanban-column.drag-over').forEach(c => c.classList.remove('drag-over'));
+    }
+}
+
+
+async function drop(e) {
+    e.preventDefault();
+    const column = e.target.closest('.kanban-column');
+    if (!column) return;
+
+    column.classList.remove('drag-over');
+    const pedidoId = e.dataTransfer.getData('text/plain');
+    const nuevaEtapa = column.dataset.etapa;
+
+    console.log(`Drop: Pedido ${pedidoId} en columna ${nuevaEtapa}`);
+
+    if (!pedidoId || !nuevaEtapa) {
+        console.error("Drop fallido: Falta ID de pedido o etapa de destino.");
+        return;
+    }
+
+    // Find the pedido in the current state to check its sequence
+    const pedido = currentPedidos.find(p => p.id === pedidoId);
+    if (!pedido) {
+        console.error(`Drop fallido: No se encontró el pedido con ID ${pedidoId} en el estado actual.`);
+        return;
+    }
+
+    // --- Validation Logic ---
+    const currentStageIndex = pedido.etapasSecuencia ? pedido.etapasSecuencia.indexOf(pedido.etapaActual) : -1;
+    const targetStageIndex = pedido.etapasSecuencia ? pedido.etapasSecuencia.indexOf(nuevaEtapa) : -1;
+
+    // Allow moving to "Completado" from the last stage in the sequence
+    const isLastStage = currentStageIndex === (pedido.etapasSecuencia?.length || 0) - 1;
+    if (nuevaEtapa === "Completado" && !isLastStage && pedido.etapaActual !== "Completado") {
+         alert(`El pedido debe pasar por todas las etapas (${pedido.etapasSecuencia.join(', ')}) antes de completarse.`);
+         console.log("Drop prevenido: Intento de completar antes de la última etapa.");
+         return;
+    }
+
+    // Allow moving back to the *first* printing stage from any other stage (handled by returnToPrintStage button now)
+    // Prevent moving between arbitrary stages if sequence exists
+    if (pedido.etapasSecuencia && pedido.etapasSecuencia.length > 0 && nuevaEtapa !== "Completado") {
+        const nextExpectedStage = pedido.etapasSecuencia[currentStageIndex + 1];
+        if (nuevaEtapa !== nextExpectedStage && !etapasImpresion.includes(nuevaEtapa)) { // Allow dropping back to any print stage? No, use button.
+             // Check if it's the first stage (initial drop)
+             const isInitialDrop = !pedido.etapaActual || etapasImpresion.includes(pedido.etapaActual);
+             if (!isInitialDrop || !etapasImpresion.includes(nuevaEtapa)) { // Allow initial drop into correct print stage
+                alert(`Movimiento inválido. La siguiente etapa esperada es '${nextExpectedStage || 'Completado'}'. Use el botón 'Regresar a Impresión' si es necesario.`);
+                console.log(`Drop prevenido: Movimiento fuera de secuencia. Actual: ${pedido.etapaActual}, Destino: ${nuevaEtapa}, Esperada: ${nextExpectedStage}`);
+                return;
+             }
+        }
+    }
+
+
+    // --- Update Firestore ---
+    try {
+        const pedidoRef = doc(db, "pedidos", pedidoId);
+        await updateDoc(pedidoRef, {
+            etapaActual: nuevaEtapa,
+            // Optionally update a timestamp for the move
+            lastMoved: serverTimestamp()
+        });
+        console.log(`Pedido ${pedidoId} actualizado en Firestore a etapa: ${nuevaEtapa}`);
+
+        // Optimistic UI update (Firebase listener will eventually confirm)
+        // Find the card element and move it
+        const cardElement = document.getElementById(`pedido-${pedidoId}`);
+        if (cardElement) {
+            column.appendChild(cardElement); // Move the card element to the new column
+            // Update card's stage display if necessary (though full render on snapshot is safer)
+        } else {
+             console.warn("Drop: No se encontró el elemento de la tarjeta para la actualización optimista.");
+        }
+
+    } catch (error) {
+        console.error("Error al actualizar el pedido en Firestore:", error);
+        alert("Error al mover el pedido. Inténtalo de nuevo.");
+        // Revert optimistic update might be needed here if implemented
+    }
 }
 
 
