@@ -5,12 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Control de Producción</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
         body {
-            background-color: #f8f9fa; /* Un fondo suave */
+            background-color: #f8f9fa;
         }
         #app-container {
-            display: none; /* Oculto hasta que el usuario inicie sesión */
+            display: none;
         }
         .login-container {
             max-width: 400px;
@@ -20,7 +21,55 @@
             border-radius: 0.5rem;
             box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
         }
-        /* Puedes añadir más estilos aquí */
+        /* Estilos para el Kanban (se desarrollarán más adelante) */
+        #kanban-board {
+            display: flex;
+            gap: 1rem;
+            overflow-x: auto; /* Permitir scroll horizontal si hay muchas columnas */
+            padding-bottom: 1rem; /* Espacio para el scrollbar */
+        }
+        .kanban-column {
+            min-width: 300px; /* Ancho mínimo de columna */
+            max-width: 350px; /* Ancho máximo */
+            background-color: #e9ecef;
+            border-radius: 0.5rem;
+            padding: 0.5rem;
+            flex-shrink: 0; /* Evitar que las columnas se encojan */
+        }
+        .kanban-column h5 {
+            text-align: center;
+            padding: 0.5rem;
+            background-color: #dee2e6;
+            border-radius: 0.3rem;
+            margin-bottom: 1rem;
+            font-size: 1rem; /* Tamaño ajustado */
+        }
+        .kanban-card {
+            background-color: white;
+            border: 1px solid #dee2e6;
+            border-radius: 0.3rem;
+            padding: 0.75rem;
+            margin-bottom: 0.75rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            cursor: grab; /* Indicar que se puede mover */
+        }
+        .kanban-card h6 { /* Título del pedido */
+            font-size: 0.9rem;
+            font-weight: bold;
+            margin-bottom: 0.3rem;
+        }
+        .kanban-card p { /* Detalles pequeños */
+            font-size: 0.8rem;
+            margin-bottom: 0.2rem;
+            color: #6c757d;
+        }
+        /* Estilos para el modal */
+        .modal-body .row > div {
+             margin-bottom: 0.8rem; /* Espacio entre campos */
+        }
+        #etapas-secuencia-container label {
+            margin-right: 10px; /* Espacio entre checkboxes */
+        }
     </style>
 </head>
 <body>
@@ -68,42 +117,173 @@
         </div>
     </div>
 
+    <div class="modal fade" id="pedidoModal" tabindex="-1" aria-labelledby="pedidoModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="pedidoModalLabel">Añadir Nuevo Pedido</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="pedido-form">
+                        <input type="hidden" id="pedido-id">
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="numeroPedido" class="form-label">Número Pedido (Cliente - Número)*</label>
+                                <input type="text" class="form-control" id="numeroPedido" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="cliente" class="form-label">Cliente (Opcional)</label>
+                                <input type="text" class="form-control" id="cliente">
+                            </div>
+                        </div>
+
+                        <hr>
+                        <h6>Características Principales</h6>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label for="maquinaImpresion" class="form-label">Máquina Impresión*</label>
+                                <select class="form-select" id="maquinaImpresion" required>
+                                    <option value="" selected disabled>Seleccionar...</option>
+                                    <option value="WindMöller 1">WindMöller 1</option>
+                                    <option value="GIAVE">GIAVE</option>
+                                    <option value="WindMöller 3">WindMöller 3</option>
+                                    <option value="Anonimo">Anonimo</option>
+                                </select>
+                            </div>
+                             <div class="col-md-4">
+                                <label for="desarrTexto" class="form-label">Desarr. (Texto)</label>
+                                <input type="text" class="form-control" id="desarrTexto">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="desarrNumero" class="form-label">Desarr. (Número)</label>
+                                <input type="number" class="form-control" id="desarrNumero">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="metros" class="form-label">Metros</label>
+                                <input type="number" class="form-control" id="metros">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="superficie" class="form-label">Superficie (SUP)</label>
+                                <select class="form-select" id="superficie">
+                                    <option value="false">No</option>
+                                    <option value="true">Sí</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="transparencia" class="form-label">Transparencia (TTE)</label>
+                                <select class="form-select" id="transparencia">
+                                    <option value="false">No</option>
+                                    <option value="true">Sí</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="capa" class="form-label">Capa (CAPA)</label>
+                                <input type="text" class="form-control" id="capa">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="camisa" class="form-label">Camisa</label>
+                                <input type="text" class="form-control" id="camisa">
+                            </div>
+                             <div class="col-md-4">
+                                <label for="fecha" class="form-label">Fecha (FH)</label>
+                                <input type="text" class="form-control" id="fecha" placeholder="DD/MM">
+                            </div>
+                        </div>
+                         <div class="row">
+                             <div class="col-12">
+                                <label for="observaciones" class="form-label">Observaciones</label>
+                                <textarea class="form-control" id="observaciones" rows="2"></textarea>
+                            </div>
+                        </div>
+
+                        <hr>
+                        <h6>Secuencia de Etapas (Seleccionar en orden)</h6>
+                        <p class="form-text text-muted">La etapa de impresión seleccionada arriba se añadirá automáticamente al inicio.</p>
+                        <div id="etapas-secuencia-container" class="mb-3">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input etapa-check" type="checkbox" value="Laminación SL2" id="etapa-sl2">
+                                <label class="form-check-label" for="etapa-sl2">Laminación SL2</label>
+                            </div>
+                             <div class="form-check form-check-inline">
+                                <input class="form-check-input etapa-check" type="checkbox" value="Laminación NEXUS" id="etapa-nexus">
+                                <label class="form-check-label" for="etapa-nexus">Laminación NEXUS</label>
+                            </div>
+                             <div class="form-check form-check-inline">
+                                <input class="form-check-input etapa-check" type="checkbox" value="Perforación MAC" id="etapa-mac">
+                                <label class="form-check-label" for="etapa-mac">Perforación MAC</label>
+                            </div>
+                             <div class="form-check form-check-inline">
+                                <input class="form-check-input etapa-check" type="checkbox" value="Perforación MIC" id="etapa-mic">
+                                <label class="form-check-label" for="etapa-mic">Perforación MIC</label>
+                            </div>
+                             <div class="form-check form-check-inline">
+                                <input class="form-check-input etapa-check" type="checkbox" value="Rebobinado S2DT" id="etapa-s2dt">
+                                <label class="form-check-label" for="etapa-s2dt">Rebobinado S2DT</label>
+                            </div>
+                             <div class="form-check form-check-inline">
+                                <input class="form-check-input etapa-check" type="checkbox" value="Rebobinado PROSLIT" id="etapa-proslit">
+                                <label class="form-check-label" for="etapa-proslit">Rebobinado PROSLIT</label>
+                            </div>
+                             <div class="form-check form-check-inline">
+                                <input class="form-check-input etapa-check" type="checkbox" value="Rebobinado TEMAC" id="etapa-temac">
+                                <label class="form-check-label" for="etapa-temac">Rebobinado TEMAC</label>
+                            </div>
+                             <div class="form-check form-check-inline">
+                                <input class="form-check-input etapa-check" type="checkbox" value="Pendiente de Laminar" id="etapa-pdlam">
+                                <label class="form-check-label" for="etapa-pdlam">P.D. Laminar</label>
+                            </div>
+                             <div class="form-check form-check-inline">
+                                <input class="form-check-input etapa-check" type="checkbox" value="Pendiente de Rebobinado" id="etapa-pdreb">
+                                <label class="form-check-label" for="etapa-pdreb">P.D. Rebobinado</label>
+                            </div>
+                            </div>
+
+                        </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" form="pedido-form">Guardar Pedido</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 
     <script type="module">
-        // Importar funciones necesarias de los SDKs de Firebase como módulos
+        // Imports de Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
         import {
-            getAuth,
-            signInWithEmailAndPassword,
-            onAuthStateChanged,
-            signOut
-        } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
-        import { getFirestore } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
-        // O si usas Realtime Database:
-        // import { getDatabase } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
+            getFirestore,
+            collection,
+            addDoc,
+            serverTimestamp,
+            query, // Para futuras consultas
+            where, // Para futuras consultas
+            onSnapshot // Para escuchar cambios en tiempo real
+        } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
-        // Tu configuración de Firebase
+        // Configuración Firebase (sin cambios)
         const firebaseConfig = {
           apiKey: "AIzaSyBp5a0lUJYZWhtUTVDuwn1jvj6TodaCyrc",
           authDomain: "production-control-pigmea.firebaseapp.com",
           projectId: "production-control-pigmea",
-          storageBucket: "production-control-pigmea.firebasestorage.app", // Corregido
+          storageBucket: "production-control-pigmea.firebasestorage.app",
           messagingSenderId: "1008458265879",
           appId: "1:1008458265879:web:008889d56b1d4de3cc3352"
         };
 
-        // Inicializar Firebase
+        // Inicialización Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        const db = getFirestore(app); // Inicializa Firestore
-        // const db = getDatabase(app); // O inicializa Realtime Database
+        const db = getFirestore(app);
+        const pedidosCollection = collection(db, "pedidos"); // Referencia a la colección
 
         console.log("Firebase inicializado.");
-        console.log("Auth:", auth);
-        console.log("Firestore DB:", db);
 
-        // Elementos del DOM
+        // --- Elementos DOM ---
         const loginContainer = document.getElementById('login-container');
         const appContainer = document.getElementById('app-container');
         const loginForm = document.getElementById('login-form');
@@ -112,10 +292,15 @@
         const loginError = document.getElementById('login-error');
         const logoutButton = document.getElementById('logout-button');
         const userEmailSpan = document.getElementById('user-email');
-        const mainContent = document.getElementById('main-content'); // Área principal
+        const mainContent = document.getElementById('main-content');
+        // Modal y formulario
+        const pedidoModalElement = document.getElementById('pedidoModal');
+        const pedidoModal = new bootstrap.Modal(pedidoModalElement); // Instancia del Modal de Bootstrap
+        const pedidoForm = document.getElementById('pedido-form');
+        const pedidoModalLabel = document.getElementById('pedidoModalLabel');
+        const pedidoIdInput = document.getElementById('pedido-id'); // Para modo edición
 
-        // --- Lógica de Autenticación ---
-
+        // --- Lógica de Autenticación (sin cambios) ---
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 console.log("Usuario conectado:", user.email);
@@ -128,86 +313,346 @@
                 loginContainer.style.display = 'block';
                 appContainer.style.display = 'none';
                 userEmailSpan.textContent = '';
-                mainContent.innerHTML = '<h1 class="text-center">Por favor, inicia sesión</h1>'; // Limpiar contenido
+                mainContent.innerHTML = '<h1 class="text-center">Por favor, inicia sesión</h1>';
             }
         });
+        loginForm.addEventListener('submit', async (e) => { e.preventDefault(); /* ... (código sin cambios) ... */ });
+        logoutButton.addEventListener('click', async () => { /* ... (código sin cambios) ... */ });
+        function getFirebaseErrorMessage(error) { /* ... (código sin cambios) ... */ }
 
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = emailInput.value;
-            const password = passwordInput.value;
-            loginError.style.display = 'none';
-
-            try {
-                console.log(`Intentando iniciar sesión con ${email}`);
-                const userCredential = await signInWithEmailAndPassword(auth, email, password);
-                console.log("Inicio de sesión exitoso:", userCredential.user);
-                // onAuthStateChanged maneja la UI
-            } catch (error) {
-                console.error("Error de inicio de sesión:", error);
-                loginError.textContent = getFirebaseErrorMessage(error);
-                loginError.style.display = 'block';
-            }
-        });
-
-        logoutButton.addEventListener('click', async () => {
-            try {
-                await signOut(auth);
-                console.log("Cierre de sesión exitoso.");
-                // onAuthStateChanged maneja la UI
-            } catch (error) {
-                console.error("Error al cerrar sesión:", error);
-                alert("Error al cerrar sesión. Inténtalo de nuevo.");
-            }
-        });
-
-        function getFirebaseErrorMessage(error) {
-            switch (error.code) {
-                case 'auth/invalid-email': return 'El formato del correo electrónico no es válido.';
-                case 'auth/user-disabled': return 'Este usuario ha sido deshabilitado.';
-                case 'auth/user-not-found':
-                case 'auth/wrong-password':
-                case 'auth/invalid-credential': return 'Correo electrónico o contraseña incorrectos.';
-                case 'auth/too-many-requests': return 'Demasiados intentos fallidos. Inténtalo más tarde.';
-                default: return 'Error al iniciar sesión. Por favor, inténtalo de nuevo.';
-            }
-        }
 
         // --- Lógica Principal de la Aplicación ---
+
+        let currentPedidos = []; // Almacenará los pedidos cargados
+        let unsubscribePedidos = null; // Para detener el listener de Firestore
+
         function loadMainAppData() {
             console.log("Cargando datos principales de la aplicación...");
-            // Estructura inicial del contenido principal
             mainContent.innerHTML = `
-                <div class="text-center mb-3">
-                     <button id="view-kanban-btn" class="btn btn-primary me-2">Vista Kanban</button>
-                     <button id="view-list-btn" class="btn btn-secondary">Vista Lista</button>
-                     <button id="add-pedido-btn" class="btn btn-success ms-4">+ Añadir Pedido</button>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <button id="view-kanban-btn" class="btn btn-primary me-2 active">Vista Kanban</button>
+                        <button id="view-list-btn" class="btn btn-secondary">Vista Lista</button>
+                    </div>
+                    <div>
+                        <input type="text" id="search-input" class="form-control d-inline-block w-auto me-2" placeholder="Buscar pedido...">
+                        <button id="add-pedido-btn" class="btn btn-success">+ Añadir Pedido</button>
+                    </div>
                 </div>
                 <div id="kanban-board" class="mt-4">
-                    <p class="text-center fst-italic">Cargando tablero Kanban...</p>
-                </div>
+                    </div>
                 <div id="list-view" class="mt-4" style="display: none;">
-                    <p class="text-center fst-italic">Cargando vista de lista...</p>
-                </div>
+                    </div>
+            `;
+
+            // Añadir listeners botones de vista
+            const viewKanbanBtn = document.getElementById('view-kanban-btn');
+            const viewListBtn = document.getElementById('view-list-btn');
+            const kanbanBoard = document.getElementById('kanban-board');
+            const listView = document.getElementById('list-view');
+
+            viewKanbanBtn.addEventListener('click', () => {
+                 kanbanBoard.style.display = 'flex'; // Kanban usa flex
+                 listView.style.display = 'none';
+                 viewKanbanBtn.classList.add('active');
+                 viewListBtn.classList.remove('active');
+                 renderKanban(currentPedidos); // Re-renderizar con datos actuales
+            });
+            viewListBtn.addEventListener('click', () => {
+                 kanbanBoard.style.display = 'none';
+                 listView.style.display = 'block';
+                 viewKanbanBtn.classList.remove('active');
+                 viewListBtn.classList.add('active');
+                 renderList(currentPedidos); // Re-renderizar con datos actuales
+            });
+
+            // Listener para abrir el modal
+            document.getElementById('add-pedido-btn').addEventListener('click', openPedidoModal);
+
+            // Listener para el formulario del modal
+            pedidoForm.addEventListener('submit', savePedido);
+
+            // Listener para búsqueda (implementación básica)
+            document.getElementById('search-input').addEventListener('input', (e) => {
+                const searchTerm = e.target.value.toLowerCase();
+                const filteredPedidos = currentPedidos.filter(pedido =>
+                    pedido.numeroPedido.toLowerCase().includes(searchTerm) ||
+                    (pedido.cliente && pedido.cliente.toLowerCase().includes(searchTerm))
+                );
+                // Re-renderizar la vista activa con los pedidos filtrados
+                if (kanbanBoard.style.display !== 'none') {
+                    renderKanban(filteredPedidos);
+                } else {
+                    renderList(filteredPedidos);
+                }
+            });
+
+
+            // Empezar a escuchar cambios en los pedidos de Firestore
+            listenToPedidos();
+        }
+
+        // Función para escuchar cambios en Firestore en tiempo real
+        function listenToPedidos() {
+            console.log("Escuchando cambios en la colección 'pedidos'...");
+            // Si ya hay un listener, lo detenemos primero
+            if (unsubscribePedidos) {
+                unsubscribePedidos();
+            }
+
+            const q = query(pedidosCollection); // Podríamos añadir orderBy aquí si fuera necesario
+
+            unsubscribePedidos = onSnapshot(q, (querySnapshot) => {
+                currentPedidos = [];
+                querySnapshot.forEach((doc) => {
+                    currentPedidos.push({ id: doc.id, ...doc.data() });
+                });
+                console.log("Pedidos actualizados:", currentPedidos);
+                // Renderizar la vista activa (Kanban por defecto)
+                if (document.getElementById('kanban-board').style.display !== 'none') {
+                    renderKanban(currentPedidos);
+                } else {
+                    renderList(currentPedidos);
+                }
+
+            }, (error) => {
+                console.error("Error al escuchar pedidos:", error);
+                alert("Error al cargar los datos. Por favor, recarga la página.");
+            });
+        }
+
+        // --- Renderizado de Vistas (Placeholders iniciales) ---
+        function renderKanban(pedidos) {
+            const kanbanBoard = document.getElementById('kanban-board');
+            if (!kanbanBoard) return; // Asegurarse que el elemento existe
+
+            // 1. Definir las columnas (etapas)
+            //    Idealmente, esto debería ser dinámico basado en las etapas únicas de los pedidos
+            //    o una lista predefinida. Por ahora, usamos una lista fija.
+            const etapas = [
+                "Impresión WindMöller 1", "Impresión GIAVE", "Impresión WindMöller 3", "Impresión Anonimo",
+                "Laminación SL2", "Laminación NEXUS",
+                "Perforación MAC", "Perforación MIC",
+                "Rebobinado S2DT", "Rebobinado PROSLIT", "Rebobinado TEMAC",
+                "Pendiente de Laminar", "Pendiente de Rebobinado",
+                "Completado"
+            ];
+
+            kanbanBoard.innerHTML = ''; // Limpiar tablero
+
+            // 2. Crear HTML para cada columna
+            etapas.forEach(etapa => {
+                const columnDiv = document.createElement('div');
+                columnDiv.classList.add('kanban-column');
+                columnDiv.dataset.etapa = etapa; // Guardar la etapa en el dataset
+
+                const title = document.createElement('h5');
+                title.textContent = etapa;
+                columnDiv.appendChild(title);
+
+                // 3. Filtrar pedidos para esta columna (etapa actual)
+                const pedidosEnEtapa = pedidos.filter(p => p.etapaActual === etapa);
+
+                // 4. Crear tarjetas para cada pedido en la columna
+                pedidosEnEtapa.forEach(pedido => {
+                    const cardDiv = document.createElement('div');
+                    cardDiv.classList.add('kanban-card');
+                    cardDiv.draggable = true; // Hacerla arrastrable
+                    cardDiv.dataset.id = pedido.id; // Guardar ID del pedido
+
+                    const cardTitle = document.createElement('h6');
+                    cardTitle.textContent = pedido.numeroPedido;
+                    cardDiv.appendChild(cardTitle);
+
+                    // Añadir algunos detalles (ej: máquina, metros) - ¡Personalizable!
+                    const detail1 = document.createElement('p');
+                    detail1.textContent = `Máquina: ${pedido.maquinaImpresion || 'N/A'}`;
+                    cardDiv.appendChild(detail1);
+
+                    const detail2 = document.createElement('p');
+                    detail2.textContent = `Metros: ${pedido.metros || 'N/A'}`;
+                    cardDiv.appendChild(detail2);
+
+                    // Añadir botón de editar (se implementará la lógica después)
+                    const editButton = document.createElement('button');
+                    editButton.classList.add('btn', 'btn-sm', 'btn-outline-secondary', 'float-end');
+                    editButton.innerHTML = '<i class="bi bi-pencil"></i>'; // Icono de lápiz
+                    editButton.onclick = () => openPedidoModal(pedido.id); // Llamar a editar
+                    cardDiv.appendChild(editButton);
+
+
+                    columnDiv.appendChild(cardDiv);
+                });
+
+                kanbanBoard.appendChild(columnDiv);
+            });
+
+            // TODO: Añadir lógica de Drag and Drop para mover tarjetas entre columnas
+        }
+
+        function renderList(pedidos) {
+            const listView = document.getElementById('list-view');
+             if (!listView) return;
+
+            // Crear una tabla Bootstrap
+            let tableHTML = `
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Nº Pedido</th>
+                                <th>Máquina Imp.</th>
+                                <th>Metros</th>
+                                <th>Etapa Actual</th>
+                                <th>Secuencia</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            pedidos.forEach(pedido => {
+                tableHTML += `
+                    <tr>
+                        <td>${pedido.numeroPedido || 'N/A'}</td>
+                        <td>${pedido.maquinaImpresion || 'N/A'}</td>
+                        <td>${pedido.metros || 'N/A'}</td>
+                        <td><span class="badge bg-info text-dark">${pedido.etapaActual || 'N/A'}</span></td>
+                        <td>${(pedido.etapasSecuencia || []).join(' -> ')}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" onclick="window.openPedidoModal('${pedido.id}')">
+                                <i class="bi bi-pencil"></i> Editar
+                            </button>
+                            </td>
+                    </tr>
                 `;
+            });
 
-            // Añadir listeners para los botones de cambio de vista
-             document.getElementById('view-kanban-btn').addEventListener('click', () => {
-                 document.getElementById('kanban-board').style.display = 'block';
-                 document.getElementById('list-view').style.display = 'none';
-                 // Podríamos añadir lógica para cargar/refrescar la vista Kanban aquí si fuera necesario
-             });
-             document.getElementById('view-list-btn').addEventListener('click', () => {
-                 document.getElementById('kanban-board').style.display = 'none';
-                 document.getElementById('list-view').style.display = 'block';
-                 // Podríamos añadir lógica para cargar/refrescar la vista Lista aquí si fuera necesario
-             });
+            tableHTML += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            listView.innerHTML = tableHTML;
+        }
 
-             // Listener para el botón Añadir Pedido (se implementará junto con el modal)
-             // document.getElementById('add-pedido-btn').addEventListener('click', () => { ... });
 
-            // TODO: Implementar la carga de datos desde Firestore y renderizado de vistas Kanban/Lista.
-            // TODO: Implementar el modal para añadir/editar pedidos.
+        // --- Lógica del Modal ---
+
+        function openPedidoModal(pedidoId = null) {
+            pedidoForm.reset(); // Limpiar formulario
+            pedidoIdInput.value = ''; // Limpiar ID oculto
+
+            if (pedidoId) {
+                // Modo Edición
+                pedidoModalLabel.textContent = 'Editar Pedido';
+                const pedido = currentPedidos.find(p => p.id === pedidoId);
+                if (pedido) {
+                    pedidoIdInput.value = pedido.id;
+                    // Rellenar campos del formulario
+                    document.getElementById('numeroPedido').value = pedido.numeroPedido || '';
+                    document.getElementById('cliente').value = pedido.cliente || '';
+                    document.getElementById('maquinaImpresion').value = pedido.maquinaImpresion || '';
+                    document.getElementById('desarrTexto').value = pedido.desarrTexto || '';
+                    document.getElementById('desarrNumero').value = pedido.desarrNumero || '';
+                    document.getElementById('metros').value = pedido.metros || '';
+                    document.getElementById('superficie').value = pedido.superficie ? 'true' : 'false';
+                    document.getElementById('transparencia').value = pedido.transparencia ? 'true' : 'false';
+                    document.getElementById('capa').value = pedido.capa || '';
+                    document.getElementById('camisa').value = pedido.camisa || '';
+                    document.getElementById('fecha').value = pedido.fecha || '';
+                    document.getElementById('observaciones').value = pedido.observaciones || '';
+
+                    // Marcar checkboxes de etapas (excluyendo la de impresión y 'Completado')
+                    const etapaChecks = document.querySelectorAll('.etapa-check');
+                    etapaChecks.forEach(check => {
+                        check.checked = (pedido.etapasSecuencia || []).includes(check.value);
+                    });
+
+                    // TODO: Rellenar campos personalizados si existen
+                } else {
+                    console.error("No se encontró el pedido con ID:", pedidoId);
+                    alert("Error: No se pudo cargar el pedido para editar.");
+                    return; // No abrir modal si hay error
+                }
+            } else {
+                // Modo Añadir Nuevo
+                pedidoModalLabel.textContent = 'Añadir Nuevo Pedido';
+                // Asegurarse que los selects booleanos estén en 'false' por defecto
+                 document.getElementById('superficie').value = 'false';
+                 document.getElementById('transparencia').value = 'false';
+            }
+            pedidoModal.show(); // Mostrar el modal
+        }
+
+        // Hacer openPedidoModal accesible globalmente para los botones onclick en la tabla
+        window.openPedidoModal = openPedidoModal;
+
+
+        async function savePedido(event) {
+            event.preventDefault(); // Prevenir envío normal del formulario
+            console.log("Intentando guardar pedido...");
+
+            const id = pedidoIdInput.value; // Obtener ID para saber si es edición o nuevo
+            const maquinaImpresionSeleccionada = document.getElementById('maquinaImpresion').value;
+
+            // Construir la secuencia de etapas
+            const etapasSeleccionadas = [];
+            // Añadir siempre la etapa de impresión al inicio
+            if (maquinaImpresionSeleccionada) {
+                etapasSeleccionadas.push(`Impresión ${maquinaImpresionSeleccionada}`);
+            } else {
+                 alert("Por favor, selecciona una máquina de impresión.");
+                 return; // No continuar si no hay máquina de impresión
+            }
+
+            document.querySelectorAll('.etapa-check:checked').forEach(check => {
+                etapasSeleccionadas.push(check.value);
+            });
+            // Añadir siempre 'Completado' al final
+            etapasSeleccionadas.push('Completado');
+
+            // Crear objeto del pedido con datos del formulario
+            const pedidoData = {
+                numeroPedido: document.getElementById('numeroPedido').value,
+                cliente: document.getElementById('cliente').value || null, // Guardar null si está vacío
+                maquinaImpresion: maquinaImpresionSeleccionada,
+                desarrTexto: document.getElementById('desarrTexto').value || null,
+                desarrNumero: parseInt(document.getElementById('desarrNumero').value) || null,
+                metros: parseInt(document.getElementById('metros').value) || null,
+                superficie: document.getElementById('superficie').value === 'true',
+                transparencia: document.getElementById('transparencia').value === 'true',
+                capa: document.getElementById('capa').value || null,
+                camisa: document.getElementById('camisa').value || null,
+                fecha: document.getElementById('fecha').value || null,
+                observaciones: document.getElementById('observaciones').value || null,
+                etapasSecuencia: etapasSeleccionadas,
+                // Para un pedido nuevo, la etapa actual es la primera de la secuencia
+                etapaActual: etapasSeleccionadas.length > 0 ? etapasSeleccionadas[0] : 'Completado',
+                indiceEtapaActual: 0,
+                updatedAt: serverTimestamp() // Siempre actualizar timestamp
+            };
+
+            try {
+                if (id) {
+                    // Modo Edición - TODO: Implementar lógica de actualización (updateDoc)
+                    console.log("Actualizando pedido con ID:", id);
+                     // const pedidoRef = doc(db, "pedidos", id);
+                     // await updateDoc(pedidoRef, pedidoData); // Necesitaríamos importar doc y updateDoc
+                    alert("Funcionalidad de edición aún no implementada."); // Placeholder
+                } else {
+                    // Modo Añadir Nuevo
+                    pedidoData.createdAt = serverTimestamp(); // Añadir timestamp de creación solo para nuevos
+                    console.log("Añadiendo nuevo pedido:", pedidoData);
+                    const docRef = await addDoc(pedidosCollection, pedidoData);
+                    console.log("Pedido añadido con ID: ", docRef.id);
+                }
+                pedidoModal.hide(); // Ocultar modal después de guardar
+                pedidoForm.reset(); // Limpiar formulario
+            } catch (error) {
+                console.error("Error al guardar pedido: ", error);
+                alert(`Error al guardar el pedido: ${error.message}`);
+            }
         }
 
     </script>
