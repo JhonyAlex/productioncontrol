@@ -41,7 +41,7 @@
             </div>
             <div id="login-error" class="text-danger mt-3 text-center" style="display: none;"></div>
         </form>
-        </div>
+    </div>
 
     <div id="app-container" class="container-fluid mt-4">
         <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4 rounded">
@@ -64,17 +64,14 @@
         </nav>
 
         <div id="main-content">
-            <h1 class="text-center">¡Bienvenido!</h1>
-            <p class="text-center">Contenido de la aplicación principal irá aquí (Kanban, Lista, etc.).</p>
-            </div>
+            <h1 class="text-center">Por favor, inicia sesión</h1>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js"></script> <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js"></script>
     <script type="module">
-        // Importar funciones necesarias de los SDKs
+        // Importar funciones necesarias de los SDKs de Firebase como módulos
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
         import {
             getAuth,
@@ -86,12 +83,12 @@
         // O si usas Realtime Database:
         // import { getDatabase } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
 
-        // Tu configuración de Firebase (la que proporcionaste)
+        // Tu configuración de Firebase
         const firebaseConfig = {
-          apiKey: "AIzaSyBp5a0lUJYZWhtUTVDuwn1jvj6TodaCyrc", // ¡Reemplaza si es necesario!
+          apiKey: "AIzaSyBp5a0lUJYZWhtUTVDuwn1jvj6TodaCyrc",
           authDomain: "production-control-pigmea.firebaseapp.com",
           projectId: "production-control-pigmea",
-          storageBucket: "production-control-pigmea.firebasestorage.app", // Corregido: eliminado .com al final
+          storageBucket: "production-control-pigmea.firebasestorage.app", // Corregido
           messagingSenderId: "1008458265879",
           appId: "1:1008458265879:web:008889d56b1d4de3cc3352"
         };
@@ -119,81 +116,67 @@
 
         // --- Lógica de Autenticación ---
 
-        // Escuchar cambios en el estado de autenticación
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                // Usuario ha iniciado sesión
                 console.log("Usuario conectado:", user.email);
-                loginContainer.style.display = 'none'; // Ocultar login
-                appContainer.style.display = 'block';  // Mostrar app
-                userEmailSpan.textContent = user.email; // Mostrar email del usuario
-                // Aquí llamaríamos a la función para cargar los datos/vistas principales
-                loadMainAppData();
+                loginContainer.style.display = 'none';
+                appContainer.style.display = 'block';
+                userEmailSpan.textContent = user.email;
+                loadMainAppData(); // Cargar contenido principal
             } else {
-                // Usuario ha cerrado sesión o no está conectado
                 console.log("Usuario desconectado.");
-                loginContainer.style.display = 'block'; // Mostrar login
-                appContainer.style.display = 'none';   // Ocultar app
+                loginContainer.style.display = 'block';
+                appContainer.style.display = 'none';
                 userEmailSpan.textContent = '';
-                // Limpiar cualquier dato de la app si es necesario
-                mainContent.innerHTML = '<h1 class="text-center">Por favor, inicia sesión</h1>';
+                mainContent.innerHTML = '<h1 class="text-center">Por favor, inicia sesión</h1>'; // Limpiar contenido
             }
         });
 
-        // Manejar envío del formulario de login
         loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault(); // Evitar recarga de página
+            e.preventDefault();
             const email = emailInput.value;
             const password = passwordInput.value;
-            loginError.style.display = 'none'; // Ocultar errores previos
+            loginError.style.display = 'none';
 
             try {
                 console.log(`Intentando iniciar sesión con ${email}`);
                 const userCredential = await signInWithEmailAndPassword(auth, email, password);
                 console.log("Inicio de sesión exitoso:", userCredential.user);
-                // El onAuthStateChanged se encargará de mostrar/ocultar contenedores
+                // onAuthStateChanged maneja la UI
             } catch (error) {
                 console.error("Error de inicio de sesión:", error);
-                loginError.textContent = getFirebaseErrorMessage(error); // Mostrar mensaje de error amigable
+                loginError.textContent = getFirebaseErrorMessage(error);
                 loginError.style.display = 'block';
             }
         });
 
-        // Manejar cierre de sesión
         logoutButton.addEventListener('click', async () => {
             try {
                 await signOut(auth);
                 console.log("Cierre de sesión exitoso.");
-                // El onAuthStateChanged se encargará de mostrar/ocultar contenedores
+                // onAuthStateChanged maneja la UI
             } catch (error) {
                 console.error("Error al cerrar sesión:", error);
                 alert("Error al cerrar sesión. Inténtalo de nuevo.");
             }
         });
 
-        // Función para traducir errores comunes de Firebase Auth
         function getFirebaseErrorMessage(error) {
             switch (error.code) {
-                case 'auth/invalid-email':
-                    return 'El formato del correo electrónico no es válido.';
-                case 'auth/user-disabled':
-                    return 'Este usuario ha sido deshabilitado.';
+                case 'auth/invalid-email': return 'El formato del correo electrónico no es válido.';
+                case 'auth/user-disabled': return 'Este usuario ha sido deshabilitado.';
                 case 'auth/user-not-found':
-                case 'auth/wrong-password': // Combinamos not-found y wrong-password por seguridad
-                case 'auth/invalid-credential': // Nuevo código de error común
-                    return 'Correo electrónico o contraseña incorrectos.';
-                case 'auth/too-many-requests':
-                    return 'Demasiados intentos fallidos. Inténtalo más tarde.';
-                default:
-                    return 'Error al iniciar sesión. Por favor, inténtalo de nuevo.';
+                case 'auth/wrong-password':
+                case 'auth/invalid-credential': return 'Correo electrónico o contraseña incorrectos.';
+                case 'auth/too-many-requests': return 'Demasiados intentos fallidos. Inténtalo más tarde.';
+                default: return 'Error al iniciar sesión. Por favor, inténtalo de nuevo.';
             }
         }
 
-        // --- Lógica Principal de la Aplicación (Placeholder) ---
+        // --- Lógica Principal de la Aplicación ---
         function loadMainAppData() {
             console.log("Cargando datos principales de la aplicación...");
-            // Aquí es donde empezaremos a cargar los pedidos desde Firestore
-            // y a construir las vistas Kanban/Lista.
+            // Estructura inicial del contenido principal
             mainContent.innerHTML = `
                 <div class="text-center mb-3">
                      <button id="view-kanban-btn" class="btn btn-primary me-2">Vista Kanban</button>
@@ -208,18 +191,23 @@
                 </div>
                 `;
 
-            // Añadir listeners para los botones de cambio de vista y añadir pedido (se implementarán después)
+            // Añadir listeners para los botones de cambio de vista
              document.getElementById('view-kanban-btn').addEventListener('click', () => {
                  document.getElementById('kanban-board').style.display = 'block';
                  document.getElementById('list-view').style.display = 'none';
+                 // Podríamos añadir lógica para cargar/refrescar la vista Kanban aquí si fuera necesario
              });
              document.getElementById('view-list-btn').addEventListener('click', () => {
                  document.getElementById('kanban-board').style.display = 'none';
                  document.getElementById('list-view').style.display = 'block';
+                 // Podríamos añadir lógica para cargar/refrescar la vista Lista aquí si fuera necesario
              });
-             // El listener para 'add-pedido-btn' se añadirá cuando creemos el modal.
 
-            // TODO: Implementar la carga de datos desde Firestore y renderizado de vistas
+             // Listener para el botón Añadir Pedido (se implementará junto con el modal)
+             // document.getElementById('add-pedido-btn').addEventListener('click', () => { ... });
+
+            // TODO: Implementar la carga de datos desde Firestore y renderizado de vistas Kanban/Lista.
+            // TODO: Implementar el modal para añadir/editar pedidos.
         }
 
     </script>
