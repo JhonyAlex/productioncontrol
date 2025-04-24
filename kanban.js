@@ -35,19 +35,45 @@ export function renderKanban(pedidos, options = {}) {
         });
     }
 
+    // --- NUEVO: Mostrar/ocultar los botones de orden solo en impresión ---
+    let sortContainer = document.getElementById('kanban-sort-buttons');
+    if (!sortContainer) {
+        // Ahora el contenedor ya existe en el HTML, solo lo seleccionamos
+        sortContainer = document.getElementById('kanban-sort-buttons');
+    }
+    // Solo mostrar los botones si estamos en impresión
+    if (!options.only || options.only === 'impresion') {
+        sortContainer.innerHTML = `
+            <button class="btn btn-outline-secondary btn-sm${kanbanSortKey === 'secuenciaPedido' ? ' active' : ''}" id="btn-kanban-sort-secuencia">Ordenar por Nº Secuencia</button>
+            <button class="btn btn-outline-secondary btn-sm${kanbanSortKey === 'cliente' ? ' active' : ''}" id="btn-kanban-sort-cliente">Ordenar por Cliente</button>
+            <button class="btn btn-outline-secondary btn-sm" id="btn-kanban-sort-toggle">${kanbanSortAsc ? 'Ascendente' : 'Descendente'}</button>
+        `;
+        sortContainer.style.display = '';
+        document.getElementById('btn-kanban-sort-secuencia').onclick = () => {
+            kanbanSortKey = 'secuenciaPedido';
+            renderKanban(window.currentPedidos || [], options);
+        };
+        document.getElementById('btn-kanban-sort-cliente').onclick = () => {
+            kanbanSortKey = 'cliente';
+            renderKanban(window.currentPedidos || [], options);
+        };
+        document.getElementById('btn-kanban-sort-toggle').onclick = () => {
+            kanbanSortAsc = !kanbanSortAsc;
+            renderKanban(window.currentPedidos || [], options);
+        };
+    } else {
+        sortContainer.innerHTML = '';
+        sortContainer.style.display = 'none';
+    }
+
     // Renderiza solo el grupo solicitado
     if (!options.only || options.only === 'impresion') {
-        // Quitar título de grupo
         const printingGroup = createKanbanGroup(null, etapasImpresion, sortedPedidos);
         kanbanBoard.appendChild(printingGroup);
-        // Mostrar botones de orden solo en impresión
-        renderKanbanSortButtons(true);
-    } else if (!options.only || options.only === 'complementarias') {
-        // Quitar título de grupo
+    }
+    if (!options.only || options.only === 'complementarias') {
         const complementaryGroup = createKanbanGroup(null, etapasComplementarias, sortedPedidos);
         kanbanBoard.appendChild(complementaryGroup);
-        // Ocultar botones de orden en complementarias
-        renderKanbanSortButtons(false);
     }
 
     // Listeners de drag & drop
