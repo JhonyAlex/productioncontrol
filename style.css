@@ -1,48 +1,211 @@
 /* style.css */
-body { background-color: #f8f9fa; }
-#app-container { display: none; }
-.login-container { max-width: 400px; margin: 5rem auto; padding: 2rem; background-color: white; border-radius: 0.5rem; box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1); }
+
+/* Fondo general con gradiente sutil */
+body {
+    background: linear-gradient(135deg, #f3f6fb 0%, #e9ecef 100%);
+    min-height: 100vh;
+    font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
+    color: #23272b;
+    letter-spacing: 0.01em;
+}
+
+/* Contenedor principal de la app */
+#app-container {
+    display: none;
+}
+
+/* Login */
+.login-container {
+    max-width: 400px;
+    margin: 5rem auto;
+    padding: 2rem;
+    background: rgba(255,255,255,0.95);
+    border-radius: 1rem;
+    box-shadow: 0 8px 32px rgba(60, 72, 88, 0.12), 0 1.5px 4px rgba(0,0,0,0.04);
+    border: 1px solid #e3e7ed;
+}
 
 /* Kanban Styles */
-#kanban-board { display: flex; gap: 2rem; overflow-x: auto; padding-bottom: 1rem; align-items: flex-start; }
+#kanban-board {
+    display: flex;
+    gap: 2rem;
+    overflow-x: auto;
+    padding-bottom: 1rem;
+    align-items: flex-start;
+    background: rgba(255,255,255,0.7);
+    border-radius: 1rem;
+    box-shadow: 0 2px 12px rgba(60, 72, 88, 0.08);
+    margin-bottom: 2rem;
+}
+
 #kanban-board.drag-scroll-active {
     cursor: grabbing !important;
 }
-.kanban-group { background-color: #f1f3f5; padding: 1rem; border-radius: 0.5rem; flex-shrink: 0; }
-.kanban-group h4 { text-align: center; margin-bottom: 1rem; color: #495057; }
-.kanban-columns-container { display: flex; gap: 1rem; }
-.kanban-column { min-width: 280px; max-width: 320px; background-color: #e9ecef; border-radius: 0.5rem; padding: 0.5rem; flex-shrink: 0; height: fit-content; }
-.kanban-column h5 { text-align: center; padding: 0.5rem; background-color: #dee2e6; border-radius: 0.3rem; margin-bottom: 1rem; font-size: 0.9rem; word-break: break-word; }
-.kanban-card { background-color: white; border: 1px solid #dee2e6; border-radius: 0.3rem; padding: 0.75rem; margin-bottom: 0.75rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); cursor: grab; }
-.kanban-card:active { cursor: grabbing; }
-.kanban-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
-.kanban-card-header h6 { font-size: 0.9rem; font-weight: bold; margin-bottom: 0; word-break: break-all; }
-.kanban-card-body p { font-size: 0.8rem; margin-bottom: 0.2rem; color: #6c757d; }
-.kanban-card-footer { margin-top: 0.75rem; text-align: center; }
-.kanban-card-footer .btn { width: 100%; }
-.etapas-display { font-size: 0.75rem; color: #495057; margin-top: 5px; word-break: break-word; }
-.drag-over { border: 2px dashed #0d6efd; background-color: #cfe2ff; }
+
+.kanban-group {
+    background: linear-gradient(120deg, #f8fafc 60%, #e9ecef 100%);
+    padding: 1.2rem;
+    border-radius: 1rem;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(60, 72, 88, 0.07);
+    border: 1px solid #e3e7ed;
+    transition: box-shadow 0.2s;
+}
+.kanban-group:hover {
+    box-shadow: 0 4px 16px rgba(60, 72, 88, 0.13);
+}
+
+.kanban-group h4 {
+    text-align: center;
+    margin-bottom: 1rem;
+    color: #3b4252;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.kanban-columns-container {
+    display: flex;
+    gap: 1.2rem;
+}
+
+.kanban-column {
+    min-width: 280px;
+    max-width: 320px;
+    background: rgba(233,236,239,0.95);
+    border-radius: 0.7rem;
+    padding: 0.7rem;
+    flex-shrink: 0;
+    height: fit-content;
+    border: 1px solid #dde3ea;
+    box-shadow: 0 1px 6px rgba(60, 72, 88, 0.06);
+    transition: box-shadow 0.2s;
+}
+.kanban-column:hover {
+    box-shadow: 0 4px 16px rgba(60, 72, 88, 0.10);
+}
+
+.kanban-column h5 {
+    text-align: center;
+    padding: 0.7rem;
+    background: linear-gradient(90deg, #dee2e6 70%, #f3f6fb 100%);
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #495057;
+    word-break: break-word;
+    border-bottom: 1px solid #e3e7ed;
+}
+
+.kanban-card {
+    background: white;
+    border: 1.5px solid #e3e7ed;
+    border-radius: 0.5rem;
+    padding: 1rem 0.9rem 0.8rem 0.9rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 8px rgba(60, 72, 88, 0.08);
+    cursor: grab;
+    transition: box-shadow 0.18s, border 0.18s;
+    position: relative;
+}
+.kanban-card:active {
+    cursor: grabbing;
+    box-shadow: 0 4px 16px rgba(60, 72, 88, 0.13);
+    border-color: #b6d4fe;
+}
+
+.kanban-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+.kanban-card-header h6 {
+    font-size: 1rem;
+    font-weight: bold;
+    margin-bottom: 0;
+    word-break: break-all;
+    color: #1a202c;
+    letter-spacing: 0.01em;
+}
+
+.kanban-card-body p {
+    font-size: 0.92em;
+    margin-bottom: 0.2rem;
+    color: #6c757d;
+}
+
+.kanban-card-footer {
+    margin-top: 0.75rem;
+    text-align: center;
+}
+
+.kanban-card-footer .btn {
+    width: 100%;
+    border-radius: 0.5em;
+    font-weight: 500;
+    background: linear-gradient(90deg, #0d6efd 60%, #4f8cff 100%);
+    color: #fff;
+    border: none;
+    box-shadow: 0 1px 4px rgba(13,110,253,0.08);
+    transition: background 0.18s;
+}
+.kanban-card-footer .btn:hover {
+    background: linear-gradient(90deg, #0a58ca 60%, #3576e6 100%);
+}
+
+.etapas-display {
+    font-size: 0.82rem;
+    color: #495057;
+    margin-top: 5px;
+    word-break: break-word;
+}
+
+.drag-over {
+    border: 2px dashed #0d6efd;
+    background: linear-gradient(90deg, #cfe2ff 80%, #e3f0ff 100%);
+}
+
 .etapa-badge-kanban, .etapa-badge-lista {
     font-weight: 500;
     letter-spacing: 0.01em;
     border-radius: 0.7em;
-    background: #eee;
+    background: linear-gradient(90deg, #e0e7ef 60%, #f3f6fb 100%);
     color: #333;
     padding: 0.2em 0.7em;
     display: inline-block;
     margin-bottom: 0.3em;
+    box-shadow: 0 1px 3px rgba(60, 72, 88, 0.04);
 }
 
 /* List View Styles */
-#list-view .table th, #list-view .table td { font-size: 0.9rem; vertical-align: middle; }
-#list-view .table th { background-color: #e9ecef; }
+#list-view .table th, #list-view .table td {
+    font-size: 0.98rem;
+    vertical-align: middle;
+    background: rgba(255,255,255,0.95);
+}
+#list-view .table th {
+    background: linear-gradient(90deg, #e9ecef 70%, #f3f6fb 100%);
+    color: #495057;
+    font-weight: 600;
+    border-bottom: 2px solid #dde3ea;
+}
 
 /* Modal Styles */
-.modal-body .row > div { margin-bottom: 0.8rem; }
-#etapas-secuencia-container label { margin-right: 10px; }
+.modal-body .row > div {
+    margin-bottom: 0.8rem;
+}
+#etapas-secuencia-container label {
+    margin-right: 10px;
+}
 
 /* Style for delete/return buttons */
-.modal-footer .btn-danger, .modal-footer .btn-warning { margin-right: auto; } /* Push buttons to the left */
+.modal-footer .btn-danger, .modal-footer .btn-warning {
+    margin-right: auto;
+    border-radius: 0.5em;
+    font-weight: 500;
+    box-shadow: 0 1px 4px rgba(220,53,69,0.08);
+}
 
 /* Styles for sortable list and controls */
 #etapas-secuencia-list .list-group-item {
@@ -51,12 +214,23 @@ body { background-color: #f8f9fa; }
     gap: 0.5rem;
     cursor: grab;
     user-select: none;
+    background: linear-gradient(90deg, #f8fafc 80%, #e9ecef 100%);
+    border-radius: 0.5em;
+    border: 1px solid #e3e7ed;
+    margin-bottom: 0.3em;
+    transition: box-shadow 0.15s;
+    box-shadow: 0 1px 3px rgba(60, 72, 88, 0.04);
 }
+#etapas-secuencia-list .list-group-item:hover {
+    box-shadow: 0 2px 8px rgba(60, 72, 88, 0.10);
+}
+
 #etapas-secuencia-list .drag-handle {
     cursor: grab;
     font-size: 1.2em;
     color: #888;
 }
+
 #etapas-secuencia-list .move-btn {
     border: none;
     background: none;
@@ -64,14 +238,21 @@ body { background-color: #f8f9fa; }
     font-size: 1.1em;
     padding: 0 0.2em;
     cursor: pointer;
+    border-radius: 0.3em;
+    transition: background 0.15s;
+}
+#etapas-secuencia-list .move-btn:hover:not(:disabled) {
+    background: #e3e7ed;
 }
 #etapas-secuencia-list .move-btn:disabled {
     color: #ccc;
     cursor: not-allowed;
 }
+
 #etapas-secuencia-list .form-check-input {
     margin-right: 0.5em;
 }
+
 #etapas-secuencia-list .list-group-item.inactive {
     opacity: 0.5;
     background: #f8f9fa;
@@ -84,4 +265,7 @@ body { background-color: #f8f9fa; }
     font-weight: 500;
     vertical-align: middle;
     margin-right: 0.2em;
+    background: linear-gradient(90deg, #e0e7ef 60%, #f3f6fb 100%);
+    color: #2d3a4a;
+    box-shadow: 0 1px 3px rgba(60, 72, 88, 0.04);
 }
