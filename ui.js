@@ -1,5 +1,5 @@
 import { openPedidoModal, savePedido, deletePedido, returnToPrintStage } from './pedidoModal.js';
-import { handleSearch } from './utils.js';
+import { handleSearch, setupSearchAutocomplete } from './utils.js';
 import { renderKanban } from './kanban.js';
 import { renderList } from './listView.js';
 import { currentPedidos } from './firestore.js';
@@ -26,6 +26,7 @@ export function initializeAppEventListeners() {
     }
     if (searchInput) {
         searchInput.addEventListener('input', handleSearch);
+        setupSearchAutocomplete();
     }
 
     // Botón agregar pedido
