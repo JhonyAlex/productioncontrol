@@ -37,12 +37,17 @@ export function renderKanban(pedidos, options = {}) {
 
     // Renderiza solo el grupo solicitado
     if (!options.only || options.only === 'impresion') {
-        const printingGroup = createKanbanGroup("Impresión", etapasImpresion, sortedPedidos);
+        // Quitar título de grupo
+        const printingGroup = createKanbanGroup(null, etapasImpresion, sortedPedidos);
         kanbanBoard.appendChild(printingGroup);
-    }
-    if (!options.only || options.only === 'complementarias') {
-        const complementaryGroup = createKanbanGroup("Etapas Complementarias", etapasComplementarias, sortedPedidos);
+        // Mostrar botones de orden solo en impresión
+        renderKanbanSortButtons(true);
+    } else if (!options.only || options.only === 'complementarias') {
+        // Quitar título de grupo
+        const complementaryGroup = createKanbanGroup(null, etapasComplementarias, sortedPedidos);
         kanbanBoard.appendChild(complementaryGroup);
+        // Ocultar botones de orden en complementarias
+        renderKanbanSortButtons(false);
     }
 
     // Listeners de drag & drop
@@ -50,12 +55,9 @@ export function renderKanban(pedidos, options = {}) {
 
     // Habilitar drag-to-scroll horizontal
     enableKanbanDragToScroll(kanbanBoard);
-
-    // --- NUEVO: Botones de orden ---
-    renderKanbanSortButtons();
 }
 
-function renderKanbanSortButtons() {
+function renderKanbanSortButtons(showToggle) {
     let sortContainer = document.getElementById('kanban-sort-buttons');
     if (!sortContainer) {
         sortContainer = document.createElement('div');
@@ -69,7 +71,7 @@ function renderKanbanSortButtons() {
     sortContainer.innerHTML = `
         <button class="btn btn-outline-secondary btn-sm${kanbanSortKey === 'secuenciaPedido' ? ' active' : ''}" id="btn-kanban-sort-secuencia">Ordenar por Nº Secuencia</button>
         <button class="btn btn-outline-secondary btn-sm${kanbanSortKey === 'cliente' ? ' active' : ''}" id="btn-kanban-sort-cliente">Ordenar por Cliente</button>
-        <button class="btn btn-outline-secondary btn-sm" id="btn-kanban-sort-toggle">${kanbanSortAsc ? 'Ascendente' : 'Descendente'}</button>
+        ${showToggle ? `<button class="btn btn-outline-secondary btn-sm" id="btn-kanban-sort-toggle">${kanbanSortAsc ? 'Ascendente' : 'Descendente'}</button>` : ''}
     `;
     document.getElementById('btn-kanban-sort-secuencia').onclick = () => {
         kanbanSortKey = 'secuenciaPedido';
@@ -79,17 +81,22 @@ function renderKanbanSortButtons() {
         kanbanSortKey = 'cliente';
         renderKanban(window.currentPedidos || []);
     };
-    document.getElementById('btn-kanban-sort-toggle').onclick = () => {
-        kanbanSortAsc = !kanbanSortAsc;
-        renderKanban(window.currentPedidos || []);
-    };
+    if (showToggle) {
+        document.getElementById('btn-kanban-sort-toggle').onclick = () => {
+            kanbanSortAsc = !kanbanSortAsc;
+            renderKanban(window.currentPedidos || []);
+        };
+        sortContainer.style.display = '';
+    } else {
+        sortContainer.style.display = 'none';
+    }
 }
 
 function createKanbanGroup(groupTitle, etapasInGroup, allPedidos) {
     const groupDiv = document.createElement('div');
     groupDiv.className = 'kanban-group';
-    groupDiv.innerHTML = `<h4>${groupTitle}</h4>`;
-
+    // No título
+    // groupDiv.innerHTML = groupTitle ? `<h4>${groupTitle}</h4>` : '';
     const columnsContainer = document.createElement('div');
     columnsContainer.className = 'kanban-columns-container';
 
