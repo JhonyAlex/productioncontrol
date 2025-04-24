@@ -68,10 +68,8 @@ export function resetUIOnLogout(domRefs, unsubscribePedidosRef) {
         domRefs.loginContainer.style.display = 'block';
         domRefs.appContainer.style.display = 'none';
         domRefs.userEmailSpan.textContent = '';
-        domRefs.mainContent.querySelector('#kanban-board')?.style.display = 'none';
-        domRefs.mainContent.querySelector('#list-view')?.style.display = 'none';
-        domRefs.mainContent.querySelector('#view-tabs')?.style.display = 'none';
-        domRefs.mainContent.innerHTML += '<h1 class="text-center">Por favor, inicia sesión</h1>';
+        // En vez de intentar asignar a una expresión inválida, simplemente reemplaza el contenido:
+        domRefs.mainContent.innerHTML = '<h1 class="text-center">Por favor, inicia sesión</h1>';
     }
     // Si hay un listener de Firestore, desuscribirse
     if (typeof unsubscribePedidosRef === 'function') {
