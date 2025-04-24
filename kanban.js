@@ -98,6 +98,23 @@ function createKanbanCard(pedido) {
         }</div>`
         : '';
 
+    // Determinar texto dinámico para el botón de etapa
+    let etapaBtnText = '';
+    let showEtapaBtn = false;
+    if (pedido.etapaActual !== 'Completado' && pedido.etapasSecuencia && pedido.etapasSecuencia.length > 0) {
+        const idx = pedido.etapasSecuencia.indexOf(pedido.etapaActual);
+        if (etapasImpresion.includes(pedido.etapaActual)) {
+            etapaBtnText = 'Iniciar trabajo';
+            showEtapaBtn = true;
+        } else if (idx > -1 && idx < pedido.etapasSecuencia.length - 2) {
+            etapaBtnText = 'Siguiente trabajo';
+            showEtapaBtn = true;
+        } else if (idx === pedido.etapasSecuencia.length - 2) {
+            etapaBtnText = 'Completar';
+            showEtapaBtn = true;
+        }
+    }
+
     card.innerHTML = `
         <div class="kanban-card-header">
             <h6>${pedido.numeroPedido || 'N/A'}${fechaDisplay}</h6>
@@ -112,9 +129,7 @@ function createKanbanCard(pedido) {
         </div>
         <div class="kanban-card-footer">
             <button class="btn btn-sm btn-outline-primary" onclick="openPedidoModal('${pedido.id}')">Ver/Editar</button>
-            ${pedido.etapaActual !== 'Completado' && pedido.etapasSecuencia && pedido.etapasSecuencia.length > 0 ?
-                `<button class="btn btn-sm btn-outline-success mt-1" onclick="completeStage('${pedido.id}')">Completar Etapa</button>` : ''
-            }
+            ${showEtapaBtn ? `<button class="btn btn-sm btn-outline-success mt-1" onclick="completeStage('${pedido.id}')">${etapaBtnText}</button>` : ''}
         </div>
     `;
     return card;
