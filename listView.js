@@ -187,5 +187,3 @@ if (typeof window !== 'undefined') {
         });
     }, 0);
 }
-
-export { renderList };
