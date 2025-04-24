@@ -107,7 +107,8 @@ window.switchView = switchView;
 // Función global para renderizar la vista activa según currentView
 export function renderActiveView(pedidos) {
     // Mostrar/ocultar tabs
-    document.getElementById('view-tabs').style.display = '';
+    const viewTabs = document.getElementById('view-tabs');
+    if (viewTabs) viewTabs.style.display = '';
     // Kanban Impresión
     if (currentView === 'kanban-impresion') {
         renderKanban(pedidos, { only: 'impresion' });
