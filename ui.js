@@ -1,5 +1,8 @@
 import { openPedidoModal, savePedido, deletePedido, returnToPrintStage } from './pedidoModal.js';
 import { handleSearch } from './utils.js';
+import { renderKanban } from './kanban.js';
+import { renderList } from './listView.js';
+import { currentPedidos } from './firestore.js';
 
 export function initializeAppEventListeners() {
     const pedidoForm = document.getElementById('pedido-form');
@@ -24,17 +27,37 @@ export function initializeAppEventListeners() {
     }
 }
 
-// Función placeholder para cargar datos principales de la app tras login
 export function loadMainAppData() {
-    // Aquí deberías cargar y renderizar los datos principales (Kanban, lista, etc.)
-    // Por ahora solo muestra un mensaje
     const mainContent = document.getElementById('main-content');
-    if (mainContent) {
-        mainContent.innerHTML = '<h2 class="text-center">Bienvenido. Cargando datos...</h2>';
+    if (!mainContent) return;
+
+    // Crea los contenedores si no existen
+    let kanbanBoard = document.getElementById('kanban-board');
+    if (!kanbanBoard) {
+        kanbanBoard = document.createElement('div');
+        kanbanBoard.id = 'kanban-board';
+        mainContent.appendChild(kanbanBoard);
+    }
+    let listView = document.getElementById('list-view');
+    if (!listView) {
+        listView = document.createElement('div');
+        listView.id = 'list-view';
+        mainContent.appendChild(listView);
+    }
+
+    // Limpia los contenedores
+    kanbanBoard.innerHTML = '';
+    listView.innerHTML = '';
+
+    // Renderiza Kanban y lista si hay pedidos
+    if (currentPedidos && currentPedidos.length > 0) {
+        renderKanban(currentPedidos);
+        renderList(currentPedidos);
+    } else {
+        mainContent.innerHTML = '<h2 class="text-center">No hay pedidos para mostrar.</h2>';
     }
 }
 
-// Función placeholder para resetear la UI al cerrar sesión
 export function resetUIOnLogout(domRefs, unsubscribePedidosRef) {
     // Limpia la UI y vuelve a mostrar el login
     if (domRefs && domRefs.loginContainer && domRefs.appContainer && domRefs.userEmailSpan && domRefs.mainContent) {
