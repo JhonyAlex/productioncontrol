@@ -115,20 +115,21 @@ function syncMaquinaEtapa() {
     const etapasList = document.getElementById('etapas-secuencia-list');
     if (!maquinaImpresionSelect || !etapasList) return;
 
-    // Cuando cambia la máquina, actualiza la primera etapa de impresión en la lista
+    // Cuando cambia la máquina, fuerza la etapa de impresión al inicio
     maquinaImpresionSelect.addEventListener('change', () => {
         const selectedMaquina = maquinaImpresionSelect.value;
         if (!selectedMaquina) return;
         const printStage = `Impresión ${selectedMaquina}`;
-        // Elimina cualquier etapa de impresión existente al inicio
-        const items = Array.from(etapasList.children);
-        if (items.length > 0 && etapasImpresion.includes(items[0].dataset.etapa)) {
-            etapasList.removeChild(items[0]);
-        }
+        // Elimina cualquier etapa de impresión existente en la lista
+        Array.from(etapasList.children).forEach((li) => {
+            if (etapasImpresion.includes(li.dataset.etapa)) {
+                etapasList.removeChild(li);
+            }
+        });
         // Inserta la nueva etapa de impresión al inicio
         const li = document.createElement('li');
         li.className = 'list-group-item py-2';
-        li.draggable = true;
+        li.draggable = false;
         li.dataset.idx = 0;
         li.dataset.etapa = printStage;
         li.innerHTML = `
@@ -136,7 +137,7 @@ function syncMaquinaEtapa() {
             <input class="form-check-input etapa-check" type="checkbox" value="${printStage}" id="etapa-${printStage.toLowerCase().replace(/[\s.]+/g, '-')}" checked disabled>
             <label class="form-check-label flex-grow-1" for="etapa-${printStage.toLowerCase().replace(/[\s.]+/g, '-')}">${printStage}</label>
             <button type="button" class="move-btn" title="Subir" disabled><i class="bi bi-arrow-up"></i></button>
-            <button type="button" class="move-btn" title="Bajar" ${items.length === 0 ? 'disabled' : ''}><i class="bi bi-arrow-down"></i></button>
+            <button type="button" class="move-btn" title="Bajar" disabled><i class="bi bi-arrow-down"></i></button>
         `;
         etapasList.insertBefore(li, etapasList.firstChild);
     });

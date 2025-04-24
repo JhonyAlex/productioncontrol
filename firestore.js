@@ -46,6 +46,14 @@ export async function addPedido(pedidosCollection, pedidoData) {
 }
 
 export async function updatePedido(db, pedidoId, data) {
+    // Si se está cambiando la etapa y es de impresión, sincroniza maquinaImpresion
+    if (data.etapaActual && etapasImpresion.includes(data.etapaActual)) {
+        // Extrae el nombre de la máquina de la etapa
+        const match = data.etapaActual.match(/^Impresión (.+)$/);
+        if (match) {
+            data.maquinaImpresion = match[1];
+        }
+    }
     const pedidoRef = doc(db, "pedidos", pedidoId);
     return await updateDoc(pedidoRef, data);
 }
