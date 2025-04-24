@@ -29,7 +29,5 @@ export function handleSearch(e) {
 
 import { renderKanban } from './kanban.js';
 import { renderList } from './listView.js';
-window.renderActiveView = function(pedidos) {
-    renderKanban(pedidos);
-    renderList(pedidos);
-};
+import { renderActiveView } from './ui.js';
+window.renderActiveView = renderActiveView;

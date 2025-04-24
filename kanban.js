@@ -4,7 +4,7 @@ import { openPedidoModal, completeStage } from './pedidoModal.js';
 import { updatePedido } from './firestore.js';
 
 // Renderiza el tablero Kanban
-export function renderKanban(pedidos) {
+export function renderKanban(pedidos, options = {}) {
     const kanbanBoard = document.getElementById('kanban-board');
     if (!kanbanBoard) {
         console.error("renderKanban: Elemento #kanban-board no encontrado.");
@@ -13,13 +13,15 @@ export function renderKanban(pedidos) {
     console.log(`Renderizando Kanban con ${pedidos.length} pedidos.`);
     kanbanBoard.innerHTML = ''; // Limpiar contenido previo
 
-    // Grupo 1: Etapas de impresión
-    const printingGroup = createKanbanGroup("Impresión", etapasImpresion, pedidos);
-    kanbanBoard.appendChild(printingGroup);
-
-    // Grupo 2: Etapas complementarias
-    const complementaryGroup = createKanbanGroup("Etapas Complementarias", etapasComplementarias, pedidos);
-    kanbanBoard.appendChild(complementaryGroup);
+    // Renderiza solo el grupo solicitado
+    if (!options.only || options.only === 'impresion') {
+        const printingGroup = createKanbanGroup("Impresión", etapasImpresion, pedidos);
+        kanbanBoard.appendChild(printingGroup);
+    }
+    if (!options.only || options.only === 'complementarias') {
+        const complementaryGroup = createKanbanGroup("Etapas Complementarias", etapasComplementarias, pedidos);
+        kanbanBoard.appendChild(complementaryGroup);
+    }
 
     // Listeners de drag & drop
     addDragAndDropListeners();

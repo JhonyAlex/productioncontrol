@@ -4,6 +4,8 @@ import { renderKanban } from './kanban.js';
 import { renderList } from './listView.js';
 import { currentPedidos } from './firestore.js';
 
+let currentView = 'kanban-impresion'; // vista por defecto
+
 export function initializeAppEventListeners() {
     const pedidoForm = document.getElementById('pedido-form');
     const deletePedidoBtn = document.getElementById('delete-pedido-btn');
@@ -25,6 +27,13 @@ export function initializeAppEventListeners() {
     if (searchInput) {
         searchInput.addEventListener('input', handleSearch);
     }
+
+    // Listeners para los botones de vistas
+    document.getElementById('btn-kanban-impresion')?.addEventListener('click', () => switchView('kanban-impresion'));
+    document.getElementById('btn-kanban-complementarias')?.addEventListener('click', () => switchView('kanban-complementarias'));
+    document.getElementById('btn-lista')?.addEventListener('click', () => switchView('lista'));
+    // Botón exportar (a implementar)
+    document.getElementById('btn-exportar-lista')?.addEventListener('click', () => alert('Funcionalidad de exportar próximamente.'));
 }
 
 export function loadMainAppData() {
@@ -49,13 +58,8 @@ export function loadMainAppData() {
     kanbanBoard.innerHTML = '';
     listView.innerHTML = '';
 
-    // Renderiza Kanban y lista si hay pedidos
-    if (currentPedidos && currentPedidos.length > 0) {
-        renderKanban(currentPedidos);
-        renderList(currentPedidos);
-    } else {
-        mainContent.innerHTML = '<h2 class="text-center">No hay pedidos para mostrar.</h2>';
-    }
+    // Renderiza la vista activa
+    renderActiveView(currentPedidos || []);
 }
 
 export function resetUIOnLogout(domRefs, unsubscribePedidosRef) {
@@ -64,10 +68,52 @@ export function resetUIOnLogout(domRefs, unsubscribePedidosRef) {
         domRefs.loginContainer.style.display = 'block';
         domRefs.appContainer.style.display = 'none';
         domRefs.userEmailSpan.textContent = '';
-        domRefs.mainContent.innerHTML = '<h1 class="text-center">Por favor, inicia sesión</h1>';
+        domRefs.mainContent.querySelector('#kanban-board')?.style.display = 'none';
+        domRefs.mainContent.querySelector('#list-view')?.style.display = 'none';
+        domRefs.mainContent.querySelector('#view-tabs')?.style.display = 'none';
+        domRefs.mainContent.innerHTML += '<h1 class="text-center">Por favor, inicia sesión</h1>';
     }
     // Si hay un listener de Firestore, desuscribirse
     if (typeof unsubscribePedidosRef === 'function') {
         unsubscribePedidosRef();
     }
 }
+
+// Nueva función para cambiar de vista
+function switchView(view) {
+    currentView = view;
+    // Actualiza clases de los botones
+    document.getElementById('btn-kanban-impresion')?.classList.remove('active');
+    document.getElementById('btn-kanban-complementarias')?.classList.remove('active');
+    document.getElementById('btn-lista')?.classList.remove('active');
+    if (view === 'kanban-impresion') document.getElementById('btn-kanban-impresion')?.classList.add('active');
+    if (view === 'kanban-complementarias') document.getElementById('btn-kanban-complementarias')?.classList.add('active');
+    if (view === 'lista') document.getElementById('btn-lista')?.classList.add('active');
+    // Muestra/oculta vistas
+    document.getElementById('kanban-board').style.display = (view.startsWith('kanban')) ? '' : 'none';
+    document.getElementById('list-view').style.display = (view === 'lista') ? '' : 'none';
+    // Renderiza la vista correspondiente
+    renderActiveView(currentPedidos || []);
+}
+
+// Exponer para uso global
+window.switchView = switchView;
+
+// Función global para renderizar la vista activa según currentView
+export function renderActiveView(pedidos) {
+    // Mostrar/ocultar tabs
+    document.getElementById('view-tabs').style.display = '';
+    // Kanban Impresión
+    if (currentView === 'kanban-impresion') {
+        renderKanban(pedidos, { only: 'impresion' });
+    }
+    // Kanban Etapas Complementarias
+    else if (currentView === 'kanban-complementarias') {
+        renderKanban(pedidos, { only: 'complementarias' });
+    }
+    // Lista
+    else if (currentView === 'lista') {
+        renderList(pedidos);
+    }
+}
+window.renderActiveView = renderActiveView;

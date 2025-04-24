@@ -54,12 +54,29 @@
             </div>
         </nav>
 
-        <!-- Main Content Area (Populated by JavaScript) -->
+        <!-- Main Content Area -->
         <div id="main-content">
             <div class="mb-3">
                 <input type="text" id="search-input" class="form-control" placeholder="Buscar pedido, cliente o máquina...">
             </div>
-            <h1 class="text-center">Por favor, inicia sesión</h1>
+            <!-- Botones de navegación de vistas -->
+            <div class="mb-3" id="view-tabs">
+                <div class="btn-group" role="group" aria-label="Vistas">
+                    <button type="button" class="btn btn-outline-primary active" id="btn-kanban-impresion">Kanban Impresión</button>
+                    <button type="button" class="btn btn-outline-primary" id="btn-kanban-complementarias">Kanban Etapas Complementarias</button>
+                    <button type="button" class="btn btn-outline-primary" id="btn-lista">Lista</button>
+                </div>
+            </div>
+            <!-- Kanban y Lista -->
+            <div id="kanban-board"></div>
+            <div id="list-view" style="display: none;">
+                <div class="mb-2 text-end">
+                    <button class="btn btn-success" id="btn-exportar-lista">
+                        <i class="bi bi-download"></i> Exportar
+                    </button>
+                </div>
+                <!-- La tabla se renderiza por JS -->
+            </div>
         </div>
     </div>
 
