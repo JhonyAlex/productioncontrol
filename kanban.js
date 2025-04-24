@@ -68,8 +68,12 @@ function createKanbanCard(pedido) {
 
     // Formateo de campos
     const fechaDisplay = pedido.fecha ? ` (${pedido.fecha})` : '';
-    const superficieDisplay = pedido.superficie === 'true' ? ' <span class="badge bg-info text-dark">SUP</span>' : '';
-    const transparenciaDisplay = pedido.transparencia === 'true' ? ' <span class="badge bg-secondary">TTE</span>' : '';
+    // Quitar badges SUP/TTE, mostrar cliente y metros como badge
+    const clienteDisplay = pedido.cliente ? `<span class="ms-1">${pedido.cliente}</span>` : '';
+    const metrosBadge = pedido.metros
+        ? `<span class="badge bg-secondary ms-1">${pedido.metros} m</span>`
+        : '';
+
     // Solo mostrar etapas complementarias en la secuencia
     const etapasHtml = pedido.etapasSecuencia && pedido.etapasSecuencia.length > 0
         ? `<div class="etapas-display">Secuencia: ${
@@ -83,14 +87,12 @@ function createKanbanCard(pedido) {
         <div class="kanban-card-header">
             <h6>${pedido.numeroPedido || 'N/A'}${fechaDisplay}</h6>
             <div>
-              ${superficieDisplay}
-              ${transparenciaDisplay}
+                ${clienteDisplay}
+                ${metrosBadge}
             </div>
         </div>
         <div class="kanban-card-body">
-            ${pedido.cliente ? `<p><strong>Cliente:</strong> ${pedido.cliente}</p>` : ''}
             <p><strong>Máquina:</strong> ${pedido.maquinaImpresion || 'N/A'}</p>
-            ${pedido.metros ? `<p><strong>Metros:</strong> ${pedido.metros}</p>` : ''}
             ${etapasHtml}
         </div>
         <div class="kanban-card-footer">
