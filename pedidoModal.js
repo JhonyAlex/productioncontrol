@@ -222,6 +222,8 @@ function duplicarPedido(pedido) {
         document.getElementById('camisa').value = pedido.camisa || '';
         document.getElementById('fecha').value = pedido.fecha || '';
         document.getElementById('observaciones').value = pedido.observaciones || '';
+        // Limpiar el campo oculto de ID para asegurar que es un nuevo registro
+        document.getElementById('pedido-id').value = '';
         // Etapas secuencia (sin la etapa de impresión, se recalcula al guardar)
         document.getElementById('etapas-secuencia-container').querySelectorAll('.etapa-check').forEach(cb => {
             cb.checked = pedido.etapasSecuencia?.includes(cb.value) || false;
@@ -234,7 +236,7 @@ export async function savePedido(event) {
     // Obtén referencias DOM dinámicamente
     const pedidoForm = document.getElementById('pedido-form');
     const pedidoIdInput = document.getElementById('pedido-id');
-    const pedidoId = pedidoIdInput.value; // <-- AÑADE ESTA LÍNEA
+    const pedidoId = pedidoIdInput.value;
     const maquinaImpresion = document.getElementById('maquinaImpresion').value;
     const printStage = `Impresión ${maquinaImpresion}`;
     // --- NUEVO: obtener secuencia según orden y checks ---
@@ -284,7 +286,12 @@ export async function savePedido(event) {
             pedidoData.createdAt = serverTimestamp();
             await addDoc(window.pedidosCollection, pedidoData);
         }
-        if (pedidoModal) pedidoModal.hide();
+        // Cerrar el modal correctamente usando la instancia de Bootstrap
+        const pedidoModalElement = document.getElementById('pedidoModal');
+        if (pedidoModalElement) {
+            const modalInstance = bootstrap.Modal.getInstance(pedidoModalElement);
+            if (modalInstance) modalInstance.hide();
+        }
         pedidoForm.reset();
     } catch (error) {
         alert(`Error al guardar el pedido: ${error.message}`);
@@ -295,8 +302,6 @@ export async function deletePedido() {
     // Obtén referencias DOM dinámicamente
     const pedidoIdInput = document.getElementById('pedido-id');
     const pedidoModalElement = document.getElementById('pedidoModal');
-    const pedidoModal = pedidoModalElement ? new bootstrap.Modal(pedidoModalElement) : null;
-
     const pedidoId = pedidoIdInput.value;
     if (!pedidoId) {
         alert("No se ha seleccionado ningún pedido para eliminar.");
@@ -308,7 +313,11 @@ export async function deletePedido() {
     try {
         const pedidoRef = doc(window.db, "pedidos", pedidoId);
         await deleteDoc(pedidoRef);
-        if (pedidoModal) pedidoModal.hide();
+        // Cerrar el modal correctamente usando la instancia de Bootstrap
+        if (pedidoModalElement) {
+            const modalInstance = bootstrap.Modal.getInstance(pedidoModalElement);
+            if (modalInstance) modalInstance.hide();
+        }
     } catch (error) {
         alert("Error al eliminar el pedido. Inténtalo de nuevo.");
     }
