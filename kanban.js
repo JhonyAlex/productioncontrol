@@ -85,11 +85,7 @@ function createKanbanCard(pedido) {
         <div class="kanban-card-body">
             ${pedido.cliente ? `<p><strong>Cliente:</strong> ${pedido.cliente}</p>` : ''}
             <p><strong>Máquina:</strong> ${pedido.maquinaImpresion || 'N/A'}</p>
-            ${pedido.desarrTexto ? `<p><strong>Desarr:</strong> ${pedido.desarrTexto}${pedido.desarrNumero ? ` (${pedido.desarrNumero})` : ''}</p>` : ''}
             ${pedido.metros ? `<p><strong>Metros:</strong> ${pedido.metros}</p>` : ''}
-            ${pedido.capa ? `<p><strong>Capa:</strong> ${pedido.capa}</p>` : ''}
-            ${pedido.camisa ? `<p><strong>Camisa:</strong> ${pedido.camisa}</p>` : ''}
-            ${pedido.observaciones ? `<p><strong>Obs:</strong> ${pedido.observaciones}</p>` : ''}
             ${etapasHtml}
         </div>
         <div class="kanban-card-footer">
