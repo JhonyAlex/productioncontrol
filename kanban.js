@@ -70,8 +70,13 @@ function createKanbanCard(pedido) {
     const fechaDisplay = pedido.fecha ? ` (${pedido.fecha})` : '';
     const superficieDisplay = pedido.superficie === 'true' ? ' <span class="badge bg-info text-dark">SUP</span>' : '';
     const transparenciaDisplay = pedido.transparencia === 'true' ? ' <span class="badge bg-secondary">TTE</span>' : '';
+    // Solo mostrar etapas complementarias en la secuencia
     const etapasHtml = pedido.etapasSecuencia && pedido.etapasSecuencia.length > 0
-        ? `<div class="etapas-display">Secuencia: ${pedido.etapasSecuencia.join(' -> ')}</div>`
+        ? `<div class="etapas-display">Secuencia: ${
+            pedido.etapasSecuencia
+                .filter(et => !etapasImpresion.includes(et))
+                .join(' -> ') || 'N/A'
+        }</div>`
         : '';
 
     card.innerHTML = `

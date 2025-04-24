@@ -19,10 +19,11 @@ const SECUENCIA_ETAPAS_DEFAULT = [
 function renderEtapasSecuenciaList(seleccionadas = [], ordenPersonalizado = null) {
     const container = document.getElementById('etapas-secuencia-list');
     if (!container) return;
-    // Usa el orden personalizado si existe, si no el default
-    const orden = ordenPersonalizado && ordenPersonalizado.length
+    // Solo mostrar etapas complementarias
+    const orden = (ordenPersonalizado && ordenPersonalizado.length
         ? ordenPersonalizado
-        : SECUENCIA_ETAPAS_DEFAULT.slice();
+        : SECUENCIA_ETAPAS_DEFAULT.slice()
+    ).filter(et => !etapasImpresion.includes(et));
 
     container.innerHTML = '';
     orden.forEach((etapa, idx) => {
@@ -221,7 +222,7 @@ export function openPedidoModal(pedidoId = null) {
             let ordenPersonalizado = SECUENCIA_ETAPAS_DEFAULT.slice();
             let seleccionadas = [];
             if (pedido.etapasSecuencia && Array.isArray(pedido.etapasSecuencia)) {
-                // Quitar la etapa de impresión
+                // Solo selecciona etapas complementarias
                 seleccionadas = pedido.etapasSecuencia.filter(et => !etapasImpresion.includes(et));
                 // Orden personalizado: primero las que están en la secuencia, luego el resto
                 ordenPersonalizado = [
@@ -291,7 +292,7 @@ export async function savePedido(event) {
     // --- NUEVO: obtener secuencia según orden y checks ---
     const etapasOrden = getEtapasOrden();
     const etapasChecked = getEtapasChecked();
-    const selectedEtapas = [printStage, ...etapasOrden.filter(et => etapasChecked.includes(et))];
+    const selectedEtapas = etapasOrden.filter(et => etapasChecked.includes(et));
 
     const pedidoData = {
         numeroPedido: document.getElementById('numeroPedido').value.trim(),
