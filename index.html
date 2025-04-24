@@ -118,6 +118,13 @@
                                 <input type="text" class="form-control" id="cliente" maxlength="100">
                             </div>
                         </div>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label for="secuenciaPedido" class="form-label">Nº Secuencia*</label>
+                                <input type="number" class="form-control" id="secuenciaPedido" min="1000" step="1" required>
+                                <div class="form-text text-danger d-none" id="secuenciaPedido-error">Debe ser único y mayor o igual a 1000.</div>
+                            </div>
+                        </div>
                         <hr>
                         <!-- Row 2: Main Features -->
                         <h6>Características Principales</h6>

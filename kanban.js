@@ -3,6 +3,10 @@ import { etapasImpresion, etapasComplementarias, currentPedidos } from './firest
 import { openPedidoModal, completeStage } from './pedidoModal.js';
 import { updatePedido } from './firestore.js';
 
+// Variables para ordenación
+let kanbanSortKey = 'secuenciaPedido'; // 'secuenciaPedido' o 'cliente'
+let kanbanSortAsc = true;
+
 // Renderiza el tablero Kanban
 export function renderKanban(pedidos, options = {}) {
     const kanbanBoard = document.getElementById('kanban-board');
@@ -13,13 +17,31 @@ export function renderKanban(pedidos, options = {}) {
     console.log(`Renderizando Kanban con ${pedidos.length} pedidos.`);
     kanbanBoard.innerHTML = ''; // Limpiar contenido previo
 
+    // --- NUEVO: Ordenar pedidos según selección ---
+    let sortedPedidos = pedidos.slice();
+    if (kanbanSortKey === 'cliente') {
+        sortedPedidos.sort((a, b) => {
+            const va = (a.cliente || '').toLowerCase();
+            const vb = (b.cliente || '').toLowerCase();
+            if (va < vb) return kanbanSortAsc ? -1 : 1;
+            if (va > vb) return kanbanSortAsc ? 1 : -1;
+            return 0;
+        });
+    } else {
+        sortedPedidos.sort((a, b) => {
+            const va = Number(a.secuenciaPedido) || 0;
+            const vb = Number(b.secuenciaPedido) || 0;
+            return kanbanSortAsc ? va - vb : vb - va;
+        });
+    }
+
     // Renderiza solo el grupo solicitado
     if (!options.only || options.only === 'impresion') {
-        const printingGroup = createKanbanGroup("Impresión", etapasImpresion, pedidos);
+        const printingGroup = createKanbanGroup("Impresión", etapasImpresion, sortedPedidos);
         kanbanBoard.appendChild(printingGroup);
     }
     if (!options.only || options.only === 'complementarias') {
-        const complementaryGroup = createKanbanGroup("Etapas Complementarias", etapasComplementarias, pedidos);
+        const complementaryGroup = createKanbanGroup("Etapas Complementarias", etapasComplementarias, sortedPedidos);
         kanbanBoard.appendChild(complementaryGroup);
     }
 
@@ -28,6 +50,39 @@ export function renderKanban(pedidos, options = {}) {
 
     // Habilitar drag-to-scroll horizontal
     enableKanbanDragToScroll(kanbanBoard);
+
+    // --- NUEVO: Botones de orden ---
+    renderKanbanSortButtons();
+}
+
+function renderKanbanSortButtons() {
+    let sortContainer = document.getElementById('kanban-sort-buttons');
+    if (!sortContainer) {
+        sortContainer = document.createElement('div');
+        sortContainer.id = 'kanban-sort-buttons';
+        sortContainer.className = 'mb-2 d-flex gap-2';
+        const kanbanBoard = document.getElementById('kanban-board');
+        if (kanbanBoard && kanbanBoard.parentNode) {
+            kanbanBoard.parentNode.insertBefore(sortContainer, kanbanBoard);
+        }
+    }
+    sortContainer.innerHTML = `
+        <button class="btn btn-outline-secondary btn-sm${kanbanSortKey === 'secuenciaPedido' ? ' active' : ''}" id="btn-kanban-sort-secuencia">Ordenar por Nº Secuencia</button>
+        <button class="btn btn-outline-secondary btn-sm${kanbanSortKey === 'cliente' ? ' active' : ''}" id="btn-kanban-sort-cliente">Ordenar por Cliente</button>
+        <button class="btn btn-outline-secondary btn-sm" id="btn-kanban-sort-toggle">${kanbanSortAsc ? 'Ascendente' : 'Descendente'}</button>
+    `;
+    document.getElementById('btn-kanban-sort-secuencia').onclick = () => {
+        kanbanSortKey = 'secuenciaPedido';
+        renderKanban(window.currentPedidos || []);
+    };
+    document.getElementById('btn-kanban-sort-cliente').onclick = () => {
+        kanbanSortKey = 'cliente';
+        renderKanban(window.currentPedidos || []);
+    };
+    document.getElementById('btn-kanban-sort-toggle').onclick = () => {
+        kanbanSortAsc = !kanbanSortAsc;
+        renderKanban(window.currentPedidos || []);
+    };
 }
 
 function createKanbanGroup(groupTitle, etapasInGroup, allPedidos) {
@@ -68,6 +123,16 @@ function stringToColor(str) {
     // HSL pastel
     const h = Math.abs(hash) % 360;
     return `hsl(${h}, 60%, 80%)`;
+}
+
+function etapaToColor(etapa) {
+    // Genera un color pastel opaco consistente para cada etapa
+    let hash = 0;
+    for (let i = 0; i < etapa.length; i++) {
+        hash = etapa.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const h = Math.abs(hash) % 360;
+    return `hsl(${h}, 40%, 85%)`; // tono pastel, opaco
 }
 
 function createKanbanCard(pedido) {
@@ -115,6 +180,9 @@ function createKanbanCard(pedido) {
         }
     }
 
+    // Color para la etapa actual
+    const etapaColor = etapaToColor(pedido.etapaActual || '');
+
     card.innerHTML = `
         <div class="kanban-card-header">
             <h6>${pedido.numeroPedido || 'N/A'}${fechaDisplay}</h6>
@@ -125,6 +193,9 @@ function createKanbanCard(pedido) {
         </div>
         <div class="kanban-card-body">
             <p><strong>Máquina:</strong> ${pedido.maquinaImpresion || 'N/A'}</p>
+            <div class="etapa-badge-kanban" style="background:${etapaColor};color:#333;display:inline-block;padding:0.2em 0.7em;border-radius:0.7em;font-size:0.85em;margin-bottom:0.3em;">
+                ${pedido.etapaActual || ''}
+            </div>
             ${etapasHtml}
         </div>
         <div class="kanban-card-footer">

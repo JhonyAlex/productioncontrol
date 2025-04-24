@@ -173,6 +173,24 @@ export function openPedidoModal(pedidoId = null) {
     returnToPrintBtn.style.display = 'none';
     document.getElementById('etapas-secuencia-container').querySelectorAll('.etapa-check').forEach(cb => cb.checked = false);
 
+    // --- NUEVO: Manejo del campo secuenciaPedido ---
+    let secuenciaPedidoInput = document.getElementById('secuenciaPedido');
+    if (!secuenciaPedidoInput) {
+        // Crear el input si no existe (lo ideal es agregarlo en el HTML, pero aquí lo agregamos por JS)
+        const row = document.querySelector('#pedido-form .row');
+        if (row) {
+            const div = document.createElement('div');
+            div.className = 'col-md-4';
+            div.innerHTML = `
+                <label for="secuenciaPedido" class="form-label">Nº Secuencia*</label>
+                <input type="number" class="form-control" id="secuenciaPedido" min="1000" step="1" required>
+                <div class="form-text text-danger d-none" id="secuenciaPedido-error">Debe ser único y mayor o igual a 1000.</div>
+            `;
+            row.parentNode.insertBefore(div, row.nextSibling);
+        }
+        secuenciaPedidoInput = document.getElementById('secuenciaPedido');
+    }
+
     // Quitar botón duplicar si existe
     let btnDuplicar = document.getElementById('btn-duplicar-pedido');
     if (btnDuplicar) btnDuplicar.remove();
@@ -194,6 +212,9 @@ export function openPedidoModal(pedidoId = null) {
             document.getElementById('camisa').value = pedido.camisa || '';
             document.getElementById('fecha').value = pedido.fecha || '';
             document.getElementById('observaciones').value = pedido.observaciones || '';
+            if (pedido.secuenciaPedido) {
+                secuenciaPedidoInput.value = pedido.secuenciaPedido;
+            }
             if (pedido.etapasSecuencia && Array.isArray(pedido.etapasSecuencia)) {
                 const printStage = `Impresión ${pedido.maquinaImpresion}`;
                 pedido.etapasSecuencia.forEach(etapa => {
@@ -242,6 +263,9 @@ export function openPedidoModal(pedidoId = null) {
         document.getElementById('transparencia').value = 'false';
         // Nuevo pedido: secuencia por defecto, nada seleccionado
         renderEtapasSecuenciaList([], SECUENCIA_ETAPAS_DEFAULT);
+        // Asignar automáticamente el siguiente número de secuencia (de 10 en 10)
+        const maxSec = Math.max(1000, ...window.currentPedidos.map(p => Number(p.secuenciaPedido) || 0));
+        secuenciaPedidoInput.value = (Math.floor((maxSec + 10) / 10) * 10);
     }
     // --- INICIALIZAR SINCRONIZACIÓN ---
     setTimeout(syncMaquinaEtapa, 100);
@@ -294,6 +318,27 @@ export async function savePedido(event) {
     const etapasChecked = getEtapasChecked();
     const selectedEtapas = etapasOrden.filter(et => etapasChecked.includes(et));
 
+    const secuenciaPedidoInput = document.getElementById('secuenciaPedido');
+    const secuenciaPedido = Number(secuenciaPedidoInput.value);
+    const secuenciaPedidoError = document.getElementById('secuenciaPedido-error');
+    secuenciaPedidoError.classList.add('d-none');
+
+    // Validación de secuenciaPedido
+    if (!secuenciaPedido || secuenciaPedido < 1000) {
+        secuenciaPedidoError.textContent = "Debe ser un número mayor o igual a 1000.";
+        secuenciaPedidoError.classList.remove('d-none');
+        return;
+    }
+    // Unicidad
+    const repetido = window.currentPedidos.some(p =>
+        Number(p.secuenciaPedido) === secuenciaPedido && (!pedidoId || p.id !== pedidoId)
+    );
+    if (repetido) {
+        secuenciaPedidoError.textContent = "El número de secuencia ya existe. Debe ser único.";
+        secuenciaPedidoError.classList.remove('d-none');
+        return;
+    }
+
     const pedidoData = {
         numeroPedido: document.getElementById('numeroPedido').value.trim(),
         cliente: document.getElementById('cliente').value.trim(),
@@ -307,6 +352,7 @@ export async function savePedido(event) {
         camisa: document.getElementById('camisa').value.trim(),
         fecha: document.getElementById('fecha').value.trim(),
         observaciones: document.getElementById('observaciones').value.trim(),
+        secuenciaPedido: secuenciaPedido,
         etapasSecuencia: selectedEtapas,
     };
 

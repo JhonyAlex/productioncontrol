@@ -8,6 +8,25 @@ function normalizeValue(val) {
     return val || '';
 }
 
+function etapaToColor(etapa) {
+    let hash = 0;
+    for (let i = 0; i < etapa.length; i++) {
+        hash = etapa.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const h = Math.abs(hash) % 360;
+    return `hsl(${h}, 40%, 85%)`;
+}
+
+// --- NUEVO: función para color de cliente consistente ---
+function stringToColor(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const h = Math.abs(hash) % 360;
+    return `hsl(${h}, 60%, 80%)`;
+}
+
 export function renderList(pedidos) {
     const listView = document.getElementById('list-view');
     if (!listView) {
@@ -45,6 +64,7 @@ export function renderList(pedidos) {
     }
 
     const columns = [
+        { key: 'secuenciaPedido', label: 'Nº Secuencia' },
         { key: 'numeroPedido', label: 'Nº Pedido' },
         { key: 'cliente', label: 'Cliente' },
         { key: 'maquinaImpresion', label: 'Máquina Imp.' },
@@ -75,13 +95,21 @@ export function renderList(pedidos) {
     `;
 
     if (filteredPedidos.length === 0) {
-        tableHTML += '<tr><td colspan="12" class="text-center">No hay pedidos para mostrar.</td></tr>';
+        tableHTML += '<tr><td colspan="13" class="text-center">No hay pedidos para mostrar.</td></tr>';
     } else {
         filteredPedidos.forEach(pedido => {
+            const etapaColor = etapaToColor(pedido.etapaActual || '');
+            // --- NUEVO: badge de cliente con color consistente ---
+            let clienteBadge = '';
+            if (pedido.cliente) {
+                const color = stringToColor(pedido.cliente);
+                clienteBadge = `<span class="badge badge-cliente ms-1" style="background:${color};color:#333;font-size:0.75em;">${pedido.cliente}</span>`;
+            }
             tableHTML += `
                 <tr>
+                    <td>${pedido.secuenciaPedido || ''}</td>
                     <td>${pedido.numeroPedido || 'N/A'}</td>
-                    <td>${pedido.cliente || '-'}</td>
+                    <td>${clienteBadge || '-'}</td>
                     <td>${pedido.maquinaImpresion || 'N/A'}</td>
                     <td>${pedido.desarrTexto || ''}${pedido.desarrNumero ? ` (${pedido.desarrNumero})` : ''}</td>
                     <td>${pedido.metros || '-'}</td>
@@ -90,7 +118,11 @@ export function renderList(pedidos) {
                     <td>${pedido.capa || '-'}</td>
                     <td>${pedido.camisa || '-'}</td>
                     <td>${pedido.fecha || '-'}</td>
-                    <td><span class="badge bg-primary">${pedido.etapaActual || 'N/A'}</span></td>
+                    <td>
+                        <span class="badge etapa-badge-lista" style="background:${etapaColor};color:#333;font-size:0.95em;">
+                            ${pedido.etapaActual || 'N/A'}
+                        </span>
+                    </td>
                     <td>
                         <button class="btn btn-sm btn-outline-primary" onclick="openPedidoModal('${pedido.id}')">
                             <i class="bi bi-pencil-square"></i> Editar

@@ -22,6 +22,16 @@ body { background-color: #f8f9fa; }
 .kanban-card-footer .btn { width: 100%; }
 .etapas-display { font-size: 0.75rem; color: #495057; margin-top: 5px; word-break: break-word; }
 .drag-over { border: 2px dashed #0d6efd; background-color: #cfe2ff; }
+.etapa-badge-kanban, .etapa-badge-lista {
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    border-radius: 0.7em;
+    background: #eee;
+    color: #333;
+    padding: 0.2em 0.7em;
+    display: inline-block;
+    margin-bottom: 0.3em;
+}
 
 /* List View Styles */
 #list-view .table th, #list-view .table td { font-size: 0.9rem; vertical-align: middle; }
