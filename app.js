@@ -50,8 +50,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Suscribirse a los pedidos de Firestore y actualizar la UI en tiempo real
     unsubscribePedidos = listenToPedidos(pedidosCollection, (pedidos) => {
-        // Si hay pedidos, renderiza la UI
-        if (window.renderActiveView) {
+        // --- NUEVO: Solo renderiza si el DOM está listo y pedidos es un array ---
+        if (window.renderActiveView && Array.isArray(pedidos)) {
             window.renderActiveView(pedidos);
         }
     }, (error) => {

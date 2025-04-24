@@ -17,9 +17,15 @@ export function handleSearch(e) {
         const numeroPedido = pedido.numeroPedido?.toLowerCase() || '';
         const cliente = pedido.cliente?.toLowerCase() || '';
         const maquina = pedido.maquinaImpresion?.toLowerCase() || '';
+        const etapaActual = pedido.etapaActual?.toLowerCase() || '';
+        const etapasSecuencia = Array.isArray(pedido.etapasSecuencia)
+            ? pedido.etapasSecuencia.join(', ').toLowerCase()
+            : '';
         return numeroPedido.includes(searchTerm) ||
                cliente.includes(searchTerm) ||
-               maquina.includes(searchTerm);
+               maquina.includes(searchTerm) ||
+               etapaActual.includes(searchTerm) ||
+               etapasSecuencia.includes(searchTerm);
     });
     // Llama a la función global renderActiveView
     if (typeof window.renderActiveView === 'function') {

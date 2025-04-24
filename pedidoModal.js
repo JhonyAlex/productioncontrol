@@ -425,11 +425,13 @@ export async function returnToPrintStage() {
 
 // Implementación real de completeStage
 export async function completeStage(pedidoId) {
+    // --- NUEVO: Siempre usa la secuencia guardada en el pedido ---
     const pedido = window.currentPedidos.find(p => p.id === pedidoId);
     if (!pedido || !pedido.etapasSecuencia || !Array.isArray(pedido.etapasSecuencia)) {
         alert("No se pudo avanzar la etapa. Datos incompletos.");
         return;
     }
+    // Busca el índice de la etapa actual en la secuencia guardada
     const idx = pedido.etapasSecuencia.indexOf(pedido.etapaActual);
     if (idx === -1) {
         alert("No se pudo determinar la etapa actual.");
@@ -445,7 +447,7 @@ export async function completeStage(pedidoId) {
     try {
         await updateDoc(
             doc(window.db, "pedidos", pedidoId),
-            { etapaActual: nuevaEtapa, lastMoved: serverTimestamp() }
+            { etapaActual: nuevaEtapa, lastMoved: serverTimestamp(), etapasSecuencia: pedido.etapasSecuencia }
         );
     } catch (error) {
         alert("Error al avanzar la etapa.");

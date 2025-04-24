@@ -1,41 +1,103 @@
+let currentSort = { key: null, asc: true };
+let currentFilters = {};
+let quickStageFilter = null; // Puede ser 'laminacion', 'rebobinado', 'perforado', 'pendiente' o null
+
+function normalizeValue(val) {
+    if (typeof val === 'string') return val.toLowerCase().trim();
+    if (typeof val === 'number') return val;
+    return val || '';
+}
+
 export function renderList(pedidos) {
     const listView = document.getElementById('list-view');
     if (!listView) {
         console.error("renderList: Elemento #list-view no encontrado.");
         return;
     }
-    console.log(`Renderizando Lista con ${pedidos.length} pedidos.`);
 
-    // Ordenar pedidos, por ejemplo, por numeroPedido
-    pedidos.sort((a, b) => (a.numeroPedido || '').localeCompare(b.numeroPedido || ''));
+    // --- NUEVO: Aplica filtro rápido por etapa si corresponde ---
+    let filteredPedidos = pedidos.slice();
+    if (quickStageFilter) {
+        const startsWith = {
+            laminacion: 'lamin',
+            rebobinado: 'rebob',
+            perforado: 'perfor',
+            pendiente: 'pendiente'
+        };
+        filteredPedidos = filteredPedidos.filter(p =>
+            (p.etapaActual || '').toLowerCase().startsWith(startsWith[quickStageFilter])
+        );
+    }
+
+    // --- Filtros y ordenamiento ---
+    // Aplica filtros
+    Object.entries(currentFilters).forEach(([key, value]) => {
+        if (value) {
+            filteredPedidos = filteredPedidos.filter(pedido => {
+                const cell = normalizeValue(pedido[key]);
+                return cell.toString().includes(value.toLowerCase());
+            });
+        }
+    });
+
+    // Aplica ordenamiento
+    if (currentSort.key) {
+        filteredPedidos.sort((a, b) => {
+            let va = a[currentSort.key], vb = b[currentSort.key];
+            // Intenta comparar como número si ambos son numéricos
+            if (!isNaN(Number(va)) && !isNaN(Number(vb))) {
+                va = Number(va); vb = Number(vb);
+            } else {
+                va = normalizeValue(va); vb = normalizeValue(vb);
+            }
+            if (va < vb) return currentSort.asc ? -1 : 1;
+            if (va > vb) return currentSort.asc ? 1 : -1;
+            return 0;
+        });
+    }
+
+    // Encabezados y claves (elimina la columna 'etapasSecuencia')
+    const columns = [
+        { key: 'numeroPedido', label: 'Nº Pedido' },
+        { key: 'cliente', label: 'Cliente' },
+        { key: 'maquinaImpresion', label: 'Máquina Imp.' },
+        { key: 'desarrTexto', label: 'Desarr.' },
+        { key: 'metros', label: 'Metros' },
+        { key: 'superficie', label: 'SUP' },
+        { key: 'transparencia', label: 'TTE' },
+        { key: 'capa', label: 'Capa' },
+        { key: 'camisa', label: 'Camisa' },
+        { key: 'fecha', label: 'Fecha' },
+        { key: 'etapaActual', label: 'Etapa Actual' },
+        { key: 'acciones', label: 'Acciones' }
+    ];
 
     let tableHTML = `
         <table class="table table-striped table-hover table-bordered">
             <thead>
                 <tr>
-                    <th>Nº Pedido</th>
-                    <th>Cliente</th>
-                    <th>Máquina Imp.</th>
-                    <th>Desarr.</th>
-                    <th>Metros</th>
-                    <th>SUP</th>
-                    <th>TTE</th>
-                    <th>Capa</th>
-                    <th>Camisa</th>
-                    <th>Fecha</th>
-                    <th>Etapa Actual</th>
-                    <th>Secuencia</th>
-                    <th>Acciones</th>
+                    ${columns.map(col => `
+                        <th style="cursor:pointer;" data-key="${col.key}">
+                            ${col.label}
+                            ${currentSort.key === col.key ? (currentSort.asc ? '▲' : '▼') : ''}
+                        </th>
+                    `).join('')}
+                </tr>
+                <tr>
+                    ${columns.map(col => {
+                        // No filtro para acciones
+                        if (col.key === 'acciones') return '<th></th>';
+                        return `<th><input type="text" class="form-control form-control-sm" data-filter="${col.key}" value="${currentFilters[col.key] || ''}" style="min-width:70px;"/></th>`;
+                    }).join('')}
                 </tr>
             </thead>
             <tbody>
     `;
 
-    if (pedidos.length === 0) {
-        tableHTML += '<tr><td colspan="13" class="text-center">No hay pedidos para mostrar.</td></tr>';
+    if (filteredPedidos.length === 0) {
+        tableHTML += '<tr><td colspan="12" class="text-center">No hay pedidos para mostrar.</td></tr>';
     } else {
-        pedidos.forEach(pedido => {
-            const secuenciaStr = pedido.etapasSecuencia ? pedido.etapasSecuencia.join(', ') : 'N/A';
+        filteredPedidos.forEach(pedido => {
             tableHTML += `
                 <tr>
                     <td>${pedido.numeroPedido || 'N/A'}</td>
@@ -49,7 +111,6 @@ export function renderList(pedidos) {
                     <td>${pedido.camisa || '-'}</td>
                     <td>${pedido.fecha || '-'}</td>
                     <td><span class="badge bg-primary">${pedido.etapaActual || 'N/A'}</span></td>
-                    <td style="font-size: 0.8em;">${secuenciaStr}</td>
                     <td>
                         <button class="btn btn-sm btn-outline-primary" onclick="openPedidoModal('${pedido.id}')">
                             <i class="bi bi-pencil-square"></i> Editar
@@ -66,4 +127,65 @@ export function renderList(pedidos) {
     `;
 
     listView.innerHTML = tableHTML;
+
+    // --- Listeners para filtros ---
+    columns.forEach(col => {
+        if (col.key === 'acciones') return;
+        const input = listView.querySelector(`input[data-filter="${col.key}"]`);
+        if (input) {
+            input.oninput = (e) => {
+                currentFilters[col.key] = e.target.value;
+                renderList(pedidos);
+            };
+        }
+    });
+
+    // --- Listeners para ordenamiento ---
+    columns.forEach(col => {
+        const th = listView.querySelector(`th[data-key="${col.key}"]`);
+        if (th) {
+            th.onclick = () => {
+                if (currentSort.key === col.key) {
+                    currentSort.asc = !currentSort.asc;
+                } else {
+                    currentSort.key = col.key;
+                    currentSort.asc = true;
+                }
+                renderList(pedidos);
+            };
+        }
+    });
 }
+
+// --- NUEVO: listeners para los botones de filtro rápido ---
+if (typeof window !== 'undefined') {
+    setTimeout(() => {
+        const btns = [
+            { id: 'btn-filtrar-laminacion', val: 'laminacion' },
+            { id: 'btn-filtrar-rebobinado', val: 'rebobinado' },
+            { id: 'btn-filtrar-perforado', val: 'perforado' },
+            { id: 'btn-filtrar-pendiente', val: 'pendiente' },
+            { id: 'btn-filtrar-todos', val: null }
+        ];
+        btns.forEach(({ id, val }) => {
+            const btn = document.getElementById(id);
+            if (btn) {
+                btn.onclick = () => {
+                    quickStageFilter = val;
+                    // Quita clase active de todos
+                    btns.forEach(({ id }) => {
+                        const b = document.getElementById(id);
+                        if (b) b.classList.remove('active');
+                    });
+                    // Marca el botón actual como activo
+                    if (val !== null) btn.classList.add('active');
+                    else document.getElementById('btn-filtrar-todos').classList.add('active');
+                    // Vuelve a renderizar
+                    renderList(window.currentPedidos || []);
+                };
+            }
+        });
+    }, 0);
+}
+
+export { renderList };

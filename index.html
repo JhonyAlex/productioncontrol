@@ -61,21 +61,30 @@
             </div>
             <!-- Botones de navegación de vistas -->
             <div class="mb-3" id="view-tabs">
-                <div class="d-flex gap-2 align-items-center">
-                    <button type="button" class="btn btn-success" id="btn-agregar-pedido">
-                        <i class="bi bi-plus-circle"></i> Agregar pedido
-                    </button>
+                <div class="d-flex justify-content-between align-items-center">
+                    <!-- Botones de vista a la izquierda -->
                     <div class="btn-group" role="group" aria-label="Vistas">
                         <button type="button" class="btn btn-outline-primary active" id="btn-kanban-impresion">Kanban Impresión</button>
                         <button type="button" class="btn btn-outline-primary" id="btn-kanban-complementarias">Kanban Etapas Complementarias</button>
                         <button type="button" class="btn btn-outline-primary" id="btn-lista">Lista</button>
                     </div>
+                    <!-- Botón agregar pedido a la derecha -->
+                    <button type="button" class="btn btn-success ms-auto" id="btn-agregar-pedido">
+                        <i class="bi bi-plus-circle"></i> Agregar pedido
+                    </button>
                 </div>
             </div>
             <!-- Kanban y Lista -->
             <div id="kanban-board"></div>
             <div id="list-view" style="display: none;">
-                <div class="mb-2 text-end">
+                <div class="mb-2 d-flex justify-content-between align-items-center">
+                    <div id="list-filters" class="d-flex gap-2" style="display:none;">
+                        <button class="btn btn-outline-secondary btn-sm" id="btn-filtrar-laminacion">Laminación</button>
+                        <button class="btn btn-outline-secondary btn-sm" id="btn-filtrar-rebobinado">Rebobinado</button>
+                        <button class="btn btn-outline-secondary btn-sm" id="btn-filtrar-perforado">Perforado</button>
+                        <button class="btn btn-outline-secondary btn-sm" id="btn-filtrar-pendiente">Pendiente</button>
+                        <button class="btn btn-outline-secondary btn-sm" id="btn-filtrar-todos">Todos</button>
+                    </div>
                     <button class="btn btn-success" id="btn-exportar-lista">
                         <i class="bi bi-download"></i> Exportar
                     </button>

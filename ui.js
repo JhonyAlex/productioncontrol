@@ -102,6 +102,9 @@ function switchView(view) {
     // Muestra/oculta vistas
     document.getElementById('kanban-board').style.display = (view.startsWith('kanban')) ? '' : 'none';
     document.getElementById('list-view').style.display = (view === 'lista') ? '' : 'none';
+    // --- NUEVO: mostrar filtros rápidos solo en lista ---
+    const listFilters = document.getElementById('list-filters');
+    if (listFilters) listFilters.style.display = (view === 'lista') ? '' : 'none';
     // Renderiza la vista correspondiente
     renderActiveView(currentPedidos || []);
 }
@@ -114,6 +117,17 @@ export function renderActiveView(pedidos) {
     // Mostrar/ocultar tabs
     const viewTabs = document.getElementById('view-tabs');
     if (viewTabs) viewTabs.style.display = '';
+
+    // --- NUEVO: Evita renderizar si pedidos no está listo o es null ---
+    if (!Array.isArray(pedidos) || pedidos.length === 0) {
+        // Opcional: muestra mensaje de carga o "No hay pedidos"
+        const kanbanBoard = document.getElementById('kanban-board');
+        const listView = document.getElementById('list-view');
+        if (kanbanBoard) kanbanBoard.innerHTML = '<div class="text-center text-muted py-5">Cargando pedidos...</div>';
+        if (listView) listView.innerHTML = '';
+        return;
+    }
+
     // Kanban Impresión
     if (currentView === 'kanban-impresion') {
         renderKanban(pedidos, { only: 'impresion' });
