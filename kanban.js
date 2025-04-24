@@ -59,6 +59,17 @@ function createKanbanGroup(groupTitle, etapasInGroup, allPedidos) {
     return groupDiv;
 }
 
+function stringToColor(str) {
+    // Genera un color pastel consistente para un string
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    // HSL pastel
+    const h = Math.abs(hash) % 360;
+    return `hsl(${h}, 60%, 80%)`;
+}
+
 function createKanbanCard(pedido) {
     const card = document.createElement('div');
     card.className = 'kanban-card';
@@ -68,10 +79,14 @@ function createKanbanCard(pedido) {
 
     // Formateo de campos
     const fechaDisplay = pedido.fecha ? ` (${pedido.fecha})` : '';
-    // Quitar badges SUP/TTE, mostrar cliente y metros como badge
-    const clienteDisplay = pedido.cliente ? `<span class="ms-1">${pedido.cliente}</span>` : '';
+    // Badge de cliente con color consistente y badge de metros
+    let clienteBadge = '';
+    if (pedido.cliente) {
+        const color = stringToColor(pedido.cliente);
+        clienteBadge = `<span class="badge badge-cliente ms-1" style="background:${color};color:#333;font-size:0.75em;">${pedido.cliente}</span>`;
+    }
     const metrosBadge = pedido.metros
-        ? `<span class="badge bg-secondary ms-1">${pedido.metros} m</span>`
+        ? `<span class="badge bg-secondary ms-1" style="font-size:0.75em;">${pedido.metros} m</span>`
         : '';
 
     // Solo mostrar etapas complementarias en la secuencia
@@ -87,7 +102,7 @@ function createKanbanCard(pedido) {
         <div class="kanban-card-header">
             <h6>${pedido.numeroPedido || 'N/A'}${fechaDisplay}</h6>
             <div>
-                ${clienteDisplay}
+                ${clienteBadge}
                 ${metrosBadge}
             </div>
         </div>

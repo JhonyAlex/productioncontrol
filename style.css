@@ -66,3 +66,12 @@ body { background-color: #f8f9fa; }
     opacity: 0.5;
     background: #f8f9fa;
 }
+
+/* Badge Cliente Styles */
+.badge-cliente {
+    border-radius: 0.5em;
+    padding: 0.2em 0.6em;
+    font-weight: 500;
+    vertical-align: middle;
+    margin-right: 0.2em;
+}
