@@ -35,6 +35,7 @@ export function listenToPedidos(pedidosCollection, onUpdate, onError) {
             pedidos.push({ id: doc.id, ...doc.data() });
         });
         currentPedidos = pedidos; // Actualiza la variable global
+        window.currentPedidos = currentPedidos; // Hacerlo global
         onUpdate(pedidos);
     }, onError);
 }

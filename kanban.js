@@ -1,6 +1,5 @@
 // Dependencias necesarias (ajusta los imports según tu estructura real)
 import { etapasImpresion, etapasComplementarias, currentPedidos } from './firestore.js'; // O ajusta según donde declares estas variables
-import { addDragAndDropListeners } from './kanban.js'; // Si hay dependencia circular, ajusta
 import { openPedidoModal, completeStage } from './pedidoModal.js';
 import { db } from './app.js'; // Asegúrate de exponer db en window o importar correctamente
 import { updatePedido } from './firestore.js';

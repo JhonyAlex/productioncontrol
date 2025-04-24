@@ -60,6 +60,7 @@ export function openPedidoModal(pedidoId = null) {
     }
     if (pedidoModal) pedidoModal.show();
 }
+window.openPedidoModal = openPedidoModal;
 
 export async function savePedido(event) {
     event.preventDefault();
@@ -161,3 +162,9 @@ export async function returnToPrintStage() {
         alert("Error al regresar el pedido a impresión. Inténtalo de nuevo.");
     }
 }
+
+// Implementación básica de completeStage para evitar errores
+export function completeStage(pedidoId) {
+    alert("Funcionalidad 'Completar Etapa' aún no implementada.");
+}
+window.completeStage = completeStage;
