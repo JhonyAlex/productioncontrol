@@ -325,11 +325,20 @@ export async function savePedido(event) {
 
     try {
         if (pedidoId) {
-            const pedidoRef = doc(window.db, "pedidos", pedidoId);
-            await updateDoc(pedidoRef, {
-                ...pedidoData,
-                lastUpdated: serverTimestamp()
-            });
+            // --- NUEVO: Si la etapa actual es de impresión, sincroniza con la máquina seleccionada ---
+            const pedido = currentPedidos.find(p => p.id === pedidoId);
+            let etapaActual = pedido?.etapaActual;
+            if (etapaActual && etapasImpresion.includes(etapaActual)) {
+                etapaActual = printStage;
+            }
+            await updateDoc(
+                doc(window.db, "pedidos", pedidoId),
+                {
+                    ...pedidoData,
+                    etapaActual: etapaActual || pedido?.etapaActual,
+                    lastUpdated: serverTimestamp()
+                }
+            );
         } else {
             pedidoData.etapaActual = printStage;
             pedidoData.createdAt = serverTimestamp();
