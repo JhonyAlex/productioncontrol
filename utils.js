@@ -21,8 +21,15 @@ export function handleSearch(e) {
                cliente.includes(searchTerm) ||
                maquina.includes(searchTerm);
     });
-    // renderActiveView debe estar accesible globalmente o importarse si es necesario
+    // Llama a la función global renderActiveView
     if (typeof window.renderActiveView === 'function') {
         window.renderActiveView(filteredPedidos);
     }
 }
+
+import { renderKanban } from './kanban.js';
+import { renderList } from './listView.js';
+window.renderActiveView = function(pedidos) {
+    renderKanban(pedidos);
+    renderList(pedidos);
+};

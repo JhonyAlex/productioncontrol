@@ -78,11 +78,12 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <label for="numeroPedido" class="form-label">Número Pedido (Cliente - Número)*</label>
-                                <input type="text" class="form-control" id="numeroPedido" required>
+                                <input type="text" class="form-control" id="numeroPedido" required maxlength="100" pattern=".{3,}" title="Debe tener al menos 3 caracteres">
+                                <div class="form-text text-danger d-none" id="numeroPedido-error">Este campo es obligatorio y debe tener al menos 3 caracteres.</div>
                             </div>
                             <div class="col-md-6">
                                 <label for="cliente" class="form-label">Cliente (Opcional)</label>
-                                <input type="text" class="form-control" id="cliente">
+                                <input type="text" class="form-control" id="cliente" maxlength="100">
                             </div>
                         </div>
                         <hr>
@@ -98,18 +99,21 @@
                                     <option value="WindMöller 3">WindMöller 3</option>
                                     <option value="Anonimo">Anonimo</option>
                                 </select>
+                                <div class="form-text text-danger d-none" id="maquinaImpresion-error">Selecciona una máquina de impresión.</div>
                             </div>
-                             <div class="col-md-4">
+                            <div class="col-md-4">
                                 <label for="desarrTexto" class="form-label">Desarr. (Texto)</label>
-                                <input type="text" class="form-control" id="desarrTexto">
+                                <input type="text" class="form-control" id="desarrTexto" maxlength="100">
                             </div>
                             <div class="col-md-4">
                                 <label for="desarrNumero" class="form-label">Desarr. (Número)</label>
-                                <input type="number" class="form-control" id="desarrNumero" step="any"> <!-- Allow decimals if needed -->
+                                <input type="number" class="form-control" id="desarrNumero" step="any" min="0" max="999999" pattern="\d*">
+                                <div class="form-text text-danger d-none" id="desarrNumero-error">Debe ser un número válido.</div>
                             </div>
                             <div class="col-md-4">
                                 <label for="metros" class="form-label">Metros</label>
-                                <input type="number" class="form-control" id="metros" step="any"> <!-- Allow decimals if needed -->
+                                <input type="number" class="form-control" id="metros" step="any" min="0" max="999999" pattern="\d*">
+                                <div class="form-text text-danger d-none" id="metros-error">Debe ser un número válido.</div>
                             </div>
                             <div class="col-md-4">
                                 <label for="superficie" class="form-label">Superficie (SUP)</label>
@@ -127,15 +131,16 @@
                             </div>
                             <div class="col-md-4">
                                 <label for="capa" class="form-label">Capa (CAPA)</label>
-                                <input type="text" class="form-control" id="capa">
+                                <input type="text" class="form-control" id="capa" maxlength="50">
                             </div>
                             <div class="col-md-4">
                                 <label for="camisa" class="form-label">Camisa</label>
-                                <input type="text" class="form-control" id="camisa">
+                                <input type="text" class="form-control" id="camisa" maxlength="50">
                             </div>
-                             <div class="col-md-4">
+                            <div class="col-md-4">
                                 <label for="fecha" class="form-label">Fecha (FH)</label>
-                                <input type="text" class="form-control" id="fecha" placeholder="DD/MM">
+                                <input type="text" class="form-control" id="fecha" placeholder="DD/MM" maxlength="10" pattern="^\d{2}/\d{2}$" title="Formato DD/MM">
+                                <div class="form-text text-danger d-none" id="fecha-error">Formato esperado: DD/MM</div>
                             </div>
                         </div>
                          <!-- Row 3: Observaciones -->

@@ -2,16 +2,16 @@
 import { currentPedidos, etapasImpresion } from './firestore.js';
 import { doc, updateDoc, addDoc, deleteDoc, serverTimestamp, collection } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
-// Variables de referencia a elementos del DOM (deben inicializarse en tu UI)
-let pedidoForm = document.getElementById('pedido-form');
-let pedidoIdInput = document.getElementById('pedido-id');
-let deletePedidoBtn = document.getElementById('delete-pedido-btn');
-let returnToPrintBtn = document.getElementById('return-to-print-btn');
-let pedidoModalElement = document.getElementById('pedidoModal');
-let pedidoModalLabel = document.getElementById('pedidoModalLabel');
-let pedidoModal = pedidoModalElement ? new bootstrap.Modal(pedidoModalElement) : null;
-
 export function openPedidoModal(pedidoId = null) {
+    // Obtén referencias DOM dinámicamente
+    const pedidoForm = document.getElementById('pedido-form');
+    const pedidoIdInput = document.getElementById('pedido-id');
+    const deletePedidoBtn = document.getElementById('delete-pedido-btn');
+    const returnToPrintBtn = document.getElementById('return-to-print-btn');
+    const pedidoModalElement = document.getElementById('pedidoModal');
+    const pedidoModalLabel = document.getElementById('pedidoModalLabel');
+    const pedidoModal = pedidoModalElement ? new bootstrap.Modal(pedidoModalElement) : null;
+
     pedidoForm.reset();
     pedidoIdInput.value = '';
     deletePedidoBtn.style.display = 'none';
@@ -64,7 +64,9 @@ window.openPedidoModal = openPedidoModal;
 
 export async function savePedido(event) {
     event.preventDefault();
-    const pedidoId = pedidoIdInput.value;
+    // Obtén referencias DOM dinámicamente
+    const pedidoForm = document.getElementById('pedido-form');
+    const pedidoIdInput = document.getElementById('pedido-id');
     const maquinaImpresion = document.getElementById('maquinaImpresion').value;
     const printStage = `Impresión ${maquinaImpresion}`;
     const selectedEtapas = [printStage];
@@ -88,8 +90,17 @@ export async function savePedido(event) {
         etapasSecuencia: selectedEtapas,
     };
 
+    // Validación mejorada
     if (!pedidoData.numeroPedido || !pedidoData.maquinaImpresion) {
         alert("Por favor, completa los campos obligatorios: Número Pedido y Máquina Impresión.");
+        return;
+    }
+    if (pedidoData.metros && isNaN(Number(pedidoData.metros))) {
+        alert("El campo 'Metros' debe ser un número válido.");
+        return;
+    }
+    if (pedidoData.desarrNumero && isNaN(Number(pedidoData.desarrNumero))) {
+        alert("El campo 'Desarr. (Número)' debe ser un número válido.");
         return;
     }
 
@@ -113,6 +124,11 @@ export async function savePedido(event) {
 }
 
 export async function deletePedido() {
+    // Obtén referencias DOM dinámicamente
+    const pedidoIdInput = document.getElementById('pedido-id');
+    const pedidoModalElement = document.getElementById('pedidoModal');
+    const pedidoModal = pedidoModalElement ? new bootstrap.Modal(pedidoModalElement) : null;
+
     const pedidoId = pedidoIdInput.value;
     if (!pedidoId) {
         alert("No se ha seleccionado ningún pedido para eliminar.");
@@ -131,6 +147,11 @@ export async function deletePedido() {
 }
 
 export async function returnToPrintStage() {
+    // Obtén referencias DOM dinámicamente
+    const pedidoIdInput = document.getElementById('pedido-id');
+    const pedidoModalElement = document.getElementById('pedidoModal');
+    const pedidoModal = pedidoModalElement ? new bootstrap.Modal(pedidoModalElement) : null;
+
     const pedidoId = pedidoIdInput.value;
     if (!pedidoId) {
         alert("No se ha seleccionado ningún pedido.");
@@ -163,8 +184,32 @@ export async function returnToPrintStage() {
     }
 }
 
-// Implementación básica de completeStage para evitar errores
-export function completeStage(pedidoId) {
-    alert("Funcionalidad 'Completar Etapa' aún no implementada.");
+// Implementación real de completeStage
+export async function completeStage(pedidoId) {
+    const pedido = window.currentPedidos.find(p => p.id === pedidoId);
+    if (!pedido || !pedido.etapasSecuencia || !Array.isArray(pedido.etapasSecuencia)) {
+        alert("No se pudo avanzar la etapa. Datos incompletos.");
+        return;
+    }
+    const idx = pedido.etapasSecuencia.indexOf(pedido.etapaActual);
+    if (idx === -1) {
+        alert("No se pudo determinar la etapa actual.");
+        return;
+    }
+    let nuevaEtapa = null;
+    if (idx < pedido.etapasSecuencia.length - 1) {
+        nuevaEtapa = pedido.etapasSecuencia[idx + 1];
+    } else {
+        nuevaEtapa = "Completado";
+    }
+    if (!confirm(`¿Avanzar el pedido '${pedido.numeroPedido}' a la etapa '${nuevaEtapa}'?`)) return;
+    try {
+        await updateDoc(
+            doc(window.db, "pedidos", pedidoId),
+            { etapaActual: nuevaEtapa, lastMoved: serverTimestamp() }
+        );
+    } catch (error) {
+        alert("Error al avanzar la etapa.");
+    }
 }
 window.completeStage = completeStage;

@@ -1,7 +1,6 @@
 // Dependencias necesarias (ajusta los imports según tu estructura real)
 import { etapasImpresion, etapasComplementarias, currentPedidos } from './firestore.js'; // O ajusta según donde declares estas variables
 import { openPedidoModal, completeStage } from './pedidoModal.js';
-import { db } from './app.js'; // Asegúrate de exponer db en window o importar correctamente
 import { updatePedido } from './firestore.js';
 
 // Renderiza el tablero Kanban
@@ -171,7 +170,7 @@ async function drop(e) {
 
     // Actualiza la etapa en Firestore
     try {
-        await updatePedido(db, pedidoId, { etapaActual: nuevaEtapa });
+        await updatePedido(window.db, pedidoId, { etapaActual: nuevaEtapa });
         console.log(`Pedido ${pedidoId} movido a etapa ${nuevaEtapa}`);
     } catch (error) {
         alert("Error al mover el pedido. Intenta de nuevo.");
