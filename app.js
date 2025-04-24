@@ -26,6 +26,8 @@ window.pedidosCollection = pedidosCollection;
 
 console.log("Firebase inicializado.");
 
+let unsubscribePedidos = null;
+
 // Initialize DOM Elements and Event Listeners
 document.addEventListener('DOMContentLoaded', () => {
     initializeAppEventListeners();
@@ -41,5 +43,18 @@ document.addEventListener('DOMContentLoaded', () => {
         appContainer: document.getElementById('app-container'),
         userEmailSpan: document.getElementById('user-email'),
         mainContent: document.getElementById('main-content')
+    }, () => {
+        // Al cerrar sesión, desuscribirse de Firestore
+        if (typeof unsubscribePedidos === 'function') unsubscribePedidos();
+    });
+
+    // Suscribirse a los pedidos de Firestore y actualizar la UI en tiempo real
+    unsubscribePedidos = listenToPedidos(pedidosCollection, (pedidos) => {
+        // Si hay pedidos, renderiza la UI
+        if (window.renderActiveView) {
+            window.renderActiveView(pedidos);
+        }
+    }, (error) => {
+        console.error("Error escuchando pedidos:", error);
     });
 });
