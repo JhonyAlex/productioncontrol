@@ -5,6 +5,9 @@ body { background-color: #f8f9fa; }
 
 /* Kanban Styles */
 #kanban-board { display: flex; gap: 2rem; overflow-x: auto; padding-bottom: 1rem; align-items: flex-start; }
+#kanban-board.drag-scroll-active {
+    cursor: grabbing !important;
+}
 .kanban-group { background-color: #f1f3f5; padding: 1rem; border-radius: 0.5rem; flex-shrink: 0; }
 .kanban-group h4 { text-align: center; margin-bottom: 1rem; color: #495057; }
 .kanban-columns-container { display: flex; gap: 1rem; }
