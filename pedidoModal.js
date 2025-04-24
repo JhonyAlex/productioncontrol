@@ -115,28 +115,44 @@ function syncMaquinaEtapa() {
     const etapasList = document.getElementById('etapas-secuencia-list');
     if (!maquinaImpresionSelect || !etapasList) return;
 
-    // Cuando cambia la máquina, actualiza la etapa de impresión en la secuencia
+    // Cuando cambia la máquina, actualiza la primera etapa de impresión en la lista
     maquinaImpresionSelect.addEventListener('change', () => {
         const selectedMaquina = maquinaImpresionSelect.value;
         if (!selectedMaquina) return;
-        // Si la primera etapa no coincide, la reemplaza
         const printStage = `Impresión ${selectedMaquina}`;
-        // No hace falta modificar la UI aquí, ya que al guardar se recalcula la secuencia
-        // Pero si quieres mostrarlo en la UI, podrías actualizar una etiqueta o similar
+        // Elimina cualquier etapa de impresión existente al inicio
+        const items = Array.from(etapasList.children);
+        if (items.length > 0 && etapasImpresion.includes(items[0].dataset.etapa)) {
+            etapasList.removeChild(items[0]);
+        }
+        // Inserta la nueva etapa de impresión al inicio
+        const li = document.createElement('li');
+        li.className = 'list-group-item py-2';
+        li.draggable = true;
+        li.dataset.idx = 0;
+        li.dataset.etapa = printStage;
+        li.innerHTML = `
+            <span class="drag-handle bi bi-list"></span>
+            <input class="form-check-input etapa-check" type="checkbox" value="${printStage}" id="etapa-${printStage.toLowerCase().replace(/[\s.]+/g, '-')}" checked disabled>
+            <label class="form-check-label flex-grow-1" for="etapa-${printStage.toLowerCase().replace(/[\s.]+/g, '-')}">${printStage}</label>
+            <button type="button" class="move-btn" title="Subir" disabled><i class="bi bi-arrow-up"></i></button>
+            <button type="button" class="move-btn" title="Bajar" ${items.length === 0 ? 'disabled' : ''}><i class="bi bi-arrow-down"></i></button>
+        `;
+        etapasList.insertBefore(li, etapasList.firstChild);
     });
 
-    // Cuando se reordena la lista, si la primera etapa es de impresión, actualiza el select
-    etapasList.addEventListener('DOMSubtreeModified', () => {
+    // Cuando se modifica la lista, si la primera etapa es de impresión, actualiza el select
+    const observer = new MutationObserver(() => {
         const orden = getEtapasOrden();
         const primeraEtapa = orden[0];
         if (primeraEtapa && etapasImpresion.includes(primeraEtapa)) {
-            // Extrae el nombre de la máquina
             const maquina = primeraEtapa.replace('Impresión ', '');
             if (maquinaImpresionSelect.value !== maquina) {
                 maquinaImpresionSelect.value = maquina;
             }
         }
     });
+    observer.observe(etapasList, { childList: true, subtree: false });
 }
 
 export function openPedidoModal(pedidoId = null) {
