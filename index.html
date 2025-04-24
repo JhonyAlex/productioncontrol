@@ -61,10 +61,15 @@
             </div>
             <!-- Botones de navegación de vistas -->
             <div class="mb-3" id="view-tabs">
-                <div class="btn-group" role="group" aria-label="Vistas">
-                    <button type="button" class="btn btn-outline-primary active" id="btn-kanban-impresion">Kanban Impresión</button>
-                    <button type="button" class="btn btn-outline-primary" id="btn-kanban-complementarias">Kanban Etapas Complementarias</button>
-                    <button type="button" class="btn btn-outline-primary" id="btn-lista">Lista</button>
+                <div class="d-flex gap-2 align-items-center">
+                    <button type="button" class="btn btn-success" id="btn-agregar-pedido">
+                        <i class="bi bi-plus-circle"></i> Agregar pedido
+                    </button>
+                    <div class="btn-group" role="group" aria-label="Vistas">
+                        <button type="button" class="btn btn-outline-primary active" id="btn-kanban-impresion">Kanban Impresión</button>
+                        <button type="button" class="btn btn-outline-primary" id="btn-kanban-complementarias">Kanban Etapas Complementarias</button>
+                        <button type="button" class="btn btn-outline-primary" id="btn-lista">Lista</button>
+                    </div>
                 </div>
             </div>
             <!-- Kanban y Lista -->
@@ -85,7 +90,8 @@
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="pedidoModalLabel">Añadir Nuevo Pedido</h5>
+                    <h5 class="modal-title d-flex align-items-center" id="pedidoModalLabel">Añadir Nuevo Pedido</h5>
+                    <!-- El botón duplicar se agregará dinámicamente aquí -->
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -171,43 +177,13 @@
                         <!-- Row 4: Etapas Sequence -->
                         <h6>Secuencia de Etapas Complementarias (Seleccionar en orden)</h6>
                         <p class="form-text text-muted">La etapa de impresión seleccionada arriba se añadirá automáticamente al inicio de la secuencia.</p>
-                        <div id="etapas-secuencia-container" class="mb-3 d-flex flex-wrap gap-3">
-                            <!-- Use more descriptive IDs for checkboxes -->
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input etapa-check" type="checkbox" value="Laminación SL2" id="etapa-laminacion-sl2">
-                                <label class="form-check-label" for="etapa-laminacion-sl2">Laminación SL2</label>
-                            </div>
-                             <div class="form-check form-check-inline">
-                                <input class="form-check-input etapa-check" type="checkbox" value="Laminación NEXUS" id="etapa-laminacion-nexus">
-                                <label class="form-check-label" for="etapa-laminacion-nexus">Laminación NEXUS</label>
-                            </div>
-                             <div class="form-check form-check-inline">
-                                <input class="form-check-input etapa-check" type="checkbox" value="Perforación MAC" id="etapa-perforacion-mac">
-                                <label class="form-check-label" for="etapa-perforacion-mac">Perforación MAC</label>
-                            </div>
-                             <div class="form-check form-check-inline">
-                                <input class="form-check-input etapa-check" type="checkbox" value="Perforación MIC" id="etapa-perforacion-mic">
-                                <label class="form-check-label" for="etapa-perforacion-mic">Perforación MIC</label>
-                            </div>
-                             <div class="form-check form-check-inline">
-                                <input class="form-check-input etapa-check" type="checkbox" value="Rebobinado S2DT" id="etapa-rebobinado-s2dt">
-                                <label class="form-check-label" for="etapa-rebobinado-s2dt">Rebobinado S2DT</label>
-                            </div>
-                             <div class="form-check form-check-inline">
-                                <input class="form-check-input etapa-check" type="checkbox" value="Rebobinado PROSLIT" id="etapa-rebobinado-proslit">
-                                <label class="form-check-label" for="etapa-rebobinado-proslit">Rebobinado PROSLIT</label>
-                            </div>
-                             <div class="form-check form-check-inline">
-                                <input class="form-check-input etapa-check" type="checkbox" value="Rebobinado TEMAC" id="etapa-rebobinado-temac">
-                                <label class="form-check-label" for="etapa-rebobinado-temac">Rebobinado TEMAC</label>
-                            </div>
-                             <div class="form-check form-check-inline">
-                                <input class="form-check-input etapa-check" type="checkbox" value="Pendiente de Laminar" id="etapa-pendiente-de-laminar">
-                                <label class="form-check-label" for="etapa-pendiente-de-laminar">P.D. Laminar</label>
-                            </div>
-                             <div class="form-check form-check-inline">
-                                <input class="form-check-input etapa-check" type="checkbox" value="Pendiente de Rebobinado" id="etapa-pendiente-de-rebobinado">
-                                <label class="form-check-label" for="etapa-pendiente-de-rebobinado">P.D. Rebobinado</label>
+                        <div id="etapas-secuencia-container" class="mb-3">
+                            <!-- Nueva lista ordenable de etapas -->
+                            <ul class="list-group" id="etapas-secuencia-list">
+                                <!-- Los items se generan dinámicamente por JS -->
+                            </ul>
+                            <div class="form-text text-muted mt-2">
+                                Arrastra las etapas para cambiar el orden. Usa el check para activar/desactivar cada etapa en la secuencia.
                             </div>
                         </div>
                     </form>

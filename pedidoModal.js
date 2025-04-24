@@ -1,6 +1,113 @@
 // Dependencias necesarias (ajusta los imports según tu estructura real)
-import { currentPedidos, etapasImpresion } from './firestore.js';
+import { currentPedidos, etapasImpresion, etapasComplementarias } from './firestore.js';
 import { doc, updateDoc, addDoc, deleteDoc, serverTimestamp, collection } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+
+// Secuencia por defecto (puedes ajustar el orden si lo deseas)
+const SECUENCIA_ETAPAS_DEFAULT = [
+    "Laminación SL2",
+    "Laminación NEXUS",
+    "Perforación MAC",
+    "Perforación MIC",
+    "Rebobinado S2DT",
+    "Rebobinado PROSLIT",
+    "Rebobinado TEMAC",
+    "Pendiente de Laminar",
+    "Pendiente de Rebobinado"
+];
+
+// Renderiza la lista ordenable de etapas
+function renderEtapasSecuenciaList(seleccionadas = [], ordenPersonalizado = null) {
+    const container = document.getElementById('etapas-secuencia-list');
+    if (!container) return;
+    // Usa el orden personalizado si existe, si no el default
+    const orden = ordenPersonalizado && ordenPersonalizado.length
+        ? ordenPersonalizado
+        : SECUENCIA_ETAPAS_DEFAULT.slice();
+
+    container.innerHTML = '';
+    orden.forEach((etapa, idx) => {
+        const checked = seleccionadas.includes(etapa);
+        const li = document.createElement('li');
+        li.className = 'list-group-item py-2' + (checked ? '' : ' inactive');
+        li.draggable = true;
+        li.dataset.idx = idx;
+        li.dataset.etapa = etapa;
+
+        li.innerHTML = `
+            <span class="drag-handle bi bi-list"></span>
+            <input class="form-check-input etapa-check" type="checkbox" value="${etapa}" id="etapa-${etapa.toLowerCase().replace(/[\s.]+/g, '-')}" ${checked ? 'checked' : ''}>
+            <label class="form-check-label flex-grow-1" for="etapa-${etapa.toLowerCase().replace(/[\s.]+/g, '-')}">${etapa}</label>
+            <button type="button" class="move-btn" title="Subir" ${idx === 0 ? 'disabled' : ''}><i class="bi bi-arrow-up"></i></button>
+            <button type="button" class="move-btn" title="Bajar" ${idx === orden.length - 1 ? 'disabled' : ''}><i class="bi bi-arrow-down"></i></button>
+        `;
+        container.appendChild(li);
+    });
+
+    // Listeners para check y botones de mover
+    container.querySelectorAll('.etapa-check').forEach(cb => {
+        cb.addEventListener('change', (e) => {
+            const item = e.target.closest('.list-group-item');
+            if (e.target.checked) {
+                item.classList.remove('inactive');
+            } else {
+                item.classList.add('inactive');
+            }
+        });
+    });
+    container.querySelectorAll('.move-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const li = e.target.closest('li');
+            const idx = Array.from(container.children).indexOf(li);
+            const isUp = btn.title === 'Subir';
+            if ((isUp && idx === 0) || (!isUp && idx === container.children.length - 1)) return;
+            const swapWith = isUp ? idx - 1 : idx + 1;
+            if (swapWith < 0 || swapWith >= container.children.length) return;
+            container.insertBefore(li, isUp ? container.children[swapWith] : container.children[swapWith].nextSibling);
+            // Actualiza los botones de subir/bajar
+            renderEtapasSecuenciaList(getEtapasChecked(), getEtapasOrden());
+        });
+    });
+
+    // Drag & drop para reordenar
+    let draggedIdx = null;
+    container.querySelectorAll('.list-group-item').forEach((item, idx) => {
+        item.addEventListener('dragstart', () => {
+            draggedIdx = idx;
+            item.classList.add('dragging');
+        });
+        item.addEventListener('dragend', () => {
+            draggedIdx = null;
+            item.classList.remove('dragging');
+        });
+        item.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            const overIdx = Array.from(container.children).indexOf(item);
+            if (draggedIdx === null || draggedIdx === overIdx) return;
+            const draggedItem = container.children[draggedIdx];
+            if (overIdx > draggedIdx) {
+                container.insertBefore(draggedItem, item.nextSibling);
+            } else {
+                container.insertBefore(draggedItem, item);
+            }
+            // Actualiza los botones de subir/bajar
+            renderEtapasSecuenciaList(getEtapasChecked(), getEtapasOrden());
+        });
+    });
+}
+
+// Obtiene el orden actual de las etapas
+function getEtapasOrden() {
+    const container = document.getElementById('etapas-secuencia-list');
+    return Array.from(container.children).map(li => li.dataset.etapa);
+}
+
+// Obtiene las etapas activas (checked)
+function getEtapasChecked() {
+    const container = document.getElementById('etapas-secuencia-list');
+    return Array.from(container.querySelectorAll('.etapa-check'))
+        .filter(cb => cb.checked)
+        .map(cb => cb.value);
+}
 
 export function openPedidoModal(pedidoId = null) {
     // Obtén referencias DOM dinámicamente
@@ -17,6 +124,10 @@ export function openPedidoModal(pedidoId = null) {
     deletePedidoBtn.style.display = 'none';
     returnToPrintBtn.style.display = 'none';
     document.getElementById('etapas-secuencia-container').querySelectorAll('.etapa-check').forEach(cb => cb.checked = false);
+
+    // Quitar botón duplicar si existe
+    let btnDuplicar = document.getElementById('btn-duplicar-pedido');
+    if (btnDuplicar) btnDuplicar.remove();
 
     if (pedidoId) {
         pedidoModalLabel.textContent = 'Editar Pedido';
@@ -48,6 +159,30 @@ export function openPedidoModal(pedidoId = null) {
             if (!etapasImpresion.includes(pedido.etapaActual) && pedido.etapaActual !== 'Completado') {
                 returnToPrintBtn.style.display = 'inline-block';
             }
+            // Mostrar botón duplicar solo si está en etapa de impresión
+            if (etapasImpresion.includes(pedido.etapaActual)) {
+                btnDuplicar = document.createElement('button');
+                btnDuplicar.type = 'button';
+                btnDuplicar.id = 'btn-duplicar-pedido';
+                btnDuplicar.className = 'btn btn-outline-secondary btn-sm ms-2';
+                btnDuplicar.title = 'Duplicar pedido';
+                btnDuplicar.innerHTML = '<i class="bi bi-files"></i>';
+                btnDuplicar.onclick = () => duplicarPedido(pedido);
+                pedidoModalLabel.parentNode.appendChild(btnDuplicar);
+            }
+            // Determinar orden personalizado y etapas activas
+            let ordenPersonalizado = SECUENCIA_ETAPAS_DEFAULT.slice();
+            let seleccionadas = [];
+            if (pedido.etapasSecuencia && Array.isArray(pedido.etapasSecuencia)) {
+                // Quitar la etapa de impresión
+                seleccionadas = pedido.etapasSecuencia.filter(et => !etapasImpresion.includes(et));
+                // Orden personalizado: primero las que están en la secuencia, luego el resto
+                ordenPersonalizado = [
+                    ...seleccionadas,
+                    ...SECUENCIA_ETAPAS_DEFAULT.filter(et => !seleccionadas.includes(et))
+                ];
+            }
+            renderEtapasSecuenciaList(seleccionadas, ordenPersonalizado);
         } else {
             alert("Error: No se pudo cargar la información del pedido.");
             return;
@@ -57,10 +192,42 @@ export function openPedidoModal(pedidoId = null) {
         document.getElementById('maquinaImpresion').value = '';
         document.getElementById('superficie').value = 'false';
         document.getElementById('transparencia').value = 'false';
+        // Nuevo pedido: secuencia por defecto, nada seleccionado
+        renderEtapasSecuenciaList([], SECUENCIA_ETAPAS_DEFAULT);
     }
     if (pedidoModal) pedidoModal.show();
 }
 window.openPedidoModal = openPedidoModal;
+
+// --- NUEVA FUNCIÓN ---
+function duplicarPedido(pedido) {
+    // Cierra el modal actual
+    const pedidoModalElement = document.getElementById('pedidoModal');
+    const pedidoModal = pedidoModalElement ? bootstrap.Modal.getInstance(pedidoModalElement) : null;
+    if (pedidoModal) pedidoModal.hide();
+
+    setTimeout(() => {
+        // Abre el modal en modo "nuevo", rellenando los campos con los datos del pedido original
+        openPedidoModal(null);
+        // Rellenar campos (excepto ID y etapaActual)
+        document.getElementById('numeroPedido').value = pedido.numeroPedido || '';
+        document.getElementById('cliente').value = pedido.cliente || '';
+        document.getElementById('maquinaImpresion').value = pedido.maquinaImpresion || '';
+        document.getElementById('desarrTexto').value = pedido.desarrTexto || '';
+        document.getElementById('desarrNumero').value = pedido.desarrNumero || '';
+        document.getElementById('metros').value = pedido.metros || '';
+        document.getElementById('superficie').value = pedido.superficie || 'false';
+        document.getElementById('transparencia').value = pedido.transparencia || 'false';
+        document.getElementById('capa').value = pedido.capa || '';
+        document.getElementById('camisa').value = pedido.camisa || '';
+        document.getElementById('fecha').value = pedido.fecha || '';
+        document.getElementById('observaciones').value = pedido.observaciones || '';
+        // Etapas secuencia (sin la etapa de impresión, se recalcula al guardar)
+        document.getElementById('etapas-secuencia-container').querySelectorAll('.etapa-check').forEach(cb => {
+            cb.checked = pedido.etapasSecuencia?.includes(cb.value) || false;
+        });
+    }, 400); // Espera a que el modal se cierre antes de abrir el nuevo
+}
 
 export async function savePedido(event) {
     event.preventDefault();
@@ -69,10 +236,10 @@ export async function savePedido(event) {
     const pedidoIdInput = document.getElementById('pedido-id');
     const maquinaImpresion = document.getElementById('maquinaImpresion').value;
     const printStage = `Impresión ${maquinaImpresion}`;
-    const selectedEtapas = [printStage];
-    document.querySelectorAll('#etapas-secuencia-container .etapa-check:checked').forEach(checkbox => {
-        selectedEtapas.push(checkbox.value);
-    });
+    // --- NUEVO: obtener secuencia según orden y checks ---
+    const etapasOrden = getEtapasOrden();
+    const etapasChecked = getEtapasChecked();
+    const selectedEtapas = [printStage, ...etapasOrden.filter(et => etapasChecked.includes(et))];
 
     const pedidoData = {
         numeroPedido: document.getElementById('numeroPedido').value.trim(),
@@ -178,7 +345,11 @@ export async function returnToPrintStage() {
             etapaActual: targetPrintStage,
             lastMoved: serverTimestamp()
         });
-        if (pedidoModal) pedidoModal.hide();
+        // Cierra el modal después de la operación
+        if (pedidoModalElement) {
+            const modalInstance = bootstrap.Modal.getInstance(pedidoModalElement);
+            if (modalInstance) modalInstance.hide();
+        }
     } catch (error) {
         alert("Error al regresar el pedido a impresión. Inténtalo de nuevo.");
     }

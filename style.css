@@ -33,3 +33,36 @@ body { background-color: #f8f9fa; }
 
 /* Style for delete/return buttons */
 .modal-footer .btn-danger, .modal-footer .btn-warning { margin-right: auto; } /* Push buttons to the left */
+
+/* Styles for sortable list and controls */
+#etapas-secuencia-list .list-group-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: grab;
+    user-select: none;
+}
+#etapas-secuencia-list .drag-handle {
+    cursor: grab;
+    font-size: 1.2em;
+    color: #888;
+}
+#etapas-secuencia-list .move-btn {
+    border: none;
+    background: none;
+    color: #0d6efd;
+    font-size: 1.1em;
+    padding: 0 0.2em;
+    cursor: pointer;
+}
+#etapas-secuencia-list .move-btn:disabled {
+    color: #ccc;
+    cursor: not-allowed;
+}
+#etapas-secuencia-list .form-check-input {
+    margin-right: 0.5em;
+}
+#etapas-secuencia-list .list-group-item.inactive {
+    opacity: 0.5;
+    background: #f8f9fa;
+}

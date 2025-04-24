@@ -28,6 +28,13 @@ export function initializeAppEventListeners() {
         searchInput.addEventListener('input', handleSearch);
     }
 
+    // Botón agregar pedido
+    const agregarPedidoBtn = document.getElementById('btn-agregar-pedido');
+    if (agregarPedidoBtn && !agregarPedidoBtn.dataset.listenerAttached) {
+        agregarPedidoBtn.addEventListener('click', () => window.openPedidoModal());
+        agregarPedidoBtn.dataset.listenerAttached = 'true';
+    }
+
     // Listeners para los botones de vistas
     document.getElementById('btn-kanban-impresion')?.addEventListener('click', () => switchView('kanban-impresion'));
     document.getElementById('btn-kanban-complementarias')?.addEventListener('click', () => switchView('kanban-complementarias'));
