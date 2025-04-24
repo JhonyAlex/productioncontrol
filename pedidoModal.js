@@ -1,7 +1,6 @@
 // Dependencias necesarias (ajusta los imports según tu estructura real)
 import { currentPedidos, etapasImpresion } from './firestore.js';
 import { doc, updateDoc, addDoc, deleteDoc, serverTimestamp, collection } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
-import { db, pedidosCollection } from './firestore.js';
 
 // Variables de referencia a elementos del DOM (deben inicializarse en tu UI)
 let pedidoForm = document.getElementById('pedido-form');
@@ -95,7 +94,7 @@ export async function savePedido(event) {
 
     try {
         if (pedidoId) {
-            const pedidoRef = doc(db, "pedidos", pedidoId);
+            const pedidoRef = doc(window.db, "pedidos", pedidoId);
             await updateDoc(pedidoRef, {
                 ...pedidoData,
                 lastUpdated: serverTimestamp()
@@ -103,7 +102,7 @@ export async function savePedido(event) {
         } else {
             pedidoData.etapaActual = printStage;
             pedidoData.createdAt = serverTimestamp();
-            await addDoc(pedidosCollection, pedidoData);
+            await addDoc(window.pedidosCollection, pedidoData);
         }
         if (pedidoModal) pedidoModal.hide();
         pedidoForm.reset();
@@ -122,7 +121,7 @@ export async function deletePedido() {
         return;
     }
     try {
-        const pedidoRef = doc(db, "pedidos", pedidoId);
+        const pedidoRef = doc(window.db, "pedidos", pedidoId);
         await deleteDoc(pedidoRef);
         if (pedidoModal) pedidoModal.hide();
     } catch (error) {
@@ -152,7 +151,7 @@ export async function returnToPrintStage() {
         return;
     }
     try {
-        const pedidoRef = doc(db, "pedidos", pedidoId);
+        const pedidoRef = doc(window.db, "pedidos", pedidoId);
         await updateDoc(pedidoRef, {
             etapaActual: targetPrintStage,
             lastMoved: serverTimestamp()
