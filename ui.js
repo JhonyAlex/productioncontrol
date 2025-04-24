@@ -45,6 +45,11 @@ export function initializeAppEventListeners() {
 
 export function loadMainAppData() {
     const mainContent = document.getElementById('main-content');
+    // Mostrar el contenedor principal y ocultar el login (por si acaso)
+    const appContainer = document.getElementById('app-container');
+    const loginContainer = document.getElementById('login-container');
+    if (appContainer) appContainer.style.display = 'block';
+    if (loginContainer) loginContainer.style.display = 'none';
     if (!mainContent) return;
 
     // Crea los contenedores si no existen
