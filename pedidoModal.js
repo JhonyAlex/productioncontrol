@@ -414,10 +414,11 @@ export async function returnToPrintStage() {
             etapaActual: targetPrintStage,
             lastMoved: serverTimestamp()
         });
-        // Cierra el modal después de la operación
+        // --- ARREGLADO: Cierra el modal correctamente usando la instancia de Bootstrap ---
         if (pedidoModalElement) {
-            const modalInstance = bootstrap.Modal.getInstance(pedidoModalElement);
-            if (modalInstance) modalInstance.hide();
+            let modalInstance = bootstrap.Modal.getInstance(pedidoModalElement);
+            if (!modalInstance) modalInstance = new bootstrap.Modal(pedidoModalElement);
+            modalInstance.hide();
         }
     } catch (error) {
         alert("Error al regresar el pedido a impresión. Inténtalo de nuevo.");

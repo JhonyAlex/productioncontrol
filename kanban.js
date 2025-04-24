@@ -106,10 +106,10 @@ function createKanbanCard(pedido) {
         if (etapasImpresion.includes(pedido.etapaActual)) {
             etapaBtnText = 'Iniciar trabajo';
             showEtapaBtn = true;
-        } else if (idx > -1 && idx < pedido.etapasSecuencia.length - 2) {
+        } else if (idx > -1 && idx < pedido.etapasSecuencia.length - 1) {
             etapaBtnText = 'Siguiente trabajo';
             showEtapaBtn = true;
-        } else if (idx === pedido.etapasSecuencia.length - 2) {
+        } else if (idx === pedido.etapasSecuencia.length - 1) {
             etapaBtnText = 'Completar';
             showEtapaBtn = true;
         }
