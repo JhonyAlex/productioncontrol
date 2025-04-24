@@ -15,7 +15,7 @@ export function renderList(pedidos) {
         return;
     }
 
-    // --- NUEVO: Aplica filtro rápido por etapa si corresponde ---
+    // --- Filtros rápidos y ordenamiento (sin inputs de filtro por columna) ---
     let filteredPedidos = pedidos.slice();
     if (quickStageFilter) {
         const startsWith = {
@@ -29,22 +29,10 @@ export function renderList(pedidos) {
         );
     }
 
-    // --- Filtros y ordenamiento ---
-    // Aplica filtros
-    Object.entries(currentFilters).forEach(([key, value]) => {
-        if (value) {
-            filteredPedidos = filteredPedidos.filter(pedido => {
-                const cell = normalizeValue(pedido[key]);
-                return cell.toString().includes(value.toLowerCase());
-            });
-        }
-    });
-
     // Aplica ordenamiento
     if (currentSort.key) {
         filteredPedidos.sort((a, b) => {
             let va = a[currentSort.key], vb = b[currentSort.key];
-            // Intenta comparar como número si ambos son numéricos
             if (!isNaN(Number(va)) && !isNaN(Number(vb))) {
                 va = Number(va); vb = Number(vb);
             } else {
@@ -56,7 +44,6 @@ export function renderList(pedidos) {
         });
     }
 
-    // Encabezados y claves (elimina la columna 'etapasSecuencia')
     const columns = [
         { key: 'numeroPedido', label: 'Nº Pedido' },
         { key: 'cliente', label: 'Cliente' },
@@ -82,13 +69,6 @@ export function renderList(pedidos) {
                             ${currentSort.key === col.key ? (currentSort.asc ? '▲' : '▼') : ''}
                         </th>
                     `).join('')}
-                </tr>
-                <tr>
-                    ${columns.map(col => {
-                        // No filtro para acciones
-                        if (col.key === 'acciones') return '<th></th>';
-                        return `<th><input type="text" class="form-control form-control-sm" data-filter="${col.key}" value="${currentFilters[col.key] || ''}" style="min-width:70px;"/></th>`;
-                    }).join('')}
                 </tr>
             </thead>
             <tbody>
@@ -128,18 +108,6 @@ export function renderList(pedidos) {
 
     listView.innerHTML = tableHTML;
 
-    // --- Listeners para filtros ---
-    columns.forEach(col => {
-        if (col.key === 'acciones') return;
-        const input = listView.querySelector(`input[data-filter="${col.key}"]`);
-        if (input) {
-            input.oninput = (e) => {
-                currentFilters[col.key] = e.target.value;
-                renderList(pedidos);
-            };
-        }
-    });
-
     // --- Listeners para ordenamiento ---
     columns.forEach(col => {
         const th = listView.querySelector(`th[data-key="${col.key}"]`);
@@ -172,15 +140,12 @@ if (typeof window !== 'undefined') {
             if (btn) {
                 btn.onclick = () => {
                     quickStageFilter = val;
-                    // Quita clase active de todos
                     btns.forEach(({ id }) => {
                         const b = document.getElementById(id);
                         if (b) b.classList.remove('active');
                     });
-                    // Marca el botón actual como activo
                     if (val !== null) btn.classList.add('active');
                     else document.getElementById('btn-filtrar-todos').classList.add('active');
-                    // Vuelve a renderizar
                     renderList(window.currentPedidos || []);
                 };
             }

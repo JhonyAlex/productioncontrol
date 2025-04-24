@@ -425,24 +425,31 @@ export async function returnToPrintStage() {
 
 // Implementación real de completeStage
 export async function completeStage(pedidoId) {
-    // --- NUEVO: Siempre usa la secuencia guardada en el pedido ---
+    // --- AJUSTE: Secuencia solo considera etapas complementarias ---
     const pedido = window.currentPedidos.find(p => p.id === pedidoId);
     if (!pedido || !pedido.etapasSecuencia || !Array.isArray(pedido.etapasSecuencia)) {
         alert("No se pudo avanzar la etapa. Datos incompletos.");
         return;
     }
-    // Busca el índice de la etapa actual en la secuencia guardada
-    const idx = pedido.etapasSecuencia.indexOf(pedido.etapaActual);
-    if (idx === -1) {
-        alert("No se pudo determinar la etapa actual.");
-        return;
-    }
+
+    // Filtra la secuencia para excluir etapas de impresión
+    const secuenciaComplementaria = pedido.etapasSecuencia.filter(
+        et => !etapasImpresion.includes(et)
+    );
+
+    // Busca el índice de la etapa actual en la secuencia complementaria
+    const idx = secuenciaComplementaria.indexOf(pedido.etapaActual);
     let nuevaEtapa = null;
-    if (idx < pedido.etapasSecuencia.length - 1) {
-        nuevaEtapa = pedido.etapasSecuencia[idx + 1];
+
+    if (idx === -1) {
+        // Si la etapa actual no está en complementarias, avanzar a la primera complementaria (si existe)
+        nuevaEtapa = secuenciaComplementaria.length > 0 ? secuenciaComplementaria[0] : "Completado";
+    } else if (idx < secuenciaComplementaria.length - 1) {
+        nuevaEtapa = secuenciaComplementaria[idx + 1];
     } else {
         nuevaEtapa = "Completado";
     }
+
     if (!confirm(`¿Avanzar el pedido '${pedido.numeroPedido}' a la etapa '${nuevaEtapa}'?`)) return;
     try {
         await updateDoc(
