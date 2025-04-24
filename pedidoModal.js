@@ -234,6 +234,7 @@ export async function savePedido(event) {
     // Obtén referencias DOM dinámicamente
     const pedidoForm = document.getElementById('pedido-form');
     const pedidoIdInput = document.getElementById('pedido-id');
+    const pedidoId = pedidoIdInput.value; // <-- AÑADE ESTA LÍNEA
     const maquinaImpresion = document.getElementById('maquinaImpresion').value;
     const printStage = `Impresión ${maquinaImpresion}`;
     // --- NUEVO: obtener secuencia según orden y checks ---
