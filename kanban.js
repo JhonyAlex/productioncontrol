@@ -35,13 +35,9 @@ export function renderKanban(pedidos, options = {}) {
         });
     }
 
-    // --- NUEVO: Mostrar/ocultar los botones de orden solo en impresión ---
+    // --- Mostrar/ocultar los botones de orden solo en impresión ---
     let sortContainer = document.getElementById('kanban-sort-buttons');
-    if (!sortContainer) {
-        // Ahora el contenedor ya existe en el HTML, solo lo seleccionamos
-        sortContainer = document.getElementById('kanban-sort-buttons');
-    }
-    // Solo mostrar los botones si estamos en impresión
+    if (!sortContainer) return;
     if (!options.only || options.only === 'impresion') {
         sortContainer.innerHTML = `
             <button class="btn btn-outline-secondary btn-sm${kanbanSortKey === 'secuenciaPedido' ? ' active' : ''}" id="btn-kanban-sort-secuencia">Ordenar por Nº Secuencia</button>

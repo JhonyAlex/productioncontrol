@@ -61,16 +61,17 @@
             </div>
             <!-- Botones de navegación de vistas -->
             <div class="mb-3" id="view-tabs">
-                <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
                     <!-- Botones de vista a la izquierda -->
                     <div class="btn-group" role="group" aria-label="Vistas">
                         <button type="button" class="btn btn-outline-primary active" id="btn-kanban-impresion">Kanban Impresión</button>
                         <button type="button" class="btn btn-outline-primary" id="btn-kanban-complementarias">Kanban Etapas Complementarias</button>
+                        <button type="button" class="btn btn-outline-primary" id="btn-lista">Lista</button>
                     </div>
-                    <!-- Botones de orden dinámicos para Kanban -->
-                    <div id="kanban-sort-buttons" class="mb-0 d-flex gap-2"></div>
+                    <!-- Botones de orden dinámicos para Kanban (centrado) -->
+                    <div id="kanban-sort-buttons" class="d-flex gap-2"></div>
                     <!-- Botón agregar pedido a la derecha -->
-                    <button type="button" class="btn btn-success ms-auto" id="btn-agregar-pedido">
+                    <button type="button" class="btn btn-success" id="btn-agregar-pedido">
                         <i class="bi bi-plus-circle"></i> Agregar pedido
                     </button>
                 </div>
