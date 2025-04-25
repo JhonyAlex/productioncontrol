@@ -132,16 +132,16 @@ function switchView(view) {
         kanbanSortButtons.style.display = (view === 'kanban-impresion') ? 'flex' : 'none';
     }
 
-    // Control de visibilidad del botón exportar (ahora su propio contenedor)
-    const exportContainer = document.getElementById('export-container');
-    if (exportContainer) {
-        exportContainer.style.display = (view === 'lista') ? '' : 'none';
+    // Control de visibilidad del botón exportar (dropdown)
+    const exportDropdown = document.getElementById('btn-exportar-dropdown')?.parentElement;
+    if (exportDropdown) {
+        exportDropdown.style.display = (view === 'lista') ? '' : 'none';
     }
 
     // Filtros rápidos solo en lista
     const listFilters = document.getElementById('list-filters');
     if (listFilters) {
-        listFilters.style.display = (view === 'lista') ? 'flex' : 'none';
+        listFilters.style.display = (view === 'lista') ? '' : 'none';
     }
 
     // Renderiza la vista correspondiente
