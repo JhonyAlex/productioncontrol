@@ -1,3 +1,6 @@
+import { etapasImpresion, etapasComplementarias } from './firestore.js';
+import { updatePedido } from './firestore.js';
+
 let currentSort = { key: null, asc: true };
 let currentFilters = {};
 let quickStageFilter = null; // Puede ser 'laminacion', 'rebobinado', 'perforado', 'pendiente' o null
@@ -119,7 +122,9 @@ export function renderList(pedidos) {
                     <td>${pedido.camisa || '-'}</td>
                     <td>${pedido.fecha || '-'}</td>
                     <td>
-                        <span class="badge etapa-badge-lista" style="background:${etapaColor};color:#333;font-size:0.95em;">
+                        <span class="badge etapa-badge-lista etapa-actual-editable" 
+                              style="background:${etapaColor};color:#333;font-size:0.95em;cursor:pointer;"
+                              data-pedido-id="${pedido.id}">
                             ${pedido.etapaActual || 'N/A'}
                         </span>
                     </td>
@@ -154,6 +159,60 @@ export function renderList(pedidos) {
                 renderList(pedidos);
             };
         }
+    });
+
+    // --- NUEVO: Listener para editar etapa actual ---
+    listView.querySelectorAll('.etapa-actual-editable').forEach(span => {
+        span.addEventListener('click', function (e) {
+            const pedidoId = this.dataset.pedidoId;
+            const pedido = (window.currentPedidos || []).find(p => p.id === pedidoId);
+            if (!pedido) return;
+
+            // Evita múltiples selects
+            if (this.querySelector('select')) return;
+
+            // Determina las etapas posibles para este pedido
+            let etapas = [];
+            if (pedido.etapasSecuencia && Array.isArray(pedido.etapasSecuencia) && pedido.etapasSecuencia.length > 0) {
+                etapas = pedido.etapasSecuencia.concat(['Completado']);
+            } else {
+                etapas = etapasImpresion.concat(etapasComplementarias, ['Completado']);
+            }
+
+            // Crea el select
+            const select = document.createElement('select');
+            select.className = 'form-select form-select-sm';
+            select.style.minWidth = '120px';
+            etapas.forEach(etapa => {
+                const opt = document.createElement('option');
+                opt.value = etapa;
+                opt.textContent = etapa;
+                if (etapa === pedido.etapaActual) opt.selected = true;
+                select.appendChild(opt);
+            });
+
+            // Reemplaza el span por el select temporalmente
+            this.innerHTML = '';
+            this.appendChild(select);
+            select.focus();
+
+            // Al perder foco o cambiar, actualiza la etapa
+            select.addEventListener('change', async function () {
+                const nuevaEtapa = this.value;
+                if (nuevaEtapa !== pedido.etapaActual) {
+                    try {
+                        await updatePedido(window.db, pedidoId, { etapaActual: nuevaEtapa });
+                        // La UI se actualizará automáticamente por el listener de Firestore
+                    } catch (err) {
+                        alert('Error al actualizar la etapa.');
+                    }
+                }
+            });
+            select.addEventListener('blur', function () {
+                // Si no cambió, vuelve a mostrar el texto
+                span.textContent = select.value;
+            });
+        });
     });
 
     // Guardar la referencia a los pedidos filtrados para las exportaciones
