@@ -102,7 +102,7 @@ export function resetUIOnLogout(domRefs, unsubscribePedidosRef) {
 // Nueva función para cambiar de vista
 function switchView(view) {
     currentView = view;
-    
+
     // Actualiza clases de los botones
     document.getElementById('btn-kanban-impresion')?.classList.remove('active');
     document.getElementById('btn-kanban-complementarias')?.classList.remove('active');
@@ -110,28 +110,30 @@ function switchView(view) {
     if (view === 'kanban-impresion') document.getElementById('btn-kanban-impresion')?.classList.add('active');
     if (view === 'kanban-complementarias') document.getElementById('btn-kanban-complementarias')?.classList.add('active');
     if (view === 'lista') document.getElementById('btn-lista')?.classList.add('active');
-    
+
     // Muestra/oculta vistas
     document.getElementById('kanban-board').style.display = (view.startsWith('kanban')) ? '' : 'none';
     document.getElementById('list-view').style.display = (view === 'lista') ? '' : 'none';
 
-    // --- Control de visibilidad de los botones de ordenación del kanban ---
+    // Control de visibilidad de los botones de ordenación del kanban
     const kanbanSortButtons = document.getElementById('kanban-sort-buttons');
     if (kanbanSortButtons) {
+        // Solo visible en Kanban Impresión
         kanbanSortButtons.style.display = (view === 'kanban-impresion') ? 'flex' : 'none';
     }
 
-    // --- Control de visibilidad del botón exportar (dropdown) ---
-    // Busca el dropdown por su id
+    // Control de visibilidad del botón exportar (dropdown)
+    // El dropdown es el padre del botón
     const exportDropdown = document.getElementById('btn-exportar-dropdown')?.parentElement;
     if (exportDropdown) {
+        // Solo visible en vista lista
         exportDropdown.style.display = (view === 'lista') ? '' : 'none';
     }
 
     // Filtros rápidos solo en lista
     const listFilters = document.getElementById('list-filters');
     if (listFilters) listFilters.style.display = (view === 'lista') ? '' : 'none';
-    
+
     // Renderiza la vista correspondiente
     renderActiveView(currentPedidos || []);
 }
