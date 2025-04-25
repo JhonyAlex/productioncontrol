@@ -65,8 +65,8 @@
                 <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
                     <!-- Botones de vista a la izquierda -->
                     <div class="btn-group" role="group" aria-label="Vistas">
-                        <button type="button" class="btn btn-outline-primary" id="btn-kanban-impresion">Kanban Impresión</button>
-                        <button type="button" class="btn btn-outline-primary" id="btn-kanban-complementarias">Kanban Etapas Complementarias</button>
+                        <button type="button" class="btn btn-outline-primary" id="btn-kanban-impresion">Impresión</button>
+                        <button type="button" class="btn btn-outline-primary" id="btn-kanban-complementarias">Etapas Complementarias</button>
                         <button type="button" class="btn btn-outline-primary active" id="btn-lista">Lista</button>
                     </div>
                     <!-- Botones de orden dinámicos para Kanban (centrado) -->
@@ -81,6 +81,7 @@
             <div id="kanban-board"></div>
             <div id="list-view" style="display:none;">
                 <div class="mb-2 d-flex justify-content-between align-items-center">
+                    <!-- Filtros rápidos para la lista -->
                     <div id="list-filters" class="d-flex gap-2" style="display:none;">
                         <button class="btn btn-outline-secondary btn-sm" id="btn-filtrar-laminacion">Laminación</button>
                         <button class="btn btn-outline-secondary btn-sm" id="btn-filtrar-rebobinado">Rebobinado</button>
