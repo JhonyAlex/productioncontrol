@@ -14,18 +14,16 @@ export function handleSearch(e) {
     const searchTerm = e.target.value.toLowerCase().trim();
     // currentPedidos debe estar accesible globalmente o importarse si es necesario
     const filteredPedidos = (window.currentPedidos || []).filter(pedido => {
+        // Excluye etapasSecuencia del filtro
         const numeroPedido = pedido.numeroPedido?.toLowerCase() || '';
         const cliente = pedido.cliente?.toLowerCase() || '';
         const maquina = pedido.maquinaImpresion?.toLowerCase() || '';
         const etapaActual = pedido.etapaActual?.toLowerCase() || '';
-        const etapasSecuencia = Array.isArray(pedido.etapasSecuencia)
-            ? pedido.etapasSecuencia.join(', ').toLowerCase()
-            : '';
+        // NO buscar en etapasSecuencia
         return numeroPedido.includes(searchTerm) ||
                cliente.includes(searchTerm) ||
                maquina.includes(searchTerm) ||
-               etapaActual.includes(searchTerm) ||
-               etapasSecuencia.includes(searchTerm);
+               etapaActual.includes(searchTerm);
     });
     // Llama a la función global renderActiveView
     if (typeof window.renderActiveView === 'function') {
@@ -63,7 +61,7 @@ export function setupSearchAutocomplete() {
             suggestionBox.style.display = 'none';
             return;
         }
-        // Recolecta sugerencias únicas de todos los campos relevantes
+        // Recolecta sugerencias únicas de todos los campos relevantes (EXCLUYENDO etapasSecuencia)
         const pedidos = window.currentPedidos || [];
         const suggestionsSet = new Set();
         pedidos.forEach(pedido => {
@@ -71,8 +69,8 @@ export function setupSearchAutocomplete() {
                 pedido.numeroPedido,
                 pedido.cliente,
                 pedido.maquinaImpresion,
-                pedido.etapaActual,
-                ...(Array.isArray(pedido.etapasSecuencia) ? pedido.etapasSecuencia : [])
+                pedido.etapaActual
+                // NO incluir ...pedido.etapasSecuencia
             ].forEach(val => {
                 if (val && val.toLowerCase().includes(term)) {
                     suggestionsSet.add(val);
