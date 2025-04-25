@@ -140,18 +140,42 @@ body {
     text-align: center;
 }
 
-.kanban-card-footer .btn {
+/* Botón principal: Ver/editar */
+.kanban-card-footer .btn.btn-primary {
     width: 100%;
     border-radius: 0.5em;
     font-weight: 500;
     color: #fff;
+    background: linear-gradient(90deg, #0d6efd 60%, #3576e6 100%);
     border: none;
     box-shadow: 0 1px 4px rgba(13,110,253,0.08);
     transition: background 0.18s;
 }
 
-.kanban-card-footer .btn:hover {
-    background: linear-gradient(90deg, #0a58ca 60%, #3576e6 100%);
+.kanban-card-footer .btn.btn-primary:hover {
+    background: linear-gradient(90deg, #0a58ca 60%, #2851a3 100%);
+}
+
+/* Botón secundario: Eliminar/Devolver */
+.kanban-card-footer .btn.btn-secondary {
+    width: 100%;
+    border-radius: 0.5em;
+    font-weight: 500;
+    color: #fff;
+    background: linear-gradient(90deg, #495057 60%, #6c757d 100%);
+    border: none;
+    box-shadow: 0 1px 4px rgba(60,72,88,0.08);
+    transition: background 0.18s;
+    margin-top: 0.5em;
+}
+
+.kanban-card-footer .btn.btn-secondary:hover {
+    background: linear-gradient(90deg, #343a40 60%, #495057 100%);
+}
+
+/* Elimina el color blanco por defecto de todos los .btn dentro de .kanban-card-footer */
+.kanban-card-footer .btn {
+    color: #fff;
 }
 
 .etapas-display {
