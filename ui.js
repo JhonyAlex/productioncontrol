@@ -82,7 +82,7 @@ export function resetUIOnLogout(domRefs, unsubscribePedidosRef) {
         domRefs.appContainer.style.display = 'none';
         domRefs.userEmailSpan.textContent = '';
         // En vez de intentar asignar a una expresión inválida, simplemente reemplaza el contenido:
-        domRefs.mainContent.innerHTML = '<h1 class="text-center">Por favor, inicia sesión</h1>';
+        domRefs.mainContent.innerHTML = '<h1 class="text-center">Cargando pedidos, actualiza la página.</h1>';
     }
     // Si hay un listener de Firestore, desuscribirse
     if (typeof unsubscribePedidosRef === 'function') {
@@ -124,7 +124,7 @@ export function renderActiveView(pedidos) {
         // Opcional: muestra mensaje de carga o "No hay pedidos"
         const kanbanBoard = document.getElementById('kanban-board');
         const listView = document.getElementById('list-view');
-        if (kanbanBoard) kanbanBoard.innerHTML = '<div class="text-center text-muted py-5">Cargando pedidos...</div>';
+        if (kanbanBoard) kanbanBoard.innerHTML = '<div class="text-center text-muted py-5">Cargando pedidos actualiza la página...</div>';
         if (listView) listView.innerHTML = '';
         return;
     }
