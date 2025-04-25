@@ -40,6 +40,9 @@ export function initializeAppEventListeners() {
     document.getElementById('btn-kanban-impresion')?.addEventListener('click', () => switchView('kanban-impresion'));
     document.getElementById('btn-kanban-complementarias')?.addEventListener('click', () => switchView('kanban-complementarias'));
     document.getElementById('btn-lista')?.addEventListener('click', () => switchView('lista'));
+    
+    // Eliminar el listener del botón exportar ya que ahora usamos dropdown
+    // document.getElementById('btn-exportar-lista')?.addEventListener('click', () => alert('Funcionalidad de exportar próximamente.'));
 }
 
 export function loadMainAppData() {
@@ -98,12 +101,21 @@ function switchView(view) {
     if (view === 'kanban-impresion') document.getElementById('btn-kanban-impresion')?.classList.add('active');
     if (view === 'kanban-complementarias') document.getElementById('btn-kanban-complementarias')?.classList.add('active');
     if (view === 'lista') document.getElementById('btn-lista')?.classList.add('active');
+    
     // Muestra/oculta vistas
     document.getElementById('kanban-board').style.display = (view.startsWith('kanban')) ? '' : 'none';
     document.getElementById('list-view').style.display = (view === 'lista') ? '' : 'none';
+    
+    // --- NUEVO: Control explícito de botones de ordenación del kanban ---
+    const kanbanSortButtons = document.getElementById('kanban-sort-buttons');
+    if (kanbanSortButtons) {
+        kanbanSortButtons.style.display = (view === 'kanban-impresion') ? '' : 'none';
+    }
+    
     // --- NUEVO: mostrar filtros rápidos solo en lista ---
     const listFilters = document.getElementById('list-filters');
     if (listFilters) listFilters.style.display = (view === 'lista') ? '' : 'none';
+    
     // Renderiza la vista correspondiente
     renderActiveView(currentPedidos || []);
 }

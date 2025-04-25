@@ -35,16 +35,16 @@ export function renderKanban(pedidos, options = {}) {
         });
     }
 
-    // --- Mostrar/ocultar los botones de orden solo en impresión ---
+    // --- MODIFICADO: Simplificar el código de mostrar/ocultar botones ---
+    // Los botones se controlarán desde switchView en ui.js
     let sortContainer = document.getElementById('kanban-sort-buttons');
-    if (!sortContainer) return;
-    if (!options.only || options.only === 'impresion') {
+    if (sortContainer && (!options.only || options.only === 'impresion')) {
         sortContainer.innerHTML = `
             <button class="btn btn-outline-secondary btn-sm${kanbanSortKey === 'secuenciaPedido' ? ' active' : ''}" id="btn-kanban-sort-secuencia">Ordenar por Nº Secuencia</button>
             <button class="btn btn-outline-secondary btn-sm${kanbanSortKey === 'cliente' ? ' active' : ''}" id="btn-kanban-sort-cliente">Ordenar por Cliente</button>
             <button class="btn btn-outline-secondary btn-sm" id="btn-kanban-sort-toggle">${kanbanSortAsc ? 'Ascendente' : 'Descendente'}</button>
         `;
-        sortContainer.style.display = '';
+        
         document.getElementById('btn-kanban-sort-secuencia').onclick = () => {
             kanbanSortKey = 'secuenciaPedido';
             renderKanban(window.currentPedidos || [], options);
@@ -57,9 +57,6 @@ export function renderKanban(pedidos, options = {}) {
             kanbanSortAsc = !kanbanSortAsc;
             renderKanban(window.currentPedidos || [], options);
         };
-    } else {
-        sortContainer.innerHTML = '';
-        sortContainer.style.display = 'none';
     }
 
     // Renderiza solo el grupo solicitado
