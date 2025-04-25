@@ -115,14 +115,20 @@ function switchView(view) {
     document.getElementById('kanban-board').style.display = (view.startsWith('kanban')) ? '' : 'none';
     document.getElementById('list-view').style.display = (view === 'lista') ? '' : 'none';
 
-    // --- CORREGIDO: Control SOLO aquí de la visibilidad de los botones de ordenación ---
+    // --- Control de visibilidad de los botones de ordenación del kanban ---
     const kanbanSortButtons = document.getElementById('kanban-sort-buttons');
     if (kanbanSortButtons) {
-        // Siempre ocultar por defecto y mostrar solo en Kanban Impresión
         kanbanSortButtons.style.display = (view === 'kanban-impresion') ? 'flex' : 'none';
     }
-    
-    // --- Mostrar filtros rápidos solo en lista ---
+
+    // --- Control de visibilidad del botón exportar (dropdown) ---
+    // Busca el dropdown por su id
+    const exportDropdown = document.getElementById('btn-exportar-dropdown')?.parentElement;
+    if (exportDropdown) {
+        exportDropdown.style.display = (view === 'lista') ? '' : 'none';
+    }
+
+    // Filtros rápidos solo en lista
     const listFilters = document.getElementById('list-filters');
     if (listFilters) listFilters.style.display = (view === 'lista') ? '' : 'none';
     
