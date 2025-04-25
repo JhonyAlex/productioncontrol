@@ -53,8 +53,19 @@ document.addEventListener('DOMContentLoaded', () => {
         // --- NUEVO: Solo renderiza si el DOM está listo y pedidos es un array ---
         if (window.renderActiveView && Array.isArray(pedidos)) {
             window.renderActiveView(pedidos);
+            // Forzar la visibilidad correcta después de renderizar
+            if (typeof window.switchView === 'function' && window.currentView) {
+                window.switchView(window.currentView);
+            }
         }
     }, (error) => {
         console.error("Error escuchando pedidos:", error);
     });
+    
+    // NUEVO: Asegurarse de que el estado de la vista sea correcto después de cargar
+    setTimeout(() => {
+        if (typeof window.switchView === 'function' && window.currentView) {
+            window.switchView(window.currentView);
+        }
+    }, 1000);
 });

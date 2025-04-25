@@ -43,6 +43,9 @@ export function initializeAppEventListeners() {
     
     // Eliminar el listener del botón exportar ya que ahora usamos dropdown
     // document.getElementById('btn-exportar-lista')?.addEventListener('click', () => alert('Funcionalidad de exportar próximamente.'));
+    
+    // Inicializar el estado de la vista
+    initializeViewState();
 }
 
 export function loadMainAppData() {
@@ -74,6 +77,11 @@ export function loadMainAppData() {
 
     // Renderiza la vista activa
     renderActiveView(currentPedidos || []);
+    
+    // Aplicar estado de la vista actual al cargar datos
+    setTimeout(() => {
+        switchView(currentView);
+    }, 100);
 }
 
 export function resetUIOnLogout(domRefs, unsubscribePedidosRef) {
@@ -94,6 +102,7 @@ export function resetUIOnLogout(domRefs, unsubscribePedidosRef) {
 // Nueva función para cambiar de vista
 function switchView(view) {
     currentView = view;
+    
     // Actualiza clases de los botones
     document.getElementById('btn-kanban-impresion')?.classList.remove('active');
     document.getElementById('btn-kanban-complementarias')?.classList.remove('active');
@@ -106,18 +115,29 @@ function switchView(view) {
     document.getElementById('kanban-board').style.display = (view.startsWith('kanban')) ? '' : 'none';
     document.getElementById('list-view').style.display = (view === 'lista') ? '' : 'none';
     
-    // --- NUEVO: Control explícito de botones de ordenación del kanban ---
+    // --- CORREGIDO: Control explícito de botones de ordenación del kanban ---
     const kanbanSortButtons = document.getElementById('kanban-sort-buttons');
     if (kanbanSortButtons) {
+        // Forzar la visibilidad SOLO para 'kanban-impresion'
         kanbanSortButtons.style.display = (view === 'kanban-impresion') ? '' : 'none';
     }
     
-    // --- NUEVO: mostrar filtros rápidos solo en lista ---
+    // --- Mostrar filtros rápidos solo en lista ---
     const listFilters = document.getElementById('list-filters');
     if (listFilters) listFilters.style.display = (view === 'lista') ? '' : 'none';
     
     // Renderiza la vista correspondiente
     renderActiveView(currentPedidos || []);
+}
+
+// NUEVA FUNCIÓN: Inicializar al cargar la página para asegurar que la vista inicial sea correcta
+export function initializeViewState() {
+    // Fuerza la aplicación correcta de la visibilidad basada en currentView al inicio
+    setTimeout(() => {
+        // Asegurarse de que currentView tenga un valor válido
+        if (!currentView) currentView = 'kanban-impresion';
+        switchView(currentView);
+    }, 100);
 }
 
 // Exponer para uso global

@@ -35,10 +35,10 @@ export function renderKanban(pedidos, options = {}) {
         });
     }
 
-    // --- MODIFICADO: Simplificar el código de mostrar/ocultar botones ---
-    // Los botones se controlarán desde switchView en ui.js
+    // --- CORREGIDO: Actualizar solo contenido, no visibilidad ---
     let sortContainer = document.getElementById('kanban-sort-buttons');
-    if (sortContainer && (!options.only || options.only === 'impresion')) {
+    if (sortContainer) {
+        // Solo actualizar contenido, la visibilidad se maneja en switchView
         sortContainer.innerHTML = `
             <button class="btn btn-outline-secondary btn-sm${kanbanSortKey === 'secuenciaPedido' ? ' active' : ''}" id="btn-kanban-sort-secuencia">Ordenar por Nº Secuencia</button>
             <button class="btn btn-outline-secondary btn-sm${kanbanSortKey === 'cliente' ? ' active' : ''}" id="btn-kanban-sort-cliente">Ordenar por Cliente</button>
@@ -57,6 +57,9 @@ export function renderKanban(pedidos, options = {}) {
             kanbanSortAsc = !kanbanSortAsc;
             renderKanban(window.currentPedidos || [], options);
         };
+        
+        // IMPORTANTE: ELIMINAR CUALQUIER MANIPULACIÓN de display
+        // sortContainer.style.display = ''; // NO HACER ESTO
     }
 
     // Renderiza solo el grupo solicitado
@@ -76,46 +79,9 @@ export function renderKanban(pedidos, options = {}) {
     enableKanbanDragToScroll(kanbanBoard);
 }
 
-function renderKanbanSortButtons(showToggle) {
-    let sortContainer = document.getElementById('kanban-sort-buttons');
-    if (!sortContainer) {
-        sortContainer = document.createElement('div');
-        sortContainer.id = 'kanban-sort-buttons';
-        sortContainer.className = 'mb-2 d-flex gap-2';
-        const kanbanBoard = document.getElementById('kanban-board');
-        if (kanbanBoard && kanbanBoard.parentNode) {
-            kanbanBoard.parentNode.insertBefore(sortContainer, kanbanBoard);
-        }
-    }
-    sortContainer.innerHTML = `
-        <button class="btn btn-outline-secondary btn-sm${kanbanSortKey === 'secuenciaPedido' ? ' active' : ''}" id="btn-kanban-sort-secuencia">Ordenar por Nº Secuencia</button>
-        <button class="btn btn-outline-secondary btn-sm${kanbanSortKey === 'cliente' ? ' active' : ''}" id="btn-kanban-sort-cliente">Ordenar por Cliente</button>
-        ${showToggle ? `<button class="btn btn-outline-secondary btn-sm" id="btn-kanban-sort-toggle">${kanbanSortAsc ? 'Ascendente' : 'Descendente'}</button>` : ''}
-    `;
-    document.getElementById('btn-kanban-sort-secuencia').onclick = () => {
-        kanbanSortKey = 'secuenciaPedido';
-        renderKanban(window.currentPedidos || []);
-    };
-    document.getElementById('btn-kanban-sort-cliente').onclick = () => {
-        kanbanSortKey = 'cliente';
-        renderKanban(window.currentPedidos || []);
-    };
-    if (showToggle) {
-        document.getElementById('btn-kanban-sort-toggle').onclick = () => {
-            kanbanSortAsc = !kanbanSortAsc;
-            renderKanban(window.currentPedidos || []);
-        };
-        sortContainer.style.display = '';
-    } else {
-        sortContainer.style.display = 'none';
-    }
-}
-
 function createKanbanGroup(groupTitle, etapasInGroup, allPedidos) {
     const groupDiv = document.createElement('div');
     groupDiv.className = 'kanban-group';
-    // No título
-    // groupDiv.innerHTML = groupTitle ? `<h4>${groupTitle}</h4>` : '';
     const columnsContainer = document.createElement('div');
     columnsContainer.className = 'kanban-columns-container';
 
@@ -141,24 +107,21 @@ function createKanbanGroup(groupTitle, etapasInGroup, allPedidos) {
 }
 
 function stringToColor(str) {
-    // Genera un color pastel consistente para un string
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
         hash = str.charCodeAt(i) + ((hash << 5) - hash);
     }
-    // HSL pastel
     const h = Math.abs(hash) % 360;
     return `hsl(${h}, 60%, 80%)`;
 }
 
 function etapaToColor(etapa) {
-    // Genera un color pastel opaco consistente para cada etapa
     let hash = 0;
     for (let i = 0; i < etapa.length; i++) {
         hash = etapa.charCodeAt(i) + ((hash << 5) - hash);
     }
     const h = Math.abs(hash) % 360;
-    return `hsl(${h}, 40%, 85%)`; // tono pastel, opaco
+    return `hsl(${h}, 40%, 85%)`;
 }
 
 function createKanbanCard(pedido) {
@@ -168,9 +131,7 @@ function createKanbanCard(pedido) {
     card.draggable = true;
     card.dataset.id = pedido.id;
 
-    // Formateo de campos
     const fechaDisplay = pedido.fecha ? ` (${pedido.fecha})` : '';
-    // Badge de cliente con color consistente y badge de metros
     let clienteBadge = '';
     if (pedido.cliente) {
         const color = stringToColor(pedido.cliente);
@@ -180,7 +141,6 @@ function createKanbanCard(pedido) {
         ? `<span class="badge bg-secondary ms-1" style="font-size:0.75em;">${pedido.metros} m</span>`
         : '';
 
-    // Solo mostrar etapas complementarias en la secuencia
     const etapasHtml = pedido.etapasSecuencia && pedido.etapasSecuencia.length > 0
         ? `<div class="etapas-display">Secuencia: ${
             pedido.etapasSecuencia
@@ -189,7 +149,6 @@ function createKanbanCard(pedido) {
         }</div>`
         : '';
 
-    // Determinar texto dinámico para el botón de etapa
     let etapaBtnText = '';
     let showEtapaBtn = false;
     if (pedido.etapaActual !== 'Completado' && pedido.etapasSecuencia && pedido.etapasSecuencia.length > 0) {
@@ -206,7 +165,6 @@ function createKanbanCard(pedido) {
         }
     }
 
-    // Color para la etapa actual
     const etapaColor = etapaToColor(pedido.etapaActual || '');
 
     card.innerHTML = `
@@ -237,7 +195,6 @@ export function addDragAndDropListeners() {
     const cards = document.querySelectorAll('.kanban-card');
     const columns = document.querySelectorAll('.kanban-column');
 
-    // --- NUEVO: Eliminar listeners previos antes de agregar nuevos ---
     cards.forEach(card => {
         card.removeEventListener('dragstart', dragStart);
         card.removeEventListener('dragend', dragEnd);
@@ -261,7 +218,6 @@ export function addDragAndDropListeners() {
 let draggedItemId = null;
 
 function dragStart(e) {
-    // --- NUEVO: Solo permitir drag en .kanban-card ---
     const card = e.target.closest('.kanban-card');
     if (!card || !card.dataset.id) {
         e.preventDefault();
@@ -315,7 +271,6 @@ async function drop(e) {
     const pedidoId = e.dataTransfer.getData('text/plain');
     const nuevaEtapa = column.dataset.etapa;
 
-    // Actualiza la etapa en Firestore
     try {
         await updatePedido(window.db, pedidoId, { etapaActual: nuevaEtapa });
         console.log(`Pedido ${pedidoId} movido a etapa ${nuevaEtapa}`);
@@ -324,7 +279,6 @@ async function drop(e) {
     }
 }
 
-// --- DRAG TO SCROLL HORIZONTAL EN KANBAN ---
 function enableKanbanDragToScroll(container) {
     let isDown = false;
     let startX;
@@ -334,39 +288,38 @@ function enableKanbanDragToScroll(container) {
         if (e.target.closest('.kanban-card')) return;
         isDown = true;
         container.classList.add('drag-scroll-active');
-        container.classList.add('no-user-select'); // <--- NUEVO
+        container.classList.add('no-user-select');
         startX = e.pageX - container.offsetLeft;
         scrollLeft = container.scrollLeft;
     });
     container.addEventListener('mouseleave', () => {
         isDown = false;
         container.classList.remove('drag-scroll-active');
-        container.classList.remove('no-user-select'); // <--- NUEVO
+        container.classList.remove('no-user-select');
     });
     container.addEventListener('mouseup', () => {
         isDown = false;
         container.classList.remove('drag-scroll-active');
-        container.classList.remove('no-user-select'); // <--- NUEVO
+        container.classList.remove('no-user-select');
     });
     container.addEventListener('mousemove', (e) => {
         if (!isDown) return;
         e.preventDefault();
         const x = e.pageX - container.offsetLeft;
-        const walk = (x - startX) * 1.2; // Ajusta la velocidad si quieres
+        const walk = (x - startX) * 1.2;
         container.scrollLeft = scrollLeft - walk;
     });
 
-    // Soporte touch
     container.addEventListener('touchstart', (e) => {
         if (e.target.closest('.kanban-card')) return;
         isDown = true;
-        container.classList.add('no-user-select'); // <--- NUEVO
+        container.classList.add('no-user-select');
         startX = e.touches[0].pageX - container.offsetLeft;
         scrollLeft = container.scrollLeft;
     });
     container.addEventListener('touchend', () => {
         isDown = false;
-        container.classList.remove('no-user-select'); // <--- NUEVO
+        container.classList.remove('no-user-select');
     });
     container.addEventListener('touchmove', (e) => {
         if (!isDown) return;
