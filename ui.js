@@ -40,8 +40,6 @@ export function initializeAppEventListeners() {
     document.getElementById('btn-kanban-impresion')?.addEventListener('click', () => switchView('kanban-impresion'));
     document.getElementById('btn-kanban-complementarias')?.addEventListener('click', () => switchView('kanban-complementarias'));
     document.getElementById('btn-lista')?.addEventListener('click', () => switchView('lista'));
-    // Botón exportar (a implementar)
-    document.getElementById('btn-exportar-lista')?.addEventListener('click', () => alert('Funcionalidad de exportar próximamente.'));
 }
 
 export function loadMainAppData() {
