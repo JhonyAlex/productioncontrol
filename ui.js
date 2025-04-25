@@ -111,6 +111,7 @@ export function resetUIOnLogout(domRefs, unsubscribePedidosRef) {
 // Nueva función para cambiar de vista
 function switchView(view) {
     currentView = view;
+    console.log('[switchView] Cambiando a vista:', view);
 
     // Actualiza clases de los botones
     document.getElementById('btn-kanban-impresion')?.classList.remove('active');
@@ -121,22 +122,23 @@ function switchView(view) {
     if (view === 'lista') document.getElementById('btn-lista')?.classList.add('active');
 
     // Muestra/oculta vistas
-    document.getElementById('kanban-board').style.display = (view.startsWith('kanban')) ? '' : 'none';
-    document.getElementById('list-view').style.display = (view === 'lista') ? '' : 'none';
+    const kanbanBoard = document.getElementById('kanban-board');
+    const listView = document.getElementById('list-view');
+    if (kanbanBoard) kanbanBoard.style.display = (view.startsWith('kanban')) ? '' : 'none';
+    if (listView) listView.style.display = (view === 'lista') ? '' : 'none';
 
     // Control de visibilidad de los botones de ordenación del kanban
     const kanbanSortButtons = document.getElementById('kanban-sort-buttons');
     if (kanbanSortButtons) {
-        // Solo visible en Kanban Impresión
         kanbanSortButtons.style.display = (view === 'kanban-impresion') ? 'flex' : 'none';
+        console.log('[switchView] kanban-sort-buttons:', kanbanSortButtons.style.display);
     }
 
     // Control de visibilidad del botón exportar (dropdown)
-    // El dropdown es el padre del botón
     const exportDropdown = document.getElementById('btn-exportar-dropdown')?.parentElement;
     if (exportDropdown) {
-        // Solo visible en vista lista
         exportDropdown.style.display = (view === 'lista') ? '' : 'none';
+        console.log('[switchView] exportDropdown:', exportDropdown.style.display);
     }
 
     // Filtros rápidos solo en lista
