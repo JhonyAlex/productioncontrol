@@ -144,12 +144,12 @@ body {
     width: 100%;
     border-radius: 0.5em;
     font-weight: 500;
-    background: linear-gradient(90deg, #198754 60%, #13a905 100%)
     color: #fff;
     border: none;
     box-shadow: 0 1px 4px rgba(13,110,253,0.08);
     transition: background 0.18s;
 }
+
 .kanban-card-footer .btn:hover {
     background: linear-gradient(90deg, #0a58ca 60%, #3576e6 100%);
 }
