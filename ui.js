@@ -115,10 +115,11 @@ function switchView(view) {
     document.getElementById('kanban-board').style.display = (view.startsWith('kanban')) ? '' : 'none';
     document.getElementById('list-view').style.display = (view === 'lista') ? '' : 'none';
 
-    // Control de visibilidad de los botones de ordenación del kanban
+    // --- CORREGIDO: Control SOLO aquí de la visibilidad de los botones de ordenación ---
     const kanbanSortButtons = document.getElementById('kanban-sort-buttons');
     if (kanbanSortButtons) {
-        kanbanSortButtons.style.display = (view === 'kanban-impresion') ? '' : 'none';
+        // Siempre ocultar por defecto y mostrar solo en Kanban Impresión
+        kanbanSortButtons.style.display = (view === 'kanban-impresion') ? 'flex' : 'none';
     }
     
     // --- Mostrar filtros rápidos solo en lista ---

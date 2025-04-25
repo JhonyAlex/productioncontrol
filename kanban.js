@@ -38,7 +38,6 @@ export function renderKanban(pedidos, options = {}) {
     // --- CORREGIDO: Actualizar solo contenido, no visibilidad ---
     let sortContainer = document.getElementById('kanban-sort-buttons');
     if (sortContainer) {
-        // Solo actualizar contenido, la visibilidad se maneja en switchView
         sortContainer.innerHTML = `
             <button class="btn btn-outline-secondary btn-sm${kanbanSortKey === 'secuenciaPedido' ? ' active' : ''}" id="btn-kanban-sort-secuencia">Ordenar por Nº Secuencia</button>
             <button class="btn btn-outline-secondary btn-sm${kanbanSortKey === 'cliente' ? ' active' : ''}" id="btn-kanban-sort-cliente">Ordenar por Cliente</button>
@@ -57,9 +56,6 @@ export function renderKanban(pedidos, options = {}) {
             kanbanSortAsc = !kanbanSortAsc;
             renderKanban(window.currentPedidos || [], options);
         };
-        
-        // IMPORTANTE: ELIMINAR CUALQUIER MANIPULACIÓN de display
-        // sortContainer.style.display = ''; // NO HACER ESTO
     }
 
     // Renderiza solo el grupo solicitado
