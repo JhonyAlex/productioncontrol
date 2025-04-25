@@ -138,6 +138,9 @@ body {
 .kanban-card-footer {
     margin-top: 0.75rem;
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
 }
 
 /* Botón principal: Ver/editar */
@@ -166,16 +169,11 @@ body {
     border: none;
     box-shadow: 0 1px 4px rgba(60,72,88,0.08);
     transition: background 0.18s;
-    margin-top: 0.5em;
+    margin-top: 0;
 }
 
 .kanban-card-footer .btn.btn-secondary:hover {
     background: linear-gradient(90deg, #343a40 60%, #495057 100%);
-}
-
-/* Elimina el color blanco por defecto de todos los .btn dentro de .kanban-card-footer */
-.kanban-card-footer .btn {
-    color: #fff;
 }
 
 .etapas-display {
