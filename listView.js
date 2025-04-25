@@ -342,7 +342,9 @@ function generatePDF(pedidos) {
         p.transparencia === 'true' ? 'Sí' : 'No',
         p.capa || '',
         p.camisa || '',
-        p.etapaActual || '',
+        Array.isArray(p.etapasSecuencia) && p.etapasSecuencia.length > 0
+            ? p.etapasSecuencia.join(' -> ')
+            : '',
         p.observaciones || '',
         p.fecha || ''
     ]);
@@ -414,7 +416,9 @@ function generateExcel(pedidos) {
         p.transparencia === 'true' ? 'Sí' : 'No',
         p.capa || '',
         p.camisa || '',
-        p.etapaActual || '',
+        Array.isArray(p.etapasSecuencia) && p.etapasSecuencia.length > 0
+            ? p.etapasSecuencia.join(' -> ')
+            : '',
         p.observaciones || '',
         p.fecha || ''
     ]);
