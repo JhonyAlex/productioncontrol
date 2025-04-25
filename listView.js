@@ -174,7 +174,11 @@ export function renderList(pedidos) {
             // Determina las etapas posibles para este pedido
             let etapas = [];
             if (pedido.etapasSecuencia && Array.isArray(pedido.etapasSecuencia) && pedido.etapasSecuencia.length > 0) {
-                etapas = pedido.etapasSecuencia.concat(['Completado']);
+                // Incluye todas las etapas de la secuencia + TODAS las complementarias (sin duplicados)
+                etapas = pedido.etapasSecuencia
+                    .concat(etapasComplementarias)
+                    .filter((etapa, idx, arr) => arr.indexOf(etapa) === idx)
+                    .concat(['Completado']);
             } else {
                 etapas = etapasImpresion.concat(etapasComplementarias, ['Completado']);
             }
