@@ -291,3 +291,11 @@ body {
     color: #2d3a4a;
     box-shadow: 0 1px 3px rgba(60, 72, 88, 0.04);
 }
+
+/* Disable text selection */
+.no-user-select {
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
+}

@@ -240,12 +240,19 @@ export function addDragAndDropListeners() {
     const cards = document.querySelectorAll('.kanban-card');
     const columns = document.querySelectorAll('.kanban-column');
 
+    // --- NUEVO: Eliminar listeners previos antes de agregar nuevos ---
     cards.forEach(card => {
+        card.removeEventListener('dragstart', dragStart);
+        card.removeEventListener('dragend', dragEnd);
         card.addEventListener('dragstart', dragStart);
         card.addEventListener('dragend', dragEnd);
     });
 
     columns.forEach(column => {
+        column.removeEventListener('dragover', dragOver);
+        column.removeEventListener('dragenter', dragEnter);
+        column.removeEventListener('dragleave', dragLeave);
+        column.removeEventListener('drop', drop);
         column.addEventListener('dragover', dragOver);
         column.addEventListener('dragenter', dragEnter);
         column.addEventListener('dragleave', dragLeave);
@@ -257,14 +264,22 @@ export function addDragAndDropListeners() {
 let draggedItemId = null;
 
 function dragStart(e) {
-    draggedItemId = e.target.dataset.id;
+    // --- NUEVO: Solo permitir drag en .kanban-card ---
+    const card = e.target.closest('.kanban-card');
+    if (!card || !card.dataset.id) {
+        e.preventDefault();
+        draggedItemId = null;
+        return;
+    }
+    draggedItemId = card.dataset.id;
     e.dataTransfer.setData('text/plain', draggedItemId);
-    setTimeout(() => e.target.classList.add('dragging'), 0);
+    setTimeout(() => card.classList.add('dragging'), 0);
     console.log(`Drag Start: ${draggedItemId}`);
 }
 
 function dragEnd(e) {
-    e.target.classList.remove('dragging');
+    const card = e.target.closest('.kanban-card');
+    if (card) card.classList.remove('dragging');
     draggedItemId = null;
     console.log("Drag End");
 }
@@ -318,22 +333,23 @@ function enableKanbanDragToScroll(container) {
     let startX;
     let scrollLeft;
 
-    // Evita conflicto con drag de tarjetas
     container.addEventListener('mousedown', (e) => {
-        // Solo si el click no es sobre una tarjeta Kanban
         if (e.target.closest('.kanban-card')) return;
         isDown = true;
         container.classList.add('drag-scroll-active');
+        container.classList.add('no-user-select'); // <--- NUEVO
         startX = e.pageX - container.offsetLeft;
         scrollLeft = container.scrollLeft;
     });
     container.addEventListener('mouseleave', () => {
         isDown = false;
         container.classList.remove('drag-scroll-active');
+        container.classList.remove('no-user-select'); // <--- NUEVO
     });
     container.addEventListener('mouseup', () => {
         isDown = false;
         container.classList.remove('drag-scroll-active');
+        container.classList.remove('no-user-select'); // <--- NUEVO
     });
     container.addEventListener('mousemove', (e) => {
         if (!isDown) return;
@@ -347,11 +363,13 @@ function enableKanbanDragToScroll(container) {
     container.addEventListener('touchstart', (e) => {
         if (e.target.closest('.kanban-card')) return;
         isDown = true;
+        container.classList.add('no-user-select'); // <--- NUEVO
         startX = e.touches[0].pageX - container.offsetLeft;
         scrollLeft = container.scrollLeft;
     });
     container.addEventListener('touchend', () => {
         isDown = false;
+        container.classList.remove('no-user-select'); // <--- NUEVO
     });
     container.addEventListener('touchmove', (e) => {
         if (!isDown) return;
