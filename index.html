@@ -71,16 +71,6 @@
                     </div>
                     <!-- Botones de orden dinámicos para Kanban (centrado) -->
                     <div id="kanban-sort-buttons" class="d-flex gap-2"></div>
-                    <!-- Botón agregar pedido a la derecha -->
-                    <button type="button" class="btn btn-success" id="btn-agregar-pedido">
-                        <i class="bi bi-plus-circle"></i> Agregar pedido
-                    </button>
-                </div>
-            </div>
-            <!-- Kanban y Lista -->
-            <div id="kanban-board"></div>
-            <div id="list-view" style="display:none;">
-                <div class="mb-2 d-flex justify-content-between align-items-center">
                     <!-- Filtros rápidos para la lista -->
                     <div id="list-filters" class="d-flex gap-2" style="display:none;">
                         <button class="btn btn-outline-secondary btn-sm" id="btn-filtrar-laminacion">Laminación</button>
@@ -89,6 +79,7 @@
                         <button class="btn btn-outline-secondary btn-sm" id="btn-filtrar-pendiente">Pendiente</button>
                         <button class="btn btn-outline-secondary btn-sm" id="btn-filtrar-todos">Todos</button>
                     </div>
+                    <!-- Botón exportar -->
                     <div class="dropdown">
                         <button class="btn btn-success dropdown-toggle" type="button" id="btn-exportar-dropdown" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-download"></i> Exportar
@@ -98,7 +89,15 @@
                             <li><a class="dropdown-item" href="#" onclick="exportToExcel()"><i class="bi bi-file-earmark-excel"></i> Exportar a Excel</a></li>
                         </ul>
                     </div>
+                    <!-- Botón agregar pedido a la derecha -->
+                    <button type="button" class="btn btn-success" id="btn-agregar-pedido">
+                        <i class="bi bi-plus-circle"></i> Agregar pedido
+                    </button>
                 </div>
+            </div>
+            <!-- Kanban y Lista -->
+            <div id="kanban-board"></div>
+            <div id="list-view" style="display:none;">
                 <!-- La tabla se renderiza por JS -->
             </div>
         </div>
