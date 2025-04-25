@@ -138,11 +138,19 @@ export function renderList(pedidos) {
         </table>
     `;
 
-    listView.innerHTML = tableHTML;
+    // Encuentra el contenedor específico para la tabla
+    const listTableContainer = document.getElementById('list-table-container');
+    if (listTableContainer) {
+        listTableContainer.innerHTML = tableHTML; // Inserta solo la tabla aquí
+    } else {
+        console.error("renderList: Elemento #list-table-container no encontrado.");
+        // Como fallback, podrías seguir usando listView, pero perderías los otros elementos
+        // listView.innerHTML = tableHTML;
+    }
 
     // --- Listeners para ordenamiento ---
     columns.forEach(col => {
-        const th = listView.querySelector(`th[data-key="${col.key}"]`);
+        const th = document.querySelector(`#list-table-container th[data-key="${col.key}"]`);
         if (th) {
             th.onclick = () => {
                 if (currentSort.key === col.key) {
