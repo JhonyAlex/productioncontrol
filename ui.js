@@ -37,13 +37,22 @@ export function initializeAppEventListeners() {
     }
 
     // Listeners para los botones de vistas
-    document.getElementById('btn-kanban-impresion')?.addEventListener('click', () => switchView('kanban-impresion'));
-    document.getElementById('btn-kanban-complementarias')?.addEventListener('click', () => switchView('kanban-complementarias'));
-    document.getElementById('btn-lista')?.addEventListener('click', () => switchView('lista'));
-    
-    // Eliminar el listener del botón exportar ya que ahora usamos dropdown
-    // document.getElementById('btn-exportar-lista')?.addEventListener('click', () => alert('Funcionalidad de exportar próximamente.'));
-    
+    const btnKanbanImpresion = document.getElementById('btn-kanban-impresion');
+    if (btnKanbanImpresion && !btnKanbanImpresion.dataset.listenerAttached) {
+        btnKanbanImpresion.addEventListener('click', () => switchView('kanban-impresion'));
+        btnKanbanImpresion.dataset.listenerAttached = 'true';
+    }
+    const btnKanbanComplementarias = document.getElementById('btn-kanban-complementarias');
+    if (btnKanbanComplementarias && !btnKanbanComplementarias.dataset.listenerAttached) {
+        btnKanbanComplementarias.addEventListener('click', () => switchView('kanban-complementarias'));
+        btnKanbanComplementarias.dataset.listenerAttached = 'true';
+    }
+    const btnLista = document.getElementById('btn-lista');
+    if (btnLista && !btnLista.dataset.listenerAttached) {
+        btnLista.addEventListener('click', () => switchView('lista'));
+        btnLista.dataset.listenerAttached = 'true';
+    }
+
     // Inicializar el estado de la vista
     initializeViewState();
 }
