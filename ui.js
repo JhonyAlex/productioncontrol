@@ -114,11 +114,10 @@ function switchView(view) {
     // Muestra/oculta vistas
     document.getElementById('kanban-board').style.display = (view.startsWith('kanban')) ? '' : 'none';
     document.getElementById('list-view').style.display = (view === 'lista') ? '' : 'none';
-    
-    // --- CORREGIDO: Control explícito de botones de ordenación del kanban ---
+
+    // Control de visibilidad de los botones de ordenación del kanban
     const kanbanSortButtons = document.getElementById('kanban-sort-buttons');
     if (kanbanSortButtons) {
-        // Forzar la visibilidad SOLO para 'kanban-impresion'
         kanbanSortButtons.style.display = (view === 'kanban-impresion') ? '' : 'none';
     }
     
