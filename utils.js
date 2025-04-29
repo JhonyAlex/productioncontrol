@@ -10,17 +10,57 @@ export function getFirebaseErrorMessage(error) {
     }
 }
 
+// Estado global de filtro de fechas
+window.fechaFiltro = { desde: null, hasta: null };
+
+// --- NUEVO: Filtro combinado de búsqueda y fecha ---
 export function handleSearch(e) {
-    const searchTerm = e.target.value.toLowerCase().trim();
+    const searchTerm = document.getElementById('search-input').value.toLowerCase().trim();
+    const fechaDesde = document.getElementById('fecha-desde').value;
+    const fechaHasta = document.getElementById('fecha-hasta').value;
+
+    // Guarda el filtro global
+    window.fechaFiltro = { desde: fechaDesde, hasta: fechaHasta };
+
     const filteredPedidos = (window.currentPedidos || []).filter(pedido => {
+        // Filtro texto
         const numeroPedido = pedido.numeroPedido?.toLowerCase() || '';
         const cliente = pedido.cliente?.toLowerCase() || '';
         const maquina = pedido.maquinaImpresion?.toLowerCase() || '';
         const etapaActual = pedido.etapaActual?.toLowerCase() || '';
-        return numeroPedido.includes(searchTerm) ||
-               cliente.includes(searchTerm) ||
-               maquina.includes(searchTerm) ||
-               etapaActual.includes(searchTerm);
+        let match = (
+            !searchTerm ||
+            numeroPedido.includes(searchTerm) ||
+            cliente.includes(searchTerm) ||
+            maquina.includes(searchTerm) ||
+            etapaActual.includes(searchTerm)
+        );
+
+        // Filtro fecha
+        if (match && (fechaDesde || fechaHasta)) {
+            // Normaliza fecha del pedido
+            let fechaPedido = pedido.fecha;
+            if (!fechaPedido) return false;
+            // Soporta tanto formato ISO (datetime-local) como DD/MM
+            let fechaObj = null;
+            if (/^\d{4}-\d{2}-\d{2}/.test(fechaPedido)) {
+                fechaObj = new Date(fechaPedido);
+            } else if (/^\d{2}\/\d{2}/.test(fechaPedido)) {
+                const [d, m] = fechaPedido.split('/');
+                const y = new Date().getFullYear();
+                fechaObj = new Date(`${y}-${m}-${d}`);
+            }
+            if (!fechaObj || isNaN(fechaObj)) return false;
+            if (fechaDesde) {
+                const desdeObj = new Date(fechaDesde + "T00:00");
+                if (fechaObj < desdeObj) return false;
+            }
+            if (fechaHasta) {
+                const hastaObj = new Date(fechaHasta + "T23:59");
+                if (fechaObj > hastaObj) return false;
+            }
+        }
+        return match;
     });
 
     // Detecta la pestaña activa y renderiza la vista correspondiente
@@ -29,22 +69,18 @@ export function handleSearch(e) {
     const tabLista = document.getElementById('tab-lista');
 
     if (tabImpresion && tabImpresion.classList.contains('active')) {
-        // Kanban impresión
         import('./kanban.js').then(mod => {
             mod.renderKanban(filteredPedidos, { only: 'impresion' });
         });
     } else if (tabComplementarias && tabComplementarias.classList.contains('active')) {
-        // Kanban complementarias
         import('./kanban.js').then(mod => {
             mod.renderKanban(filteredPedidos, { only: 'complementarias' });
         });
     } else if (tabLista && tabLista.classList.contains('active')) {
-        // Lista
         import('./listView.js').then(mod => {
             mod.renderList(filteredPedidos);
         });
     }
-    // Guarda los pedidos filtrados para exportar y gráficos
     window.currentFilteredPedidos = filteredPedidos;
 }
 
@@ -123,6 +159,67 @@ export function setupSearchAutocomplete() {
     searchInput.addEventListener('blur', () => {
         setTimeout(() => { suggestionBox.style.display = 'none'; }, 120);
     });
+}
+
+// --- NUEVO: Listeners para filtros de fecha y atajos ---
+if (typeof window !== 'undefined') {
+    setTimeout(() => {
+        const fechaDesde = document.getElementById('fecha-desde');
+        const fechaHasta = document.getElementById('fecha-hasta');
+        const searchInput = document.getElementById('search-input');
+        if (fechaDesde) fechaDesde.addEventListener('change', handleSearch);
+        if (fechaHasta) fechaHasta.addEventListener('change', handleSearch);
+        if (searchInput) searchInput.addEventListener('input', handleSearch);
+
+        // Atajos de rango
+        const shortcuts = document.querySelectorAll('#date-shortcuts [data-shortcut]');
+        shortcuts.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const hoy = new Date();
+                let desde = '', hasta = '';
+                switch (btn.dataset.shortcut) {
+                    case 'semana-actual': {
+                        const day = hoy.getDay() || 7;
+                        const monday = new Date(hoy);
+                        monday.setDate(hoy.getDate() - day + 1);
+                        desde = monday.toISOString().slice(0, 10);
+                        hasta = hoy.toISOString().slice(0, 10);
+                        break;
+                    }
+                    case 'semana-pasada': {
+                        const day = hoy.getDay() || 7;
+                        const monday = new Date(hoy);
+                        monday.setDate(hoy.getDate() - day - 6);
+                        const sunday = new Date(monday);
+                        sunday.setDate(monday.getDate() + 6);
+                        desde = monday.toISOString().slice(0, 10);
+                        hasta = sunday.toISOString().slice(0, 10);
+                        break;
+                    }
+                    case 'mes-actual': {
+                        desde = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-01`;
+                        hasta = hoy.toISOString().slice(0, 10);
+                        break;
+                    }
+                    case 'mes-pasado': {
+                        const first = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
+                        const last = new Date(hoy.getFullYear(), hoy.getMonth(), 0);
+                        desde = first.toISOString().slice(0, 10);
+                        hasta = last.toISOString().slice(0, 10);
+                        break;
+                    }
+                    case 'todo': {
+                        desde = '';
+                        hasta = '';
+                        break;
+                    }
+                }
+                document.getElementById('fecha-desde').value = desde;
+                document.getElementById('fecha-hasta').value = hasta;
+                handleSearch();
+            });
+        });
+    }, 0);
 }
 
 import { renderKanban } from './kanban.js';

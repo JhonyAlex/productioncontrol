@@ -21,24 +21,39 @@ function sum(arr, fn) {
     return arr.reduce((acc, x) => acc + (Number(fn(x)) || 0), 0);
 }
 
+// Analiza fechas en formato ISO (datetime-local) o DD/MM
 function parseFecha(fecha) {
     if (!fecha) return null;
-    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(fecha)) {
-        return new Date(fecha);
+    if (/^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?/.test(fecha)) {
+        // Soporta tanto date como datetime-local
+        return new Date(fecha.slice(0, 10));
     }
     // Si es DD/MM
     const m = fecha.match(/^(\d{2})\/(\d{2})$/);
     if (m) {
         const now = new Date();
-        return new Date(now.getFullYear(), Number(m[2])-1, Number(m[1]));
+        return new Date(now.getFullYear(), Number(m[2]) - 1, Number(m[1]));
     }
     return null;
 }
 
 function safeGetCanvas(id) {
     const el = document.getElementById(id);
-    // Solo si existe y está visible (offsetParent !== null)
     return el && el.offsetParent !== null ? el : null;
+}
+
+// --- NUEVO: Renderiza tabla HTML para cada gráfico ---
+function renderTable(containerId, headers, rows) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    let html = `<div class="table-responsive"><table class="table table-sm table-bordered mb-0"><thead><tr>`;
+    headers.forEach(h => html += `<th>${h}</th>`);
+    html += `</tr></thead><tbody>`;
+    rows.forEach(row => {
+        html += `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`;
+    });
+    html += `</tbody></table></div>`;
+    container.innerHTML = html;
 }
 
 export function renderGraficosReportes(pedidos) {
@@ -67,6 +82,7 @@ export function renderGraficosReportes(pedidos) {
             options: { responsive: true, plugins: { legend: { display: false } } }
         });
     }
+    renderTable('tabla-metros-maquina', ['Máquina', 'Metros'], maqLabels.map((k, i) => [k, maqData[i]]));
 
     // --- Total metros por tipo de etapa (filtros rápidos) ---
     const tipos = {
@@ -89,6 +105,7 @@ export function renderGraficosReportes(pedidos) {
             options: { responsive: true, plugins: { legend: { display: false } } }
         });
     }
+    renderTable('tabla-metros-etapa', ['Tipo', 'Metros'], tipoLabels.map((k, i) => [k, tipoData[i]]));
 
     // --- Pedidos por estado/etapa actual ---
     const etapas = groupBy(pedidos, p => p.etapaActual || 'N/A');
@@ -105,6 +122,7 @@ export function renderGraficosReportes(pedidos) {
             options: { responsive: true }
         });
     }
+    renderTable('tabla-etapas-actual', ['Etapa', 'Cantidad'], etapaLabels.map((k, i) => [k, etapaData[i]]));
 
     // --- Top 5 clientes ---
     const clientes = groupBy(pedidos, p => p.cliente || 'Sin cliente');
@@ -122,8 +140,9 @@ export function renderGraficosReportes(pedidos) {
             options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } } }
         });
     }
+    renderTable('tabla-clientes', ['Cliente', 'Pedidos'], topClientes.map(x => [x.cliente, x.count]));
 
-    // --- Evolución de pedidos por fecha ---
+    // --- Evolución de pedidos por fecha (solo 2 últimas semanas) ---
     const fechas = {};
     pedidos.forEach(p => {
         const d = parseFecha(p.fecha);
@@ -131,18 +150,21 @@ export function renderGraficosReportes(pedidos) {
         const key = d.toISOString().slice(0,10);
         fechas[key] = (fechas[key]||0)+1;
     });
-    const fechasSorted = Object.keys(fechas).sort();
+    // Filtra solo las 2 últimas semanas
+    const allDates = Object.keys(fechas).sort();
+    const last14 = allDates.slice(-14);
     const canvasEvol = safeGetCanvas('grafico-evolucion-fecha');
     if (canvasEvol) {
         charts.evolucionFecha = new Chart(canvasEvol, {
             type: 'line',
             data: {
-                labels: fechasSorted,
-                datasets: [{ label: 'Pedidos', data: fechasSorted.map(k=>fechas[k]), borderColor:'#6610f2', backgroundColor:'#b197fc', fill:true }]
+                labels: last14,
+                datasets: [{ label: 'Pedidos', data: last14.map(k=>fechas[k]), borderColor:'#6610f2', backgroundColor:'#b197fc', fill:true }]
             },
             options: { responsive: true }
         });
     }
+    renderTable('tabla-evolucion-fecha', ['Fecha', 'Pedidos'], last14.map(k => [k, fechas[k]]));
 
     // --- Distribución por transparencia ---
     const trans = groupBy(pedidos, p => p.transparencia === 'true' ? 'Sí' : 'No');
@@ -159,6 +181,7 @@ export function renderGraficosReportes(pedidos) {
             options: { responsive: true }
         });
     }
+    renderTable('tabla-transparencia', ['Transparencia', 'Cantidad'], transLabels.map((k, i) => [k, transData[i]]));
 
     // --- Distribución por superficie ---
     const sup = groupBy(pedidos, p => p.superficie === 'true' ? 'Sí' : 'No');
@@ -175,6 +198,7 @@ export function renderGraficosReportes(pedidos) {
             options: { responsive: true }
         });
     }
+    renderTable('tabla-superficie', ['Superficie', 'Cantidad'], supLabels.map((k, i) => [k, supData[i]]));
 }
 
 // --- EXPORTAR PDF ---

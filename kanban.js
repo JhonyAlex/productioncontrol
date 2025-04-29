@@ -311,15 +311,21 @@ async function drop(e) {
 
     try {
         await updatePedido(window.db, pedidoId, { etapaActual: nuevaEtapa });
-        // --- NUEVO: Actualiza la UI localmente para feedback inmediato ---
+        // --- Mantener el scroll horizontal tras mover la tarjeta ---
+        const kanbanBoard = column.closest('#kanban-board-complementarias') || column.closest('#kanban-board');
+        const prevScroll = kanbanBoard ? kanbanBoard.scrollLeft : null;
+
         if (typeof renderKanban === 'function' && window.currentPedidos) {
-            // Actualiza el pedido localmente
             const pedidosActualizados = window.currentPedidos.map(p =>
                 p.id === pedidoId ? { ...p, etapaActual: nuevaEtapa } : p
             );
-            // Detecta si estamos en impresión o complementarias
-            const kanbanBoard = column.closest('#kanban-board-complementarias') ? 'complementarias' : 'impresion';
-            renderKanban(pedidosActualizados, { only: kanbanBoard });
+            const boardType = column.closest('#kanban-board-complementarias') ? 'complementarias' : 'impresion';
+            renderKanban(pedidosActualizados, { only: boardType });
+        }
+
+        // Restaurar el scroll horizontal si corresponde
+        if (kanbanBoard && prevScroll !== null) {
+            kanbanBoard.scrollLeft = prevScroll;
         }
         console.log(`Pedido ${pedidoId} movido a etapa ${nuevaEtapa}`);
     } catch (error) {

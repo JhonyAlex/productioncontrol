@@ -57,11 +57,24 @@
 
         <!-- Main Content Area -->
         <div id="main-content">
-            <div class="mb-3 d-flex align-items-center gap-2" id="search-row">
-                <input type="text" id="search-input" class="form-control" placeholder="Buscar pedido, cliente o máquina...">
-                <button type="button" class="btn btn-success" id="btn-agregar-pedido">
+            <div class="mb-3 d-flex align-items-center gap-2 flex-wrap" id="search-row" style="position:relative;">
+                <input type="text" id="search-input" class="form-control" placeholder="Buscar pedido, cliente o máquina..." autocomplete="off" style="position: relative;">
+                <!-- Filtro de fecha -->
+                <input type="date" id="fecha-desde" class="form-control" style="max-width: 170px;" title="Desde">
+                <span>-</span>
+                <input type="date" id="fecha-hasta" class="form-control" style="max-width: 170px;" title="Hasta">
+                <!-- Atajos de rango -->
+                <div class="btn-group" role="group" id="date-shortcuts">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-shortcut="semana-actual">Semana actual</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-shortcut="semana-pasada">Semana pasada</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-shortcut="mes-actual">Mes actual</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-shortcut="mes-pasado">Mes pasado</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-shortcut="todo">Todo</button>
+                </div>
+                <button type="button" class="btn btn-success" id="btn-agregar-pedido" data-listener-attached="true">
                     <i class="bi bi-plus-circle"></i> Agregar pedido
                 </button>
+                <div id="search-suggestions" style="position: absolute; z-index: 1000; background: rgb(255, 255, 255); border: 1px solid rgb(204, 204, 204); width: 100%; max-height: 200px; overflow-y: auto; display: none;"></div>
             </div>
             <!-- Tabs Bootstrap -->
             <ul class="nav nav-tabs" id="vista-tabs" role="tablist">
@@ -117,59 +130,87 @@
                             </button>
                         </div>
                         <div class="row g-4">
+                            <!-- 1. Gráfico metros por máquina + tabla -->
                             <div class="col-md-6">
                                 <div class="card shadow-sm">
-                                    <div class="card-body">
-                                        <h6 class="card-title">Total de metros por máquina de impresión</h6>
-                                        <canvas id="grafico-metros-maquina"></canvas>
+                                    <div class="card-body d-flex flex-column flex-md-row align-items-start gap-3">
+                                        <div style="flex:1;">
+                                            <h6 class="card-title">Total de metros por máquina de impresión</h6>
+                                            <canvas id="grafico-metros-maquina"></canvas>
+                                        </div>
+                                        <div style="flex:1;" id="tabla-metros-maquina"></div>
                                     </div>
                                 </div>
                             </div>
+                            <!-- 2. Tabla metros por etapa + gráfico -->
                             <div class="col-md-6">
                                 <div class="card shadow-sm">
-                                    <div class="card-body">
-                                        <h6 class="card-title">Total de metros por tipo de etapa</h6>
-                                        <canvas id="grafico-metros-etapa"></canvas>
+                                    <div class="card-body d-flex flex-column flex-md-row align-items-start gap-3">
+                                        <div style="flex:1;" id="tabla-metros-etapa"></div>
+                                        <div style="flex:1;">
+                                            <h6 class="card-title">Total de metros por tipo de etapa</h6>
+                                            <canvas id="grafico-metros-etapa"></canvas>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+                            <!-- 3. Gráfico etapas actual + tabla -->
                             <div class="col-md-6">
                                 <div class="card shadow-sm">
-                                    <div class="card-body">
-                                        <h6 class="card-title">Pedidos por estado/etapa actual</h6>
-                                        <canvas id="grafico-etapas-actual"></canvas>
+                                    <div class="card-body d-flex flex-column flex-md-row align-items-start gap-3">
+                                        <div style="flex:1;">
+                                            <h6 class="card-title">Pedidos por estado/etapa actual</h6>
+                                            <canvas id="grafico-etapas-actual"></canvas>
+                                        </div>
+                                        <div style="flex:1;" id="tabla-etapas-actual"></div>
                                     </div>
                                 </div>
                             </div>
+                            <!-- 4. Tabla top clientes + gráfico -->
                             <div class="col-md-6">
                                 <div class="card shadow-sm">
-                                    <div class="card-body">
-                                        <h6 class="card-title">Top 5 clientes por cantidad de pedidos</h6>
-                                        <canvas id="grafico-clientes"></canvas>
+                                    <div class="card-body d-flex flex-column flex-md-row align-items-start gap-3">
+                                        <div style="flex:1;" id="tabla-clientes"></div>
+                                        <div style="flex:1;">
+                                            <h6 class="card-title">Top 5 clientes por cantidad de pedidos</h6>
+                                            <canvas id="grafico-clientes"></canvas>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+                            <!-- 5. Gráfico evolución fecha + tabla -->
                             <div class="col-md-12">
                                 <div class="card shadow-sm">
-                                    <div class="card-body">
-                                        <h6 class="card-title">Evolución de pedidos por fecha</h6>
-                                        <canvas id="grafico-evolucion-fecha"></canvas>
+                                    <div class="card-body d-flex flex-column flex-md-row align-items-start gap-3">
+                                        <div style="flex:1;">
+                                            <h6 class="card-title">Evolución de pedidos por fecha (últimas 2 semanas)</h6>
+                                            <canvas id="grafico-evolucion-fecha"></canvas>
+                                        </div>
+                                        <div style="flex:1;" id="tabla-evolucion-fecha"></div>
                                     </div>
                                 </div>
                             </div>
+                            <!-- 6. Tabla transparencia + gráfico -->
                             <div class="col-md-6">
                                 <div class="card shadow-sm">
-                                    <div class="card-body">
-                                        <h6 class="card-title">Distribución por Transparencia</h6>
-                                        <canvas id="grafico-transparencia"></canvas>
+                                    <div class="card-body d-flex flex-column flex-md-row align-items-start gap-3">
+                                        <div style="flex:1;" id="tabla-transparencia"></div>
+                                        <div style="flex:1;">
+                                            <h6 class="card-title">Distribución por Transparencia</h6>
+                                            <canvas id="grafico-transparencia"></canvas>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+                            <!-- 7. Gráfico superficie + tabla -->
                             <div class="col-md-6">
                                 <div class="card shadow-sm">
-                                    <div class="card-body">
-                                        <h6 class="card-title">Distribución por Superficie</h6>
-                                        <canvas id="grafico-superficie"></canvas>
+                                    <div class="card-body d-flex flex-column flex-md-row align-items-start gap-3">
+                                        <div style="flex:1;">
+                                            <h6 class="card-title">Distribución por Superficie</h6>
+                                            <canvas id="grafico-superficie"></canvas>
+                                        </div>
+                                        <div style="flex:1;" id="tabla-superficie"></div>
                                     </div>
                                 </div>
                             </div>
