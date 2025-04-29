@@ -90,13 +90,14 @@ function createKanbanGroup(groupTitle, etapasInGroup, allPedidos) {
         const columnDiv = document.createElement('div');
         columnDiv.className = 'kanban-column';
         columnDiv.dataset.etapa = etapa;
-        // --- NUEVO: color de fondo único por etapa ---
-        columnDiv.style.background = etapaColumnColor(etapa);
-
-        columnDiv.innerHTML = `<h5>${etapa}</h5>`;
 
         // Filtrar pedidos para la etapa actual
         const pedidosInEtapa = allPedidos.filter(p => p.etapaActual === etapa);
+
+        // --- NUEVO: color de fondo según cliente más frecuente ---
+        columnDiv.style.background = getColumnColorByClientes(pedidosInEtapa);
+
+        columnDiv.innerHTML = `<h5>${etapa}</h5>`;
 
         pedidosInEtapa.forEach(pedido => {
             const card = createKanbanCard(pedido);
@@ -110,7 +111,46 @@ function createKanbanGroup(groupTitle, etapasInGroup, allPedidos) {
     return groupDiv;
 }
 
-// --- NUEVO: función para color de columna por etapa ---
+// NUEVO: color de columna por cliente más frecuente o primero
+function getColumnColorByClientes(pedidosInEtapa) {
+    if (!pedidosInEtapa || pedidosInEtapa.length === 0) {
+        // Color neutro si no hay pedidos
+        return 'hsl(210, 20%, 97%)';
+    }
+    // Cuenta ocurrencias de cada cliente
+    const counts = {};
+    pedidosInEtapa.forEach(p => {
+        const cliente = p.cliente || '';
+        counts[cliente] = (counts[cliente] || 0) + 1;
+    });
+    // Encuentra el cliente más frecuente
+    let maxCliente = '';
+    let maxCount = 0;
+    Object.entries(counts).forEach(([cliente, count]) => {
+        if (count > maxCount) {
+            maxCount = count;
+            maxCliente = cliente;
+        }
+    });
+    // Si todos son diferentes (maxCount === 1), usa el primero
+    const clienteColor = maxCount === 1
+        ? pedidosInEtapa[0].cliente || ''
+        : maxCliente;
+    // Si no hay cliente, color neutro
+    if (!clienteColor) return 'hsl(210, 20%, 97%)';
+    return stringToColor(clienteColor, 90, 96); // pastel más suave
+}
+
+// Modifica stringToColor para aceptar saturación/luz
+function stringToColor(str, s = 60, l = 80) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const h = Math.abs(hash) % 360;
+    return `hsl(${h}, ${s}%, ${l}%)`;
+}
+
 function etapaColumnColor(etapa) {
     // Genera un color pastel único por etapa
     let hash = 0;
@@ -119,24 +159,6 @@ function etapaColumnColor(etapa) {
     }
     const h = Math.abs(hash) % 360;
     return `hsl(${h}, 70%, 93%)`;
-}
-
-function stringToColor(str) {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        hash = str.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    const h = Math.abs(hash) % 360;
-    return `hsl(${h}, 60%, 80%)`;
-}
-
-function etapaToColor(etapa) {
-    let hash = 0;
-    for (let i = 0; i < etapa.length; i++) {
-        hash = etapa.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    const h = Math.abs(hash) % 360;
-    return `hsl(${h}, 40%, 85%)`;
 }
 
 function createKanbanCard(pedido) {
@@ -333,6 +355,7 @@ function enableKanbanDragToScroll(container) {
     container.addEventListener('mousemove', (e) => {
         if (!isDown) return;
         e.preventDefault();
+        // Asegura que solo se mueva horizontalmente
         const x = e.pageX - container.offsetLeft;
         const walk = (x - startX) * 1.2;
         container.scrollLeft = scrollLeft - walk;
@@ -352,6 +375,7 @@ function enableKanbanDragToScroll(container) {
     });
     container.addEventListener('touchmove', (e) => {
         if (!isDown) return;
+        // Solo horizontal
         const x = e.touches[0].pageX - container.offsetLeft;
         const walk = (x - startX) * 1.2;
         container.scrollLeft = scrollLeft - walk;
