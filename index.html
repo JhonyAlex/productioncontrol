@@ -80,102 +80,99 @@
                     <div id="kanban-board-complementarias"></div>
                 </div>
                 <div class="tab-pane fade" id="tab-pane-lista" role="tabpanel" aria-labelledby="tab-lista">
-                    <!-- Botón Gráficos solo visible en Lista -->
-                    <button type="button" class="btn btn-outline-primary my-2" id="btn-graficos">Gráficos</button>
-                    <!-- Filtros rápidos para la lista -->
-                    <div id="list-filters" class="gap-2 my-2">
-                        <button class="btn btn-outline-secondary btn-sm" id="btn-filtrar-laminacion">Laminación</button>
-                        <button class="btn btn-outline-secondary btn-sm" id="btn-filtrar-rebobinado">Rebobinado</button>
-                        <button class="btn btn-outline-secondary btn-sm" id="btn-filtrar-perforado">Perforado</button>
-                        <button class="btn btn-outline-secondary btn-sm" id="btn-filtrar-pendiente">Pendiente</button>
-                        <button class="btn btn-outline-secondary btn-sm" id="btn-filtrar-todos">Todos</button>
-                    </div>
-                    <!-- Botón exportar -->
-                    <div class="dropdown my-2">
-                        <button class="btn btn-success dropdown-toggle" type="button" id="btn-exportar-dropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-download"></i> Exportar
+                    <div id="list-toolbar" class="d-flex align-items-center gap-2 flex-wrap mb-2">
+                        <button type="button" class="btn btn-outline-primary" id="btn-graficos">Gráficos</button>
+                        <div id="list-filters" class="gap-2">
+                            <button class="btn btn-outline-secondary btn-sm" id="btn-filtrar-laminacion">Laminación</button>
+                            <button class="btn btn-outline-secondary btn-sm" id="btn-filtrar-rebobinado">Rebobinado</button>
+                            <button class="btn btn-outline-secondary btn-sm" id="btn-filtrar-perforado">Perforado</button>
+                            <button class="btn btn-outline-secondary btn-sm" id="btn-filtrar-pendiente">Pendiente</button>
+                            <button class="btn btn-outline-secondary btn-sm" id="btn-filtrar-todos">Todos</button>
+                        </div>
+                        <div class="dropdown">
+                            <button class="btn btn-success dropdown-toggle" type="button" id="btn-exportar-dropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-download"></i> Exportar
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="btn-exportar-dropdown">
+                                <li><a class="dropdown-item" href="#" onclick="exportToPDF()"><i class="bi bi-file-earmark-pdf"></i> Exportar a PDF</a></li>
+                                <li><a class="dropdown-item" href="#" onclick="exportToExcel()"><i class="bi bi-file-earmark-excel"></i> Exportar a Excel</a></li>
+                            </ul>
+                        </div>
+                        <button type="button" class="btn btn-success" id="btn-agregar-pedido">
+                            <i class="bi bi-plus-circle"></i> Agregar pedido
                         </button>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="btn-exportar-dropdown">
-                            <li><a class="dropdown-item" href="#" onclick="exportToPDF()"><i class="bi bi-file-earmark-pdf"></i> Exportar a PDF</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="exportToExcel()"><i class="bi bi-file-earmark-excel"></i> Exportar a Excel</a></li>
-                        </ul>
                     </div>
-                    <!-- Botón agregar pedido a la derecha -->
-                    <button type="button" class="btn btn-success my-2" id="btn-agregar-pedido">
-                        <i class="bi bi-plus-circle"></i> Agregar pedido
-                    </button>
                     <div id="list-view">
                         <!-- La tabla se renderiza por JS -->
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- NUEVO: Sección de reportes gráficos -->
-        <div id="reportes-graficos" class="container mt-4" style="display:none;">
-            <h4 class="mb-3">Reportes Gráficos</h4>
-            <div class="mb-3 d-flex gap-2">
-                <button class="btn btn-outline-danger btn-sm" id="btn-exportar-reportes-pdf">
-                    <i class="bi bi-file-earmark-pdf"></i> Descargar PDF
-                </button>
-                <button class="btn btn-outline-success btn-sm" id="btn-exportar-reportes-excel">
-                    <i class="bi bi-file-earmark-excel"></i> Descargar Excel
-                </button>
-            </div>
-            <div class="row g-4">
-                <div class="col-md-6">
-                    <div class="card shadow-sm">
-                        <div class="card-body">
-                            <h6 class="card-title">Total de metros por máquina de impresión</h6>
-                            <canvas id="grafico-metros-maquina"></canvas>
+                    <!-- Reportes gráficos ahora dentro del tab de lista -->
+                    <div id="reportes-graficos" class="container mt-4">
+                        <h4 class="mb-3">Reportes Gráficos</h4>
+                        <div class="mb-3 d-flex gap-2">
+                            <button class="btn btn-outline-danger btn-sm" id="btn-exportar-reportes-pdf">
+                                <i class="bi bi-file-earmark-pdf"></i> Descargar PDF
+                            </button>
+                            <button class="btn btn-outline-success btn-sm" id="btn-exportar-reportes-excel">
+                                <i class="bi bi-file-earmark-excel"></i> Descargar Excel
+                            </button>
                         </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="card shadow-sm">
-                        <div class="card-body">
-                            <h6 class="card-title">Total de metros por tipo de etapa</h6>
-                            <canvas id="grafico-metros-etapa"></canvas>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="card shadow-sm">
-                        <div class="card-body">
-                            <h6 class="card-title">Pedidos por estado/etapa actual</h6>
-                            <canvas id="grafico-etapas-actual"></canvas>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="card shadow-sm">
-                        <div class="card-body">
-                            <h6 class="card-title">Top 5 clientes por cantidad de pedidos</h6>
-                            <canvas id="grafico-clientes"></canvas>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-12">
-                    <div class="card shadow-sm">
-                        <div class="card-body">
-                            <h6 class="card-title">Evolución de pedidos por fecha</h6>
-                            <canvas id="grafico-evolucion-fecha"></canvas>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="card shadow-sm">
-                        <div class="card-body">
-                            <h6 class="card-title">Distribución por Transparencia</h6>
-                            <canvas id="grafico-transparencia"></canvas>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="card shadow-sm">
-                        <div class="card-body">
-                            <h6 class="card-title">Distribución por Superficie</h6>
-                            <canvas id="grafico-superficie"></canvas>
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <div class="card shadow-sm">
+                                    <div class="card-body">
+                                        <h6 class="card-title">Total de metros por máquina de impresión</h6>
+                                        <canvas id="grafico-metros-maquina"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card shadow-sm">
+                                    <div class="card-body">
+                                        <h6 class="card-title">Total de metros por tipo de etapa</h6>
+                                        <canvas id="grafico-metros-etapa"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card shadow-sm">
+                                    <div class="card-body">
+                                        <h6 class="card-title">Pedidos por estado/etapa actual</h6>
+                                        <canvas id="grafico-etapas-actual"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card shadow-sm">
+                                    <div class="card-body">
+                                        <h6 class="card-title">Top 5 clientes por cantidad de pedidos</h6>
+                                        <canvas id="grafico-clientes"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="card shadow-sm">
+                                    <div class="card-body">
+                                        <h6 class="card-title">Evolución de pedidos por fecha</h6>
+                                        <canvas id="grafico-evolucion-fecha"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card shadow-sm">
+                                    <div class="card-body">
+                                        <h6 class="card-title">Distribución por Transparencia</h6>
+                                        <canvas id="grafico-transparencia"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card shadow-sm">
+                                    <div class="card-body">
+                                        <h6 class="card-title">Distribución por Superficie</h6>
+                                        <canvas id="grafico-superficie"></canvas>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

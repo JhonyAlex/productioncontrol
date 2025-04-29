@@ -43,10 +43,13 @@ export function initializeAppEventListeners() {
             const targetId = event.target.getAttribute('data-bs-target');
             if (targetId === '#tab-pane-kanban-impresion') {
                 renderKanban(currentPedidos || [], { only: 'impresion' });
+                document.getElementById('reportes-graficos').style.display = 'none';
             } else if (targetId === '#tab-pane-kanban-complementarias') {
                 renderKanban(currentPedidos || [], { only: 'complementarias' });
+                document.getElementById('reportes-graficos').style.display = 'none';
             } else if (targetId === '#tab-pane-lista') {
                 renderList(currentPedidos || []);
+                document.getElementById('reportes-graficos').style.display = '';
                 if (typeof renderGraficosReportes === 'function') {
                     renderGraficosReportes(window.currentFilteredPedidos || currentPedidos || []);
                 }
@@ -84,6 +87,10 @@ export function loadMainAppData() {
 
     // Renderiza la vista activa por defecto (Impresión)
     renderKanban(currentPedidos || [], { only: 'impresion' });
+
+    // Oculta los reportes al inicio
+    const reportes = document.getElementById('reportes-graficos');
+    if (reportes) reportes.style.display = 'none';
 }
 
 export function resetUIOnLogout(domRefs, unsubscribePedidosRef) {
