@@ -76,7 +76,7 @@ export function renderKanban(pedidos, options = {}) {
     // Listeners de drag & drop
     addDragAndDropListeners();
 
-    // Habilitar drag-to-scroll horizontal
+    // Habilitar drag-to-scroll horizontal en el contenedor correcto
     enableKanbanDragToScroll(kanbanBoard);
 }
 
@@ -274,6 +274,16 @@ async function drop(e) {
 
     try {
         await updatePedido(window.db, pedidoId, { etapaActual: nuevaEtapa });
+        // --- NUEVO: Actualiza la UI localmente para feedback inmediato ---
+        if (typeof renderKanban === 'function' && window.currentPedidos) {
+            // Actualiza el pedido localmente
+            const pedidosActualizados = window.currentPedidos.map(p =>
+                p.id === pedidoId ? { ...p, etapaActual: nuevaEtapa } : p
+            );
+            // Detecta si estamos en impresión o complementarias
+            const kanbanBoard = column.closest('#kanban-board-complementarias') ? 'complementarias' : 'impresion';
+            renderKanban(pedidosActualizados, { only: kanbanBoard });
+        }
         console.log(`Pedido ${pedidoId} movido a etapa ${nuevaEtapa}`);
     } catch (error) {
         alert("Error al mover el pedido. Intenta de nuevo.");

@@ -57,8 +57,11 @@
 
         <!-- Main Content Area -->
         <div id="main-content">
-            <div class="mb-3">
+            <div class="mb-3 d-flex align-items-center gap-2" id="search-row">
                 <input type="text" id="search-input" class="form-control" placeholder="Buscar pedido, cliente o máquina...">
+                <button type="button" class="btn btn-success" id="btn-agregar-pedido">
+                    <i class="bi bi-plus-circle"></i> Agregar pedido
+                </button>
             </div>
             <!-- Tabs Bootstrap -->
             <ul class="nav nav-tabs" id="vista-tabs" role="tablist">
@@ -98,9 +101,6 @@
                                 <li><a class="dropdown-item" href="#" onclick="exportToExcel()"><i class="bi bi-file-earmark-excel"></i> Exportar a Excel</a></li>
                             </ul>
                         </div>
-                        <button type="button" class="btn btn-success" id="btn-agregar-pedido">
-                            <i class="bi bi-plus-circle"></i> Agregar pedido
-                        </button>
                     </div>
                     <div id="list-view">
                         <!-- La tabla se renderiza por JS -->
@@ -263,8 +263,8 @@
                                 </div>
                                 <div class="col-md-4">
                                     <label for="fecha" class="form-label">Fecha (FH)</label>
-                                    <input type="text" class="form-control" id="fecha" placeholder="DD/MM" maxlength="10" pattern="^\d{2}/\d{2}$" title="Formato DD/MM">
-                                    <div class="form-text text-danger d-none" id="fecha-error">Formato esperado: DD/MM</div>
+                                    <input type="datetime-local" class="form-control" id="fecha" maxlength="25">
+                                    <div class="form-text text-danger d-none" id="fecha-error">Formato esperado: Fecha y hora.</div>
                                 </div>
                             </div>
                             <!-- Row 3: Observaciones -->

@@ -220,7 +220,8 @@ export function openPedidoModal(pedidoId = null) {
                 let fechaVal = '';
                 if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(pedido.fecha)) {
                     fechaVal = pedido.fecha.slice(0, 16);
-                } else {
+                } else if (/^\d{2}\/\d{2}/.test(pedido.fecha)) {
+                    // Si es formato DD/MM, no se puede convertir a datetime-local, dejar vacío
                     fechaVal = '';
                 }
                 document.getElementById('fecha').value = fechaVal;
@@ -276,7 +277,7 @@ export function openPedidoModal(pedidoId = null) {
         // Asignar automáticamente el siguiente número de secuencia (de 10 en 10)
         const maxSec = Math.max(1000, ...window.currentPedidos.map(p => Number(p.secuenciaPedido) || 0));
         secuenciaPedidoInput.value = (Math.floor((maxSec + 10) / 10) * 10);
-        // CAMBIO: fecha por defecto a ahora
+        // CAMBIO: fecha por defecto a ahora (datetime-local)
         const now = new Date();
         const pad = n => n.toString().padStart(2, '0');
         const fechaDefault = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
@@ -355,11 +356,15 @@ export async function savePedido(event) {
     }
 
     const fechaInput = document.getElementById('fecha').value;
+    const fechaError = document.getElementById('fecha-error');
+    fechaError.classList.add('d-none');
     let fechaISO = '';
     if (fechaInput && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(fechaInput)) {
         fechaISO = fechaInput;
-    } else {
-        fechaISO = '';
+    } else if (fechaInput) {
+        fechaError.textContent = "Debes seleccionar una fecha y hora válida.";
+        fechaError.classList.remove('d-none');
+        return;
     }
 
     const pedidoData = {
