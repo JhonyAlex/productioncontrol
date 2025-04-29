@@ -63,15 +63,20 @@
             <!-- Botones de navegación de vistas -->
             <div class="mb-3" id="view-tabs">
                 <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
-                    <!-- Botones de vista a la izquierda -->
-                    <div class="btn-group" role="group" aria-label="Vistas">
-                        <button type="button" class="btn btn-outline-primary" id="btn-kanban-impresion">Impresión</button>
-                        <button type="button" class="btn btn-outline-primary" id="btn-kanban-complementarias">Etapas Complementarias</button>
-                        <button type="button" class="btn btn-outline-primary active" id="btn-lista">Lista</button>
-                    </div>
-                    <button type="button" class="btn btn-outline-primary" id="btn-graficos">Gráficos</button>
-                    <!-- Botones de orden dinámicos para Kanban (centrado) -->
-                    <div id="kanban-sort-buttons" class="d-flex gap-2"></div>
+                    <!-- Botones de vista como pestañas -->
+                    <ul class="nav nav-tabs" id="vista-tabs" role="tablist" style="margin-bottom:0;">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="btn-kanban-impresion" data-listener-attached="true" type="button" role="tab">Impresión</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="btn-kanban-complementarias" data-listener-attached="true" type="button" role="tab">Etapas Complementarias</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="btn-lista" data-listener-attached="true" type="button" role="tab">Lista</button>
+                        </li>
+                    </ul>
+                    <!-- Botón Gráficos solo visible en Lista -->
+                    <button type="button" class="btn btn-outline-primary" id="btn-graficos" style="display:none;">Gráficos</button>
                     <!-- Filtros rápidos para la lista -->
                     <div id="list-filters" class="gap-2" style="display: none;">
                         <button class="btn btn-outline-secondary btn-sm" id="btn-filtrar-laminacion">Laminación</button>

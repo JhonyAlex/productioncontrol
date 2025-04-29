@@ -132,7 +132,7 @@ export function resetUIOnLogout(domRefs, unsubscribePedidosRef) {
 function switchView(view) {
     currentView = view;
 
-    // Actualiza clases de los botones
+    // Actualiza clases de los tabs
     document.getElementById('btn-kanban-impresion')?.classList.remove('active');
     document.getElementById('btn-kanban-complementarias')?.classList.remove('active');
     document.getElementById('btn-lista')?.classList.remove('active');
@@ -146,11 +146,9 @@ function switchView(view) {
     if (kanbanBoard) kanbanBoard.style.display = (view.startsWith('kanban')) ? '' : 'none';
     if (listView) listView.style.display = (view === 'lista') ? '' : 'none';
 
-    // Control de visibilidad de los botones de ordenación del kanban
-    const kanbanSortButtons = document.getElementById('kanban-sort-buttons');
-    if (kanbanSortButtons) {
-        kanbanSortButtons.style.display = (view === 'kanban-impresion') ? 'flex' : 'none';
-    }
+    // Mostrar/ocultar botón gráficos solo en lista
+    const btnGraficos = document.getElementById('btn-graficos');
+    if (btnGraficos) btnGraficos.style.display = (view === 'lista') ? '' : 'none';
 
     // Control de visibilidad del botón exportar (dropdown)
     const exportDropdown = document.getElementById('btn-exportar-dropdown')?.parentElement;

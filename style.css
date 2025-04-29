@@ -299,3 +299,28 @@ body {
     -moz-user-select: none !important;
     -ms-user-select: none !important;
 }
+
+/* Apariencia de pestañas para los botones de vista */
+#vista-tabs {
+    flex-wrap: nowrap;
+    margin-bottom: 0;
+}
+#vista-tabs .nav-link {
+    border-radius: 0.5rem 0.5rem 0 0;
+    font-weight: 500;
+    color: #0d6efd;
+    background: #f8fafc;
+    border: 1px solid #dee2e6;
+    border-bottom: none;
+    margin-right: 2px;
+    transition: background 0.15s, color 0.15s;
+}
+#vista-tabs .nav-link.active, #vista-tabs .nav-link:focus, #vista-tabs .nav-link:hover {
+    color: #fff;
+    background: linear-gradient(90deg, #0d6efd 60%, #3576e6 100%);
+    border-color: #0d6efd #0d6efd #fff;
+}
+#btn-graficos {
+    margin-left: 10px;
+    margin-right: 10px;
+}
