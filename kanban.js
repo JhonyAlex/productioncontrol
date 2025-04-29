@@ -401,11 +401,12 @@ function enableKanbanDragToScroll(container) {
         lastX = x;
     });
 
-    // Prevenir el comportamiento por defecto del scroll en el contenedor
+    // Permitir scroll vertical normal con la rueda del mouse
     container.addEventListener('wheel', (e) => {
-        if (e.deltaY !== 0) {
+        // Solo prevenir el comportamiento por defecto si estamos haciendo scroll horizontal
+        if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
             e.preventDefault();
-            container.scrollLeft += e.deltaY;
+            container.scrollLeft += e.deltaX;
         }
     }, { passive: false });
 }
