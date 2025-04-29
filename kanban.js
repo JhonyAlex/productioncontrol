@@ -295,23 +295,22 @@ function enableKanbanDragToScroll(container) {
     let startX;
     let scrollLeft;
 
+    // Mouse events
     container.addEventListener('mousedown', (e) => {
+        // Solo inicia drag si no es sobre una tarjeta
         if (e.target.closest('.kanban-card')) return;
         isDown = true;
-        container.classList.add('drag-scroll-active');
-        container.classList.add('no-user-select');
+        container.classList.add('drag-scroll-active', 'no-user-select');
         startX = e.pageX - container.offsetLeft;
         scrollLeft = container.scrollLeft;
     });
     container.addEventListener('mouseleave', () => {
         isDown = false;
-        container.classList.remove('drag-scroll-active');
-        container.classList.remove('no-user-select');
+        container.classList.remove('drag-scroll-active', 'no-user-select');
     });
     container.addEventListener('mouseup', () => {
         isDown = false;
-        container.classList.remove('drag-scroll-active');
-        container.classList.remove('no-user-select');
+        container.classList.remove('drag-scroll-active', 'no-user-select');
     });
     container.addEventListener('mousemove', (e) => {
         if (!isDown) return;
@@ -321,16 +320,18 @@ function enableKanbanDragToScroll(container) {
         container.scrollLeft = scrollLeft - walk;
     });
 
+    // Touch events
     container.addEventListener('touchstart', (e) => {
+        // Solo inicia drag si no es sobre una tarjeta
         if (e.target.closest('.kanban-card')) return;
         isDown = true;
-        container.classList.add('no-user-select');
+        container.classList.add('drag-scroll-active', 'no-user-select');
         startX = e.touches[0].pageX - container.offsetLeft;
         scrollLeft = container.scrollLeft;
     });
     container.addEventListener('touchend', () => {
         isDown = false;
-        container.classList.remove('no-user-select');
+        container.classList.remove('drag-scroll-active', 'no-user-select');
     });
     container.addEventListener('touchmove', (e) => {
         if (!isDown) return;

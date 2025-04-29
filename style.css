@@ -40,10 +40,21 @@ body {
     max-width: 100%;
     /* Evita que se desborde */
     box-sizing: border-box;
+    cursor: grab;
+    user-select: none;
 }
 
-#kanban-board.drag-scroll-active {
+#kanban-board.drag-scroll-active,
+#kanban-board-complementarias.drag-scroll-active {
     cursor: grabbing !important;
+}
+
+#kanban-board.no-user-select,
+#kanban-board-complementarias.no-user-select {
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
 }
 
 .kanban-group {
@@ -117,6 +128,11 @@ body {
     cursor: grab;
     transition: box-shadow 0.18s, border 0.18s;
     position: relative;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    max-width: 100%;
+    min-width: 0;
+    /* Evita que el contenido se desborde */
 }
 .kanban-card:active {
     cursor: grabbing;
@@ -134,7 +150,10 @@ body {
     font-size: 1rem;
     font-weight: bold;
     margin-bottom: 0;
-    word-break: break-all;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    min-width: 0;
+    max-width: 100%;
     color: #1a202c;
     letter-spacing: 0.01em;
 }
@@ -142,6 +161,10 @@ body {
 .kanban-card-body p {
     font-size: 0.92em;
     margin-bottom: 0.2rem;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    min-width: 0;
+    max-width: 100%;
     color: #6c757d;
 }
 
@@ -151,6 +174,10 @@ body {
     display: flex;
     flex-direction: column;
     gap: 0.5em;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    min-width: 0;
+    max-width: 100%;
 }
 
 /* Botón principal: Ver/editar */
@@ -191,6 +218,9 @@ body {
     color: #495057;
     margin-top: 5px;
     word-break: break-word;
+    overflow-wrap: anywhere;
+    min-width: 0;
+    max-width: 100%;
 }
 
 .drag-over {
