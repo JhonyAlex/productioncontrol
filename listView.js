@@ -221,6 +221,11 @@ export function renderList(pedidos) {
 
     // Guardar la referencia a los pedidos filtrados para las exportaciones
     window.currentFilteredPedidos = filteredPedidos;
+
+    // --- NUEVO: Actualizar gráficos si estamos en vista lista ---
+    if (typeof window.renderGraficosReportes === 'function' && document.getElementById('reportes-graficos')?.style.display !== 'none') {
+        window.renderGraficosReportes(filteredPedidos);
+    }
 }
 
 // --- NUEVO: listeners para los botones de filtro rápido ---

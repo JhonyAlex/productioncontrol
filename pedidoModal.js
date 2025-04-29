@@ -215,6 +215,16 @@ export function openPedidoModal(pedidoId = null) {
             if (pedido.secuenciaPedido) {
                 secuenciaPedidoInput.value = pedido.secuenciaPedido;
             }
+            // CAMBIO: campo fecha como datetime-local
+            if (pedido.fecha) {
+                let fechaVal = '';
+                if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(pedido.fecha)) {
+                    fechaVal = pedido.fecha.slice(0, 16);
+                } else {
+                    fechaVal = '';
+                }
+                document.getElementById('fecha').value = fechaVal;
+            }
             if (pedido.etapasSecuencia && Array.isArray(pedido.etapasSecuencia)) {
                 const printStage = `Impresión ${pedido.maquinaImpresion}`;
                 pedido.etapasSecuencia.forEach(etapa => {
@@ -266,6 +276,11 @@ export function openPedidoModal(pedidoId = null) {
         // Asignar automáticamente el siguiente número de secuencia (de 10 en 10)
         const maxSec = Math.max(1000, ...window.currentPedidos.map(p => Number(p.secuenciaPedido) || 0));
         secuenciaPedidoInput.value = (Math.floor((maxSec + 10) / 10) * 10);
+        // CAMBIO: fecha por defecto a ahora
+        const now = new Date();
+        const pad = n => n.toString().padStart(2, '0');
+        const fechaDefault = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+        document.getElementById('fecha').value = fechaDefault;
     }
     // --- INICIALIZAR SINCRONIZACIÓN ---
     setTimeout(syncMaquinaEtapa, 100);
@@ -339,6 +354,14 @@ export async function savePedido(event) {
         return;
     }
 
+    const fechaInput = document.getElementById('fecha').value;
+    let fechaISO = '';
+    if (fechaInput && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(fechaInput)) {
+        fechaISO = fechaInput;
+    } else {
+        fechaISO = '';
+    }
+
     const pedidoData = {
         numeroPedido: document.getElementById('numeroPedido').value.trim(),
         cliente: document.getElementById('cliente').value.trim(),
@@ -350,7 +373,7 @@ export async function savePedido(event) {
         transparencia: document.getElementById('transparencia').value,
         capa: document.getElementById('capa').value.trim(),
         camisa: document.getElementById('camisa').value.trim(),
-        fecha: document.getElementById('fecha').value.trim(),
+        fecha: fechaISO,
         observaciones: document.getElementById('observaciones').value.trim(),
         secuenciaPedido: secuenciaPedido,
         etapasSecuencia: selectedEtapas,

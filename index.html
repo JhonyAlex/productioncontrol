@@ -69,9 +69,10 @@
                         <button type="button" class="btn btn-outline-primary" id="btn-kanban-complementarias">Etapas Complementarias</button>
                         <button type="button" class="btn btn-outline-primary active" id="btn-lista">Lista</button>
                     </div>
-                    <!-- Botones de orden dinámicos para Kanban (centrado) 
+                    <button type="button" class="btn btn-outline-primary" id="btn-graficos">Gráficos</button>
+                    <!-- Botones de orden dinámicos para Kanban (centrado) -->
                     <div id="kanban-sort-buttons" class="d-flex gap-2"></div>
-                         Filtros rápidos para la lista -->
+                    <!-- Filtros rápidos para la lista -->
                     <div id="list-filters" class="gap-2" style="display: none;">
                         <button class="btn btn-outline-secondary btn-sm" id="btn-filtrar-laminacion">Laminación</button>
                         <button class="btn btn-outline-secondary btn-sm" id="btn-filtrar-rebobinado">Rebobinado</button>
@@ -101,124 +102,140 @@
                 <!-- La tabla se renderiza por JS -->
             </div>
         </div>
-    </div>
 
-    <!-- Pedido Modal -->
-    <div class="modal fade" id="pedidoModal" tabindex="-1" aria-labelledby="pedidoModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title d-flex align-items-center" id="pedidoModalLabel">Añadir Nuevo Pedido</h5>
-                    <!-- El botón duplicar se agregará dinámicamente aquí -->
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="pedido-form">
-                        <input type="hidden" id="pedido-id">
-                        <!-- Row 1: Numero Pedido & Cliente -->
-                        <div class="row">
-                            <div class="col-md-6">
-                                <label for="numeroPedido" class="form-label">Número Pedido (Cliente - Número)*</label>
-                                <input type="text" class="form-control" id="numeroPedido" required maxlength="100" pattern=".{3,}" title="Debe tener al menos 3 caracteres">
-                                <div class="form-text text-danger d-none" id="numeroPedido-error">Este campo es obligatorio y debe tener al menos 3 caracteres.</div>
+        <!-- NUEVO: Sección de reportes gráficos -->
+        <div id="reportes-graficos" class="container mt-4" style="display:none;">
+            <h4 class="mb-3">Reportes Gráficos</h4>
+            <div class="mb-3 d-flex gap-2">
+                <button class="btn btn-outline-danger btn-sm" id="btn-exportar-reportes-pdf">
+                    <i class="bi bi-file-earmark-pdf"></i> Descargar PDF
+                </button>
+                <button class="btn btn-outline-success btn-sm" id="btn-exportar-reportes-excel">
+                    <i class="bi bi-file-earmark-excel"></i> Descargar Excel
+                </button>
+            </div>
+            <div class="row g-4">
+                <!-- ...existing code for cards/canvas... -->
+            </div>
+        </div>
+
+        <!-- Pedido Modal -->
+        <div class="modal fade" id="pedidoModal" tabindex="-1" aria-labelledby="pedidoModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title d-flex align-items-center" id="pedidoModalLabel">Añadir Nuevo Pedido</h5>
+                        <!-- El botón duplicar se agregará dinámicamente aquí -->
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="pedido-form">
+                            <input type="hidden" id="pedido-id">
+                            <!-- Row 1: Numero Pedido & Cliente -->
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label for="numeroPedido" class="form-label">Número Pedido (Cliente - Número)*</label>
+                                    <input type="text" class="form-control" id="numeroPedido" required maxlength="100" pattern=".{3,}" title="Debe tener al menos 3 caracteres">
+                                    <div class="form-text text-danger d-none" id="numeroPedido-error">Este campo es obligatorio y debe tener al menos 3 caracteres.</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="cliente" class="form-label">Cliente (Opcional)</label>
+                                    <input type="text" class="form-control" id="cliente" maxlength="100">
+                                </div>
                             </div>
-                            <div class="col-md-6">
-                                <label for="cliente" class="form-label">Cliente (Opcional)</label>
-                                <input type="text" class="form-control" id="cliente" maxlength="100">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <label for="secuenciaPedido" class="form-label">Nº Secuencia*</label>
+                                    <input type="number" class="form-control" id="secuenciaPedido" min="1000" step="1" required>
+                                    <div class="form-text text-danger d-none" id="secuenciaPedido-error">Debe ser único y mayor o igual a 1000.</div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-4">
-                                <label for="secuenciaPedido" class="form-label">Nº Secuencia*</label>
-                                <input type="number" class="form-control" id="secuenciaPedido" min="1000" step="1" required>
-                                <div class="form-text text-danger d-none" id="secuenciaPedido-error">Debe ser único y mayor o igual a 1000.</div>
+                            <hr>
+                            <!-- Row 2: Main Features -->
+                            <h6>Características Principales</h6>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <label for="maquinaImpresion" class="form-label">Máquina Impresión*</label>
+                                    <select class="form-select" id="maquinaImpresion" required>
+                                        <option value="" selected disabled>Seleccionar...</option>
+                                        <option value="WindMöller 1">WindMöller 1</option>
+                                        <option value="GIAVE">GIAVE</option>
+                                        <option value="WindMöller 3">WindMöller 3</option>
+                                        <option value="Anonimo">Anonimo</option>
+                                    </select>
+                                    <div class="form-text text-danger d-none" id="maquinaImpresion-error">Selecciona una máquina de impresión.</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="desarrTexto" class="form-label">Desarr. (Texto)</label>
+                                    <input type="text" class="form-control" id="desarrTexto" maxlength="100">
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="desarrNumero" class="form-label">Desarr. (Número)</label>
+                                    <input type="number" class="form-control" id="desarrNumero" step="any" min="0" max="999999" pattern="\d*">
+                                    <div class="form-text text-danger d-none" id="desarrNumero-error">Debe ser un número válido.</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="metros" class="form-label">Metros</label>
+                                    <input type="number" class="form-control" id="metros" step="any" min="0" max="999999" pattern="\d*">
+                                    <div class="form-text text-danger d-none" id="metros-error">Debe ser un número válido.</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="superficie" class="form-label">Superficie (SUP)</label>
+                                    <select class="form-select" id="superficie">
+                                        <option value="false">No</option>
+                                        <option value="true">Sí</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="transparencia" class="form-label">Transparencia (TTE)</label>
+                                    <select class="form-select" id="transparencia">
+                                        <option value="false">No</option>
+                                        <option value="true">Sí</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="capa" class="form-label">Capa (CAPA)</label>
+                                    <input type="text" class="form-control" id="capa" maxlength="50">
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="camisa" class="form-label">Camisa</label>
+                                    <input type="text" class="form-control" id="camisa" maxlength="50">
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="fecha" class="form-label">Fecha (FH)</label>
+                                    <input type="text" class="form-control" id="fecha" placeholder="DD/MM" maxlength="10" pattern="^\d{2}/\d{2}$" title="Formato DD/MM">
+                                    <div class="form-text text-danger d-none" id="fecha-error">Formato esperado: DD/MM</div>
+                                </div>
                             </div>
-                        </div>
-                        <hr>
-                        <!-- Row 2: Main Features -->
-                        <h6>Características Principales</h6>
-                        <div class="row">
-                            <div class="col-md-4">
-                                <label for="maquinaImpresion" class="form-label">Máquina Impresión*</label>
-                                <select class="form-select" id="maquinaImpresion" required>
-                                    <option value="" selected disabled>Seleccionar...</option>
-                                    <option value="WindMöller 1">WindMöller 1</option>
-                                    <option value="GIAVE">GIAVE</option>
-                                    <option value="WindMöller 3">WindMöller 3</option>
-                                    <option value="Anonimo">Anonimo</option>
-                                </select>
-                                <div class="form-text text-danger d-none" id="maquinaImpresion-error">Selecciona una máquina de impresión.</div>
+                            <!-- Row 3: Observaciones -->
+                            <div class="row">
+                                <div class="col-12">
+                                    <label for="observaciones" class="form-label">Observaciones</label>
+                                    <textarea class="form-control" id="observaciones" rows="2"></textarea>
+                                </div>
                             </div>
-                            <div class="col-md-4">
-                                <label for="desarrTexto" class="form-label">Desarr. (Texto)</label>
-                                <input type="text" class="form-control" id="desarrTexto" maxlength="100">
+                            <hr>
+                            <!-- Row 4: Etapas Sequence -->
+                            <h6>Secuencia de Etapas Complementarias (Seleccionar en orden)</h6>
+                            <p class="form-text text-muted">La etapa de impresión seleccionada arriba se añadirá automáticamente al inicio de la secuencia.</p>
+                            <div id="etapas-secuencia-container" class="mb-3">
+                                <!-- Nueva lista ordenable de etapas -->
+                                <ul class="list-group" id="etapas-secuencia-list">
+                                    <!-- Los items se generan dinámicamente por JS -->
+                                </ul>
+                                <div class="form-text text-muted mt-2">
+                                    Arrastra las etapas para cambiar el orden. Usa el check para activar/desactivar cada etapa en la secuencia.
+                                </div>
                             </div>
-                            <div class="col-md-4">
-                                <label for="desarrNumero" class="form-label">Desarr. (Número)</label>
-                                <input type="number" class="form-control" id="desarrNumero" step="any" min="0" max="999999" pattern="\d*">
-                                <div class="form-text text-danger d-none" id="desarrNumero-error">Debe ser un número válido.</div>
-                            </div>
-                            <div class="col-md-4">
-                                <label for="metros" class="form-label">Metros</label>
-                                <input type="number" class="form-control" id="metros" step="any" min="0" max="999999" pattern="\d*">
-                                <div class="form-text text-danger d-none" id="metros-error">Debe ser un número válido.</div>
-                            </div>
-                            <div class="col-md-4">
-                                <label for="superficie" class="form-label">Superficie (SUP)</label>
-                                <select class="form-select" id="superficie">
-                                    <option value="false">No</option>
-                                    <option value="true">Sí</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4">
-                                <label for="transparencia" class="form-label">Transparencia (TTE)</label>
-                                <select class="form-select" id="transparencia">
-                                    <option value="false">No</option>
-                                    <option value="true">Sí</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4">
-                                <label for="capa" class="form-label">Capa (CAPA)</label>
-                                <input type="text" class="form-control" id="capa" maxlength="50">
-                            </div>
-                            <div class="col-md-4">
-                                <label for="camisa" class="form-label">Camisa</label>
-                                <input type="text" class="form-control" id="camisa" maxlength="50">
-                            </div>
-                            <div class="col-md-4">
-                                <label for="fecha" class="form-label">Fecha (FH)</label>
-                                <input type="text" class="form-control" id="fecha" placeholder="DD/MM" maxlength="10" pattern="^\d{2}/\d{2}$" title="Formato DD/MM">
-                                <div class="form-text text-danger d-none" id="fecha-error">Formato esperado: DD/MM</div>
-                            </div>
-                        </div>
-                         <!-- Row 3: Observaciones -->
-                         <div class="row">
-                             <div class="col-12">
-                                <label for="observaciones" class="form-label">Observaciones</label>
-                                <textarea class="form-control" id="observaciones" rows="2"></textarea>
-                            </div>
-                        </div>
-                        <hr>
-                        <!-- Row 4: Etapas Sequence -->
-                        <h6>Secuencia de Etapas Complementarias (Seleccionar en orden)</h6>
-                        <p class="form-text text-muted">La etapa de impresión seleccionada arriba se añadirá automáticamente al inicio de la secuencia.</p>
-                        <div id="etapas-secuencia-container" class="mb-3">
-                            <!-- Nueva lista ordenable de etapas -->
-                            <ul class="list-group" id="etapas-secuencia-list">
-                                <!-- Los items se generan dinámicamente por JS -->
-                            </ul>
-                            <div class="form-text text-muted mt-2">
-                                Arrastra las etapas para cambiar el orden. Usa el check para activar/desactivar cada etapa en la secuencia.
-                            </div>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <!-- Buttons pushed to sides using Bootstrap margin utilities -->
-                    <button type="button" id="delete-pedido-btn" class="btn btn-danger me-auto" style="display: none;">Eliminar Registro</button>
-                    <button type="button" id="return-to-print-btn" class="btn btn-warning" style="display: none;">Regresar a Impresión</button> <!-- Removed ms-2, me-auto on delete pushes this right -->
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary" form="pedido-form">Guardar Pedido</button>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <!-- Buttons pushed to sides using Bootstrap margin utilities -->
+                        <button type="button" id="delete-pedido-btn" class="btn btn-danger me-auto" style="display: none;">Eliminar Registro</button>
+                        <button type="button" id="return-to-print-btn" class="btn btn-warning" style="display: none;">Regresar a Impresión</button> <!-- Removed ms-2, me-auto on delete pushes this right -->
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" form="pedido-form">Guardar Pedido</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -227,6 +244,13 @@
     <!-- Bootstrap Bundle JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- jsPDF y autotable para PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <!-- SheetJS para Excel -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- Custom App Logic (Module) -->
     <script type="module" src="app.js"></script>
 

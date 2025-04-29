@@ -3,6 +3,7 @@ import { handleSearch, setupSearchAutocomplete } from './utils.js';
 import { renderKanban } from './kanban.js';
 import { renderList } from './listView.js';
 import { currentPedidos } from './firestore.js';
+import { renderGraficosReportes } from './reportesGraficos.js'; // NUEVO
 
 let currentView = 'kanban-impresion'; // vista por defecto
 
@@ -51,6 +52,18 @@ export function initializeAppEventListeners() {
     if (btnLista && !btnLista.dataset.listenerAttached) {
         btnLista.addEventListener('click', () => switchView('lista'));
         btnLista.dataset.listenerAttached = 'true';
+    }
+
+    // Botón "Gráficos"
+    const btnGraficos = document.getElementById('btn-graficos');
+    if (btnGraficos && !btnGraficos.dataset.listenerAttached) {
+        btnGraficos.addEventListener('click', () => {
+            const reportes = document.getElementById('reportes-graficos');
+            if (reportes) {
+                reportes.scrollIntoView({ behavior: 'smooth' });
+            }
+        });
+        btnGraficos.dataset.listenerAttached = 'true';
     }
 
     // Inicializar el estado de la vista
@@ -144,6 +157,12 @@ function switchView(view) {
         listFilters.style.display = (view === 'lista') ? '' : 'none';
     }
 
+    // Mostrar/ocultar reportes gráficos solo en lista
+    const reportesGraficos = document.getElementById('reportes-graficos');
+    if (reportesGraficos) {
+        reportesGraficos.style.display = (view === 'lista') ? '' : 'none';
+    }
+
     // Renderiza la vista correspondiente
     renderActiveView(currentPedidos || []);
 }
@@ -174,6 +193,8 @@ export function renderActiveView(pedidos) {
         const listView = document.getElementById('list-view');
         if (kanbanBoard) kanbanBoard.innerHTML = '<div class="text-center text-muted py-5">Cargando pedidos actualiza la página...</div>';
         if (listView) listView.innerHTML = '';
+        // Limpiar gráficos si no hay datos
+        if (typeof renderGraficosReportes === 'function') renderGraficosReportes([]);
         return;
     }
 
@@ -188,6 +209,10 @@ export function renderActiveView(pedidos) {
     // Lista
     else if (currentView === 'lista') {
         renderList(pedidos);
+        // Renderizar gráficos con los datos filtrados
+        if (typeof renderGraficosReportes === 'function') {
+            renderGraficosReportes(window.currentFilteredPedidos || pedidos);
+        }
     }
 }
 window.renderActiveView = renderActiveView;
