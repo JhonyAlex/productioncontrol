@@ -58,9 +58,16 @@ export function initializeAppEventListeners() {
     const btnGraficos = document.getElementById('btn-graficos');
     if (btnGraficos && !btnGraficos.dataset.listenerAttached) {
         btnGraficos.addEventListener('click', () => {
-            const reportes = document.getElementById('reportes-graficos');
-            if (reportes) {
-                reportes.scrollIntoView({ behavior: 'smooth' });
+            // Cambia a la vista lista si no está activa
+            if (currentView !== 'lista') {
+                switchView('lista');
+                setTimeout(() => {
+                    const reportes = document.getElementById('reportes-graficos');
+                    if (reportes) reportes.scrollIntoView({ behavior: 'smooth' });
+                }, 200);
+            } else {
+                const reportes = document.getElementById('reportes-graficos');
+                if (reportes) reportes.scrollIntoView({ behavior: 'smooth' });
             }
         });
         btnGraficos.dataset.listenerAttached = 'true';

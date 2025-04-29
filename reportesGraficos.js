@@ -35,8 +35,19 @@ function parseFecha(fecha) {
     return null;
 }
 
+function safeGetCanvas(id) {
+    const el = document.getElementById(id);
+    // Solo si existe y está visible (offsetParent !== null)
+    return el && el.offsetParent !== null ? el : null;
+}
+
 export function renderGraficosReportes(pedidos) {
     destroyCharts();
+
+    // Si la sección está oculta, no intentes renderizar
+    const reportesDiv = document.getElementById('reportes-graficos');
+    if (!reportesDiv || reportesDiv.style.display === 'none') return;
+
     // --- Total metros por máquina ---
     const maquinas = {};
     pedidos.forEach(p => {
@@ -45,14 +56,17 @@ export function renderGraficosReportes(pedidos) {
     });
     const maqLabels = Object.keys(maquinas);
     const maqData = maqLabels.map(k => maquinas[k]);
-    charts.metrosMaquina = new Chart(document.getElementById('grafico-metros-maquina'), {
-        type: 'bar',
-        data: {
-            labels: maqLabels,
-            datasets: [{ label: 'Metros', data: maqData, backgroundColor: '#0d6efd' }]
-        },
-        options: { responsive: true, plugins: { legend: { display: false } } }
-    });
+    const canvasMaq = safeGetCanvas('grafico-metros-maquina');
+    if (canvasMaq) {
+        charts.metrosMaquina = new Chart(canvasMaq, {
+            type: 'bar',
+            data: {
+                labels: maqLabels,
+                datasets: [{ label: 'Metros', data: maqData, backgroundColor: '#0d6efd' }]
+            },
+            options: { responsive: true, plugins: { legend: { display: false } } }
+        });
+    }
 
     // --- Total metros por tipo de etapa (filtros rápidos) ---
     const tipos = {
@@ -64,41 +78,50 @@ export function renderGraficosReportes(pedidos) {
     };
     const tipoLabels = Object.keys(tipos);
     const tipoData = tipoLabels.map(t => sum(pedidos.filter(tipos[t]), p => p.metros));
-    charts.metrosEtapa = new Chart(document.getElementById('grafico-metros-etapa'), {
-        type: 'bar',
-        data: {
-            labels: tipoLabels,
-            datasets: [{ label: 'Metros', data: tipoData, backgroundColor: '#198754' }]
-        },
-        options: { responsive: true, plugins: { legend: { display: false } } }
-    });
+    const canvasEtapa = safeGetCanvas('grafico-metros-etapa');
+    if (canvasEtapa) {
+        charts.metrosEtapa = new Chart(canvasEtapa, {
+            type: 'bar',
+            data: {
+                labels: tipoLabels,
+                datasets: [{ label: 'Metros', data: tipoData, backgroundColor: '#198754' }]
+            },
+            options: { responsive: true, plugins: { legend: { display: false } } }
+        });
+    }
 
     // --- Pedidos por estado/etapa actual ---
     const etapas = groupBy(pedidos, p => p.etapaActual || 'N/A');
     const etapaLabels = Object.keys(etapas);
     const etapaData = etapaLabels.map(k => etapas[k].length);
-    charts.etapasActual = new Chart(document.getElementById('grafico-etapas-actual'), {
-        type: 'pie',
-        data: {
-            labels: etapaLabels,
-            datasets: [{ data: etapaData, backgroundColor: etapaLabels.map((_,i)=>`hsl(${i*50},70%,70%)`) }]
-        },
-        options: { responsive: true }
-    });
+    const canvasEtapasActual = safeGetCanvas('grafico-etapas-actual');
+    if (canvasEtapasActual) {
+        charts.etapasActual = new Chart(canvasEtapasActual, {
+            type: 'pie',
+            data: {
+                labels: etapaLabels,
+                datasets: [{ data: etapaData, backgroundColor: etapaLabels.map((_,i)=>`hsl(${i*50},70%,70%)`) }]
+            },
+            options: { responsive: true }
+        });
+    }
 
     // --- Top 5 clientes ---
     const clientes = groupBy(pedidos, p => p.cliente || 'Sin cliente');
     const clienteArr = Object.entries(clientes).map(([k,v])=>({cliente:k, count:v.length}));
     clienteArr.sort((a,b)=>b.count-a.count);
     const topClientes = clienteArr.slice(0,5);
-    charts.clientes = new Chart(document.getElementById('grafico-clientes'), {
-        type: 'bar',
-        data: {
-            labels: topClientes.map(x=>x.cliente),
-            datasets: [{ label: 'Pedidos', data: topClientes.map(x=>x.count), backgroundColor: '#fd7e14' }]
-        },
-        options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } } }
-    });
+    const canvasClientes = safeGetCanvas('grafico-clientes');
+    if (canvasClientes) {
+        charts.clientes = new Chart(canvasClientes, {
+            type: 'bar',
+            data: {
+                labels: topClientes.map(x=>x.cliente),
+                datasets: [{ label: 'Pedidos', data: topClientes.map(x=>x.count), backgroundColor: '#fd7e14' }]
+            },
+            options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } } }
+        });
+    }
 
     // --- Evolución de pedidos por fecha ---
     const fechas = {};
@@ -109,40 +132,49 @@ export function renderGraficosReportes(pedidos) {
         fechas[key] = (fechas[key]||0)+1;
     });
     const fechasSorted = Object.keys(fechas).sort();
-    charts.evolucionFecha = new Chart(document.getElementById('grafico-evolucion-fecha'), {
-        type: 'line',
-        data: {
-            labels: fechasSorted,
-            datasets: [{ label: 'Pedidos', data: fechasSorted.map(k=>fechas[k]), borderColor:'#6610f2', backgroundColor:'#b197fc', fill:true }]
-        },
-        options: { responsive: true }
-    });
+    const canvasEvol = safeGetCanvas('grafico-evolucion-fecha');
+    if (canvasEvol) {
+        charts.evolucionFecha = new Chart(canvasEvol, {
+            type: 'line',
+            data: {
+                labels: fechasSorted,
+                datasets: [{ label: 'Pedidos', data: fechasSorted.map(k=>fechas[k]), borderColor:'#6610f2', backgroundColor:'#b197fc', fill:true }]
+            },
+            options: { responsive: true }
+        });
+    }
 
     // --- Distribución por transparencia ---
     const trans = groupBy(pedidos, p => p.transparencia === 'true' ? 'Sí' : 'No');
     const transLabels = Object.keys(trans);
     const transData = transLabels.map(k=>trans[k].length);
-    charts.transparencia = new Chart(document.getElementById('grafico-transparencia'), {
-        type: 'doughnut',
-        data: {
-            labels: transLabels,
-            datasets: [{ data: transData, backgroundColor: ['#20c997','#adb5bd'] }]
-        },
-        options: { responsive: true }
-    });
+    const canvasTrans = safeGetCanvas('grafico-transparencia');
+    if (canvasTrans) {
+        charts.transparencia = new Chart(canvasTrans, {
+            type: 'doughnut',
+            data: {
+                labels: transLabels,
+                datasets: [{ data: transData, backgroundColor: ['#20c997','#adb5bd'] }]
+            },
+            options: { responsive: true }
+        });
+    }
 
     // --- Distribución por superficie ---
     const sup = groupBy(pedidos, p => p.superficie === 'true' ? 'Sí' : 'No');
     const supLabels = Object.keys(sup);
     const supData = supLabels.map(k=>sup[k].length);
-    charts.superficie = new Chart(document.getElementById('grafico-superficie'), {
-        type: 'doughnut',
-        data: {
-            labels: supLabels,
-            datasets: [{ data: supData, backgroundColor: ['#0dcaf0','#adb5bd'] }]
-        },
-        options: { responsive: true }
-    });
+    const canvasSup = safeGetCanvas('grafico-superficie');
+    if (canvasSup) {
+        charts.superficie = new Chart(canvasSup, {
+            type: 'doughnut',
+            data: {
+                labels: supLabels,
+                datasets: [{ data: supData, backgroundColor: ['#0dcaf0','#adb5bd'] }]
+            },
+            options: { responsive: true }
+        });
+    }
 }
 
 // --- EXPORTAR PDF ---
