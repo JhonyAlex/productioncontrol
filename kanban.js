@@ -315,13 +315,10 @@ async function drop(e) {
 
     try {
         await updatePedido(window.db, pedidoId, { etapaActual: nuevaEtapa });
-        // --- NO renderices manualmente aquí, espera a que Firestore actualice y renderice ---
-        // Pero restaura el scroll después de la actualización de Firestore
-        setTimeout(() => {
-            if (kanbanBoard && prevScroll !== null) {
-                kanbanBoard.scrollLeft = prevScroll;
-            }
-        }, 100);
+        // Restaura el scroll después de la actualización de Firestore
+        if (kanbanBoard && prevScroll !== null) {
+            kanbanBoard.scrollLeft = prevScroll;
+        }
         console.log(`Pedido ${pedidoId} movido a etapa ${nuevaEtapa}`);
     } catch (error) {
         alert("Error al mover el pedido. Intenta de nuevo.");
@@ -332,6 +329,7 @@ function enableKanbanDragToScroll(container) {
     let isDown = false;
     let startX;
     let scrollLeft;
+    let isDraggingCard = false;
 
     function isOnCard(e) {
         return e.target.closest('.kanban-card');
@@ -339,24 +337,32 @@ function enableKanbanDragToScroll(container) {
 
     // Mouse events
     container.addEventListener('mousedown', (e) => {
-        if (isOnCard(e)) return;
+        if (isOnCard(e)) {
+            isDraggingCard = true;
+            return;
+        }
         isDown = true;
         container.classList.add('drag-scroll-active', 'no-user-select');
         startX = e.pageX - container.offsetLeft;
         scrollLeft = container.scrollLeft;
     });
+
     container.addEventListener('mouseleave', () => {
-        isDown = false;
-        container.classList.remove('drag-scroll-active', 'no-user-select');
+        if (!isDraggingCard) {
+            isDown = false;
+            container.classList.remove('drag-scroll-active', 'no-user-select');
+        }
     });
+
     container.addEventListener('mouseup', () => {
         isDown = false;
+        isDraggingCard = false;
         container.classList.remove('drag-scroll-active', 'no-user-select');
     });
+
     container.addEventListener('mousemove', (e) => {
-        if (!isDown) return;
+        if (!isDown || isDraggingCard) return;
         e.preventDefault();
-        // Asegura que solo se mueva horizontalmente
         const x = e.pageX - container.offsetLeft;
         const walk = (x - startX) * 1.2;
         container.scrollLeft = scrollLeft - walk;
@@ -364,19 +370,24 @@ function enableKanbanDragToScroll(container) {
 
     // Touch events
     container.addEventListener('touchstart', (e) => {
-        if (isOnCard(e)) return;
+        if (isOnCard(e)) {
+            isDraggingCard = true;
+            return;
+        }
         isDown = true;
         container.classList.add('drag-scroll-active', 'no-user-select');
         startX = e.touches[0].pageX - container.offsetLeft;
         scrollLeft = container.scrollLeft;
     });
+
     container.addEventListener('touchend', () => {
         isDown = false;
+        isDraggingCard = false;
         container.classList.remove('drag-scroll-active', 'no-user-select');
     });
+
     container.addEventListener('touchmove', (e) => {
-        if (!isDown) return;
-        // Solo horizontal
+        if (!isDown || isDraggingCard) return;
         const x = e.touches[0].pageX - container.offsetLeft;
         const walk = (x - startX) * 1.2;
         container.scrollLeft = scrollLeft - walk;

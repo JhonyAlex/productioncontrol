@@ -46,6 +46,23 @@ function safeGetCanvas(id) {
 function renderTable(containerId, headers, rows) {
     const container = document.getElementById(containerId);
     if (!container) return;
+    
+    // Create a row container if it doesn't exist
+    let rowContainer = container.parentElement;
+    if (!rowContainer.classList.contains('row')) {
+        rowContainer = document.createElement('div');
+        rowContainer.className = 'row mb-4';
+        container.parentNode.insertBefore(rowContainer, container);
+        rowContainer.appendChild(container);
+    }
+    
+    // Create chart container if it doesn't exist
+    let chartContainer = document.getElementById(containerId.replace('tabla', 'grafico'));
+    if (chartContainer) {
+        chartContainer.className = 'col-md-6';
+        container.className = 'col-md-6';
+    }
+    
     let html = `<div class="table-responsive"><table class="table table-sm table-bordered mb-0"><thead><tr>`;
     headers.forEach(h => html += `<th>${h}</th>`);
     html += `</tr></thead><tbody>`;
