@@ -309,24 +309,19 @@ async function drop(e) {
     const pedidoId = e.dataTransfer.getData('text/plain');
     const nuevaEtapa = column.dataset.etapa;
 
+    // Guarda el scroll actual del board antes de renderizar
+    const kanbanBoard = column.closest('#kanban-board-complementarias') || column.closest('#kanban-board');
+    const prevScroll = kanbanBoard ? kanbanBoard.scrollLeft : null;
+
     try {
         await updatePedido(window.db, pedidoId, { etapaActual: nuevaEtapa });
-        // --- Mantener el scroll horizontal tras mover la tarjeta ---
-        const kanbanBoard = column.closest('#kanban-board-complementarias') || column.closest('#kanban-board');
-        const prevScroll = kanbanBoard ? kanbanBoard.scrollLeft : null;
-
-        if (typeof renderKanban === 'function' && window.currentPedidos) {
-            const pedidosActualizados = window.currentPedidos.map(p =>
-                p.id === pedidoId ? { ...p, etapaActual: nuevaEtapa } : p
-            );
-            const boardType = column.closest('#kanban-board-complementarias') ? 'complementarias' : 'impresion';
-            renderKanban(pedidosActualizados, { only: boardType });
-        }
-
-        // Restaurar el scroll horizontal si corresponde
-        if (kanbanBoard && prevScroll !== null) {
-            kanbanBoard.scrollLeft = prevScroll;
-        }
+        // --- NO renderices manualmente aquí, espera a que Firestore actualice y renderice ---
+        // Pero restaura el scroll después de la actualización de Firestore
+        setTimeout(() => {
+            if (kanbanBoard && prevScroll !== null) {
+                kanbanBoard.scrollLeft = prevScroll;
+            }
+        }, 100);
         console.log(`Pedido ${pedidoId} movido a etapa ${nuevaEtapa}`);
     } catch (error) {
         alert("Error al mover el pedido. Intenta de nuevo.");

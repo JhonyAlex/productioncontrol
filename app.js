@@ -50,21 +50,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Suscribirse a los pedidos de Firestore y actualizar la UI en tiempo real
     unsubscribePedidos = listenToPedidos(pedidosCollection, (pedidos) => {
-        // --- NUEVO: Solo renderiza si el DOM está listo y pedidos es un array ---
-        if (window.renderActiveView && Array.isArray(pedidos)) {
-            window.renderActiveView(pedidos);
-            // Forzar la visibilidad correcta después de renderizar
-            if (typeof window.switchView === 'function' && window.currentView) {
-                window.switchView(window.currentView);
+        // --- NUEVO: Actualiza todas las vistas en tiempo real ---
+        window.currentPedidos = pedidos;
+        // Actualiza Kanban si la pestaña de impresión o complementarias está activa
+        const tabImpresion = document.getElementById('tab-kanban-impresion');
+        const tabComplementarias = document.getElementById('tab-kanban-complementarias');
+        const tabLista = document.getElementById('tab-lista');
+        if (tabImpresion && tabImpresion.classList.contains('active')) {
+            import('./kanban.js').then(mod => mod.renderKanban(pedidos, { only: 'impresion' }));
+        } else if (tabComplementarias && tabComplementarias.classList.contains('active')) {
+            import('./kanban.js').then(mod => mod.renderKanban(pedidos, { only: 'complementarias' }));
+        }
+        // Actualiza lista si la pestaña lista está activa
+        if (tabLista && tabLista.classList.contains('active')) {
+            import('./listView.js').then(mod => mod.renderList(pedidos));
+            // Actualiza gráficos si están visibles
+            const reportes = document.getElementById('reportes-graficos');
+            if (reportes && reportes.style.display !== 'none' && typeof window.renderGraficosReportes === 'function') {
+                window.renderGraficosReportes(window.currentFilteredPedidos || pedidos);
             }
         }
+        // También ejecuta cualquier lógica adicional previa
         if (window.onPedidosDataUpdate) {
             window.onPedidosDataUpdate(pedidos);
         }
     }, (error) => {
         console.error("Error escuchando pedidos:", error);
     });
-    
+
     // NUEVO: Asegurarse de que el estado de la vista sea correcto después de cargar
     setTimeout(() => {
         if (typeof window.switchView === 'function' && window.currentView) {
