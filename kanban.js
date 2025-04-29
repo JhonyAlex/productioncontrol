@@ -78,6 +78,9 @@ export function renderKanban(pedidos, options = {}) {
 
     // Habilitar drag-to-scroll horizontal en el contenedor correcto
     enableKanbanDragToScroll(kanbanBoard);
+
+    // Aplicar estilos después de renderizar
+    applyKanbanStyles();
 }
 
 function createKanbanGroup(groupTitle, etapasInGroup, allPedidos) {
@@ -315,12 +318,12 @@ async function drop(e) {
 
     try {
         await updatePedido(window.db, pedidoId, { etapaActual: nuevaEtapa });
-        // Esperamos a que Firestore actualice y luego restauramos el scroll
-        requestAnimationFrame(() => {
-            if (kanbanBoard && prevScroll !== null) {
+        // Restaura el scroll después de la actualización de Firestore
+        if (kanbanBoard && prevScroll !== null) {
+            requestAnimationFrame(() => {
                 kanbanBoard.scrollLeft = prevScroll;
-            }
-        });
+            });
+        }
         console.log(`Pedido ${pedidoId} movido a etapa ${nuevaEtapa}`);
     } catch (error) {
         alert("Error al mover el pedido. Intenta de nuevo.");
@@ -400,13 +403,17 @@ function enableKanbanDragToScroll(container) {
         container.scrollLeft -= walk;
         lastX = x;
     });
+}
 
-    // Permitir scroll vertical normal con la rueda del mouse
-    container.addEventListener('wheel', (e) => {
-        // Solo prevenir el comportamiento por defecto si estamos haciendo scroll horizontal
-        if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
-            e.preventDefault();
-            container.scrollLeft += e.deltaX;
-        }
-    }, { passive: false });
+// Modificar el estilo del contenedor del Kanban
+function applyKanbanStyles() {
+    const kanbanBoards = document.querySelectorAll('#kanban-board, #kanban-board-complementarias');
+    kanbanBoards.forEach(board => {
+        board.style.cursor = 'grab';
+        board.style.overflowX = 'auto';
+        board.style.overflowY = 'hidden';
+        board.style.scrollBehavior = 'smooth';
+        board.style.scrollbarWidth = 'thin';
+        board.style.scrollbarColor = '#dee2e6 #f8f9fa';
+    });
 }
