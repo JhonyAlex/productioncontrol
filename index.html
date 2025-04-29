@@ -130,101 +130,135 @@
                             </button>
                         </div>
                         <div class="row g-4">
-                            <!-- 1. Gráfico metros por máquina + tabla -->
+                            <!-- 1. Gráfico metros por máquina -->
                             <div class="col-md-6">
-                                <div class="card shadow-sm h-100">
+                                <div class="card shadow-sm">
                                     <div class="card-body">
                                         <h6 class="card-title">Total de metros por máquina de impresión</h6>
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <canvas id="grafico-metros-maquina"></canvas>
-                                            </div>
-                                            <div class="col-md-6" id="tabla-metros-maquina"></div>
-                                        </div>
+                                        <canvas id="grafico-metros-maquina"></canvas>
                                     </div>
                                 </div>
                             </div>
-                            <!-- 2. Tabla metros por etapa + gráfico -->
+                            <!-- 1. Tabla metros por máquina -->
                             <div class="col-md-6">
-                                <div class="card shadow-sm h-100">
+                                <div class="card shadow-sm">
+                                    <div class="card-body">
+                                        <h6 class="card-title">Tabla de metros por máquina</h6>
+                                        <div id="tabla-metros-maquina"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 2. Gráfico metros por etapa -->
+                            <div class="col-md-6">
+                                <div class="card shadow-sm">
                                     <div class="card-body">
                                         <h6 class="card-title">Total de metros por tipo de etapa</h6>
-                                        <div class="row">
-                                            <div class="col-md-6" id="tabla-metros-etapa"></div>
-                                            <div class="col-md-6">
-                                                <canvas id="grafico-metros-etapa"></canvas>
-                                            </div>
-                                        </div>
+                                        <canvas id="grafico-metros-etapa"></canvas>
                                     </div>
                                 </div>
                             </div>
-                            <!-- 3. Gráfico etapas actual + tabla -->
+                            <!-- 2. Tabla metros por etapa -->
                             <div class="col-md-6">
-                                <div class="card shadow-sm h-100">
+                                <div class="card shadow-sm">
+                                    <div class="card-body">
+                                        <h6 class="card-title">Tabla de metros por etapa</h6>
+                                        <div id="tabla-metros-etapa"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 3. Gráfico etapas actual -->
+                            <div class="col-md-6">
+                                <div class="card shadow-sm">
                                     <div class="card-body">
                                         <h6 class="card-title">Pedidos por estado/etapa actual</h6>
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <canvas id="grafico-etapas-actual"></canvas>
-                                            </div>
-                                            <div class="col-md-6" id="tabla-etapas-actual"></div>
-                                        </div>
+                                        <canvas id="grafico-etapas-actual"></canvas>
                                     </div>
                                 </div>
                             </div>
-                            <!-- 4. Tabla top clientes + gráfico -->
+                            <!-- 3. Tabla etapas actual -->
                             <div class="col-md-6">
-                                <div class="card shadow-sm h-100">
+                                <div class="card shadow-sm">
+                                    <div class="card-body">
+                                        <h6 class="card-title">Tabla de pedidos por etapa</h6>
+                                        <div id="tabla-etapas-actual"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 4. Gráfico top clientes -->
+                            <div class="col-md-6">
+                                <div class="card shadow-sm">
                                     <div class="card-body">
                                         <h6 class="card-title">Top 5 clientes por cantidad de pedidos</h6>
-                                        <div class="row">
-                                            <div class="col-md-6" id="tabla-clientes"></div>
-                                            <div class="col-md-6">
-                                                <canvas id="grafico-clientes"></canvas>
-                                            </div>
-                                        </div>
+                                        <canvas id="grafico-clientes"></canvas>
                                     </div>
                                 </div>
                             </div>
-                            <!-- 5. Gráfico evolución fecha + tabla -->
-                            <div class="col-md-12">
+                            <!-- 4. Tabla top clientes -->
+                            <div class="col-md-6">
+                                <div class="card shadow-sm">
+                                    <div class="card-body">
+                                        <h6 class="card-title">Tabla de top clientes</h6>
+                                        <div id="tabla-clientes"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 5. Gráfico evolución fecha -->
+                            <div class="col-md-6">
                                 <div class="card shadow-sm">
                                     <div class="card-body">
                                         <h6 class="card-title">Evolución de pedidos por fecha (últimas 2 semanas)</h6>
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <canvas id="grafico-evolucion-fecha"></canvas>
-                                            </div>
-                                            <div class="col-md-6" id="tabla-evolucion-fecha"></div>
-                                        </div>
+                                        <canvas id="grafico-evolucion-fecha"></canvas>
                                     </div>
                                 </div>
                             </div>
-                            <!-- 6. Tabla transparencia + gráfico -->
+                            <!-- 5. Tabla evolución fecha -->
                             <div class="col-md-6">
-                                <div class="card shadow-sm h-100">
+                                <div class="card shadow-sm">
+                                    <div class="card-body">
+                                        <h6 class="card-title">Tabla de evolución por fecha</h6>
+                                        <div id="tabla-evolucion-fecha"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 6. Gráfico transparencia -->
+                            <div class="col-md-6">
+                                <div class="card shadow-sm">
                                     <div class="card-body">
                                         <h6 class="card-title">Distribución por Transparencia</h6>
-                                        <div class="row">
-                                            <div class="col-md-6" id="tabla-transparencia"></div>
-                                            <div class="col-md-6">
-                                                <canvas id="grafico-transparencia"></canvas>
-                                            </div>
-                                        </div>
+                                        <canvas id="grafico-transparencia"></canvas>
                                     </div>
                                 </div>
                             </div>
-                            <!-- 7. Gráfico superficie + tabla -->
+                            <!-- 6. Tabla transparencia -->
                             <div class="col-md-6">
-                                <div class="card shadow-sm h-100">
+                                <div class="card shadow-sm">
+                                    <div class="card-body">
+                                        <h6 class="card-title">Tabla de distribución por transparencia</h6>
+                                        <div id="tabla-transparencia"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 7. Gráfico superficie -->
+                            <div class="col-md-6">
+                                <div class="card shadow-sm">
                                     <div class="card-body">
                                         <h6 class="card-title">Distribución por Superficie</h6>
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <canvas id="grafico-superficie"></canvas>
-                                            </div>
-                                            <div class="col-md-6" id="tabla-superficie"></div>
-                                        </div>
+                                        <canvas id="grafico-superficie"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- 7. Tabla superficie -->
+                            <div class="col-md-6">
+                                <div class="card shadow-sm">
+                                    <div class="card-body">
+                                        <h6 class="card-title">Tabla de distribución por superficie</h6>
+                                        <div id="tabla-superficie"></div>
                                     </div>
                                 </div>
                             </div>
