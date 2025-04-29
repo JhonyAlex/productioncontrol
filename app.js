@@ -58,6 +58,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.switchView(window.currentView);
             }
         }
+        if (window.onPedidosDataUpdate) {
+            window.onPedidosDataUpdate(pedidos);
+        }
     }, (error) => {
         console.error("Error escuchando pedidos:", error);
     });

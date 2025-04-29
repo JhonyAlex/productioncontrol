@@ -217,6 +217,8 @@ body {
     overflow-wrap: anywhere;
     min-width: 0;
     max-width: 100%;
+    white-space: normal; /* Permite salto de línea */
+    display: block;      /* Asegura que ocupe toda la línea disponible */
 }
 
 .drag-over {
