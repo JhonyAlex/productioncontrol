@@ -425,28 +425,3 @@ function applyKanbanStyles() {
         board.style.scrollbarColor = '#dee2e6 #f8f9fa';
     });
 }
-
-// Modificar la función completeStage para manejar la secuencia original
-async function completeStage(pedidoId) {
-    const pedido = window.currentPedidos.find(p => p.id === pedidoId);
-    if (!pedido || !pedido.etapasSecuencia || pedido.etapasSecuencia.length === 0) return;
-
-    const currentIdx = pedido.etapasSecuencia.indexOf(pedido.etapaActual);
-    let nextEtapa;
-
-    if (currentIdx === -1) {
-        // Si la etapa actual no está en la secuencia, avanzamos a la siguiente etapa de la secuencia
-        nextEtapa = pedido.etapasSecuencia[0];
-    } else if (currentIdx < pedido.etapasSecuencia.length - 1) {
-        nextEtapa = pedido.etapasSecuencia[currentIdx + 1];
-    } else {
-        nextEtapa = 'Completado';
-    }
-
-    try {
-        await updatePedido(window.db, pedidoId, { etapaActual: nextEtapa });
-        console.log(`Pedido ${pedidoId} avanzado a etapa ${nextEtapa}`);
-    } catch (error) {
-        alert("Error al avanzar la etapa. Intenta de nuevo.");
-    }
-}
