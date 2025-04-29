@@ -12,23 +12,40 @@ export function getFirebaseErrorMessage(error) {
 
 export function handleSearch(e) {
     const searchTerm = e.target.value.toLowerCase().trim();
-    // currentPedidos debe estar accesible globalmente o importarse si es necesario
     const filteredPedidos = (window.currentPedidos || []).filter(pedido => {
-        // Excluye etapasSecuencia del filtro
         const numeroPedido = pedido.numeroPedido?.toLowerCase() || '';
         const cliente = pedido.cliente?.toLowerCase() || '';
         const maquina = pedido.maquinaImpresion?.toLowerCase() || '';
         const etapaActual = pedido.etapaActual?.toLowerCase() || '';
-        // NO buscar en etapasSecuencia
         return numeroPedido.includes(searchTerm) ||
                cliente.includes(searchTerm) ||
                maquina.includes(searchTerm) ||
                etapaActual.includes(searchTerm);
     });
-    // Llama a la función global renderActiveView
-    if (typeof window.renderActiveView === 'function') {
-        window.renderActiveView(filteredPedidos);
+
+    // Detecta la pestaña activa y renderiza la vista correspondiente
+    const tabImpresion = document.getElementById('tab-kanban-impresion');
+    const tabComplementarias = document.getElementById('tab-kanban-complementarias');
+    const tabLista = document.getElementById('tab-lista');
+
+    if (tabImpresion && tabImpresion.classList.contains('active')) {
+        // Kanban impresión
+        import('./kanban.js').then(mod => {
+            mod.renderKanban(filteredPedidos, { only: 'impresion' });
+        });
+    } else if (tabComplementarias && tabComplementarias.classList.contains('active')) {
+        // Kanban complementarias
+        import('./kanban.js').then(mod => {
+            mod.renderKanban(filteredPedidos, { only: 'complementarias' });
+        });
+    } else if (tabLista && tabLista.classList.contains('active')) {
+        // Lista
+        import('./listView.js').then(mod => {
+            mod.renderList(filteredPedidos);
+        });
     }
+    // Guarda los pedidos filtrados para exportar y gráficos
+    window.currentFilteredPedidos = filteredPedidos;
 }
 
 // --- NUEVO: Autocompletado para el buscador global ---

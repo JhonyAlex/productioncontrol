@@ -90,6 +90,9 @@ function createKanbanGroup(groupTitle, etapasInGroup, allPedidos) {
         const columnDiv = document.createElement('div');
         columnDiv.className = 'kanban-column';
         columnDiv.dataset.etapa = etapa;
+        // --- NUEVO: color de fondo único por etapa ---
+        columnDiv.style.background = etapaColumnColor(etapa);
+
         columnDiv.innerHTML = `<h5>${etapa}</h5>`;
 
         // Filtrar pedidos para la etapa actual
@@ -105,6 +108,17 @@ function createKanbanGroup(groupTitle, etapasInGroup, allPedidos) {
 
     groupDiv.appendChild(columnsContainer);
     return groupDiv;
+}
+
+// --- NUEVO: función para color de columna por etapa ---
+function etapaColumnColor(etapa) {
+    // Genera un color pastel único por etapa
+    let hash = 0;
+    for (let i = 0; i < etapa.length; i++) {
+        hash = etapa.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const h = Math.abs(hash) % 360;
+    return `hsl(${h}, 70%, 93%)`;
 }
 
 function stringToColor(str) {
@@ -140,7 +154,7 @@ function createKanbanCard(pedido) {
     let clienteBadge = '';
     if (pedido.cliente) {
         const color = stringToColor(pedido.cliente);
-        clienteBadge = `<span class="badge badge-cliente ms-1" style="background:${color};color:#333;font-size:0.75em;">${pedido.cliente}</span>`;
+        clienteBadge = `<span class="badge badge-cliente ms-1" style="background:${color};color:#333;font-size:0.75em; margin-right:0.5em;">${pedido.cliente}</span>`;
     }
     const metrosBadge = pedido.metros
         ? `<span class="badge bg-secondary ms-1" style="font-size:0.75em;">${pedido.metros} m</span>`
@@ -170,21 +184,18 @@ function createKanbanCard(pedido) {
         }
     }
 
-    const etapaColor = etapaToColor(pedido.etapaActual || '');
-
     card.innerHTML = `
         <div class="kanban-card-header" style="word-break:break-word;overflow-wrap:anywhere;max-width:100%;">
-            <h6 style="word-break:break-word;overflow-wrap:anywhere;max-width:100%;">${pedido.numeroPedido || 'N/A'}${fechaDisplay}</h6>
+            ${clienteBadge}
             <div>
-                ${clienteBadge}
                 ${metrosBadge}
             </div>
         </div>
         <div class="kanban-card-body" style="word-break:break-word;overflow-wrap:anywhere;max-width:100%;">
-            <p><strong>Máquina:</strong> ${pedido.maquinaImpresion || 'N/A'}</p>
-            <div class="etapa-badge-kanban" style="background:${etapaColor};color:#333;display:inline-block;padding:0.2em 0.7em;border-radius:0.7em;font-size:0.85em;margin-bottom:0.3em;word-break:break-word;overflow-wrap:anywhere;max-width:100%;">
-                ${pedido.etapaActual || ''}
+            <div style="font-weight:bold; font-size:1em; margin-bottom:0.2em;">
+                ${pedido.numeroPedido || 'N/A'}${fechaDisplay}
             </div>
+            <p><strong>Máquina:</strong> ${pedido.maquinaImpresion || 'N/A'}</p>
             ${etapasHtml}
         </div>
         <div class="kanban-card-footer" style="word-break:break-word;overflow-wrap:anywhere;max-width:100%;">
