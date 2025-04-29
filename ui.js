@@ -37,44 +37,22 @@ export function initializeAppEventListeners() {
         agregarPedidoBtn.dataset.listenerAttached = 'true';
     }
 
-    // Listeners para los botones de vistas
-    const btnKanbanImpresion = document.getElementById('btn-kanban-impresion');
-    if (btnKanbanImpresion && !btnKanbanImpresion.dataset.listenerAttached) {
-        btnKanbanImpresion.addEventListener('click', () => switchView('kanban-impresion'));
-        btnKanbanImpresion.dataset.listenerAttached = 'true';
-    }
-    const btnKanbanComplementarias = document.getElementById('btn-kanban-complementarias');
-    if (btnKanbanComplementarias && !btnKanbanComplementarias.dataset.listenerAttached) {
-        btnKanbanComplementarias.addEventListener('click', () => switchView('kanban-complementarias'));
-        btnKanbanComplementarias.dataset.listenerAttached = 'true';
-    }
-    const btnLista = document.getElementById('btn-lista');
-    if (btnLista && !btnLista.dataset.listenerAttached) {
-        btnLista.addEventListener('click', () => switchView('lista'));
-        btnLista.dataset.listenerAttached = 'true';
-    }
-
-    // Botón "Gráficos"
-    const btnGraficos = document.getElementById('btn-graficos');
-    if (btnGraficos && !btnGraficos.dataset.listenerAttached) {
-        btnGraficos.addEventListener('click', () => {
-            // Cambia a la vista lista si no está activa
-            if (currentView !== 'lista') {
-                switchView('lista');
-                setTimeout(() => {
-                    const reportes = document.getElementById('reportes-graficos');
-                    if (reportes) reportes.scrollIntoView({ behavior: 'smooth' });
-                }, 200);
-            } else {
-                const reportes = document.getElementById('reportes-graficos');
-                if (reportes) reportes.scrollIntoView({ behavior: 'smooth' });
+    // NUEVO: Listener para tabs Bootstrap
+    document.querySelectorAll('#vista-tabs button[data-bs-toggle="tab"]').forEach(tabBtn => {
+        tabBtn.addEventListener('shown.bs.tab', (event) => {
+            const targetId = event.target.getAttribute('data-bs-target');
+            if (targetId === '#tab-pane-kanban-impresion') {
+                renderKanban(currentPedidos || [], { only: 'impresion' });
+            } else if (targetId === '#tab-pane-kanban-complementarias') {
+                renderKanban(currentPedidos || [], { only: 'complementarias' });
+            } else if (targetId === '#tab-pane-lista') {
+                renderList(currentPedidos || []);
+                if (typeof renderGraficosReportes === 'function') {
+                    renderGraficosReportes(window.currentFilteredPedidos || currentPedidos || []);
+                }
             }
         });
-        btnGraficos.dataset.listenerAttached = 'true';
-    }
-
-    // Inicializar el estado de la vista
-    initializeViewState();
+    });
 }
 
 export function loadMainAppData() {
@@ -104,13 +82,8 @@ export function loadMainAppData() {
     kanbanBoard.innerHTML = '';
     listView.innerHTML = '';
 
-    // Renderiza la vista activa
-    renderActiveView(currentPedidos || []);
-    
-    // Aplicar estado de la vista actual al cargar datos
-    setTimeout(() => {
-        switchView(currentView);
-    }, 100);
+    // Renderiza la vista activa por defecto (Impresión)
+    renderKanban(currentPedidos || [], { only: 'impresion' });
 }
 
 export function resetUIOnLogout(domRefs, unsubscribePedidosRef) {
@@ -127,97 +100,3 @@ export function resetUIOnLogout(domRefs, unsubscribePedidosRef) {
         unsubscribePedidosRef();
     }
 }
-
-// Nueva función para cambiar de vista
-function switchView(view) {
-    currentView = view;
-
-    // Actualiza clases de los tabs
-    document.getElementById('btn-kanban-impresion')?.classList.remove('active');
-    document.getElementById('btn-kanban-complementarias')?.classList.remove('active');
-    document.getElementById('btn-lista')?.classList.remove('active');
-    if (view === 'kanban-impresion') document.getElementById('btn-kanban-impresion')?.classList.add('active');
-    if (view === 'kanban-complementarias') document.getElementById('btn-kanban-complementarias')?.classList.add('active');
-    if (view === 'lista') document.getElementById('btn-lista')?.classList.add('active');
-
-    // Muestra/oculta vistas principales
-    const kanbanBoard = document.getElementById('kanban-board');
-    const listView = document.getElementById('list-view');
-    if (kanbanBoard) kanbanBoard.style.display = (view.startsWith('kanban')) ? '' : 'none';
-    if (listView) listView.style.display = (view === 'lista') ? '' : 'none';
-
-    // Mostrar/ocultar botón gráficos solo en lista
-    const btnGraficos = document.getElementById('btn-graficos');
-    if (btnGraficos) btnGraficos.style.display = (view === 'lista') ? '' : 'none';
-
-    // Control de visibilidad del botón exportar (dropdown)
-    const exportDropdown = document.getElementById('btn-exportar-dropdown')?.parentElement;
-    if (exportDropdown) {
-        exportDropdown.style.display = (view === 'lista') ? '' : 'none';
-    }
-
-    // Filtros rápidos solo en lista
-    const listFilters = document.getElementById('list-filters');
-    if (listFilters) {
-        listFilters.style.display = (view === 'lista') ? '' : 'none';
-    }
-
-    // Mostrar/ocultar reportes gráficos solo en lista
-    const reportesGraficos = document.getElementById('reportes-graficos');
-    if (reportesGraficos) {
-        reportesGraficos.style.display = (view === 'lista') ? '' : 'none';
-    }
-
-    // Renderiza la vista correspondiente
-    renderActiveView(currentPedidos || []);
-}
-
-// NUEVA FUNCIÓN: Inicializar al cargar la página para asegurar que la vista inicial sea correcta
-export function initializeViewState() {
-    // Fuerza la aplicación correcta de la visibilidad basada en currentView al inicio
-    setTimeout(() => {
-        // Asegurarse de que currentView tenga un valor válido
-        if (!currentView) currentView = 'kanban-impresion';
-        switchView(currentView);
-    }, 100);
-}
-
-// Exponer para uso global
-window.switchView = switchView;
-
-// Función global para renderizar la vista activa según currentView
-export function renderActiveView(pedidos) {
-    // Mostrar/ocultar tabs
-    const viewTabs = document.getElementById('view-tabs');
-    if (viewTabs) viewTabs.style.display = '';
-
-    // --- NUEVO: Evita renderizar si pedidos no está listo o es null ---
-    if (!Array.isArray(pedidos) || pedidos.length === 0) {
-        // Opcional: muestra mensaje de carga o "No hay pedidos"
-        const kanbanBoard = document.getElementById('kanban-board');
-        const listView = document.getElementById('list-view');
-        if (kanbanBoard) kanbanBoard.innerHTML = '<div class="text-center text-muted py-5">Cargando pedidos actualiza la página...</div>';
-        if (listView) listView.innerHTML = '';
-        // Limpiar gráficos si no hay datos
-        if (typeof renderGraficosReportes === 'function') renderGraficosReportes([]);
-        return;
-    }
-
-    // Kanban Impresión
-    if (currentView === 'kanban-impresion') {
-        renderKanban(pedidos, { only: 'impresion' });
-    }
-    // Kanban Etapas Complementarias
-    else if (currentView === 'kanban-complementarias') {
-        renderKanban(pedidos, { only: 'complementarias' });
-    }
-    // Lista
-    else if (currentView === 'lista') {
-        renderList(pedidos);
-        // Renderizar gráficos con los datos filtrados
-        if (typeof renderGraficosReportes === 'function') {
-            renderGraficosReportes(window.currentFilteredPedidos || pedidos);
-        }
-    }
-}
-window.renderActiveView = renderActiveView;

@@ -60,25 +60,30 @@
             <div class="mb-3">
                 <input type="text" id="search-input" class="form-control" placeholder="Buscar pedido, cliente o máquina...">
             </div>
-            <!-- Botones de navegación de vistas -->
-            <div class="mb-3" id="view-tabs">
-                <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
-                    <!-- Botones de vista como pestañas -->
-                    <ul class="nav nav-tabs" id="vista-tabs" role="tablist" style="margin-bottom:0;">
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="btn-kanban-impresion" data-listener-attached="true" type="button" role="tab">Impresión</button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="btn-kanban-complementarias" data-listener-attached="true" type="button" role="tab">Etapas Complementarias</button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="btn-lista" data-listener-attached="true" type="button" role="tab">Lista</button>
-                        </li>
-                    </ul>
+            <!-- Tabs Bootstrap -->
+            <ul class="nav nav-tabs" id="vista-tabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="tab-kanban-impresion" data-bs-toggle="tab" data-bs-target="#tab-pane-kanban-impresion" type="button" role="tab" aria-controls="tab-pane-kanban-impresion" aria-selected="true">Impresión</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tab-kanban-complementarias" data-bs-toggle="tab" data-bs-target="#tab-pane-kanban-complementarias" type="button" role="tab" aria-controls="tab-pane-kanban-complementarias" aria-selected="false">Etapas Complementarias</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tab-lista" data-bs-toggle="tab" data-bs-target="#tab-pane-lista" type="button" role="tab" aria-controls="tab-pane-lista" aria-selected="false">Lista</button>
+                </li>
+            </ul>
+            <div class="tab-content" id="vista-tabs-content">
+                <div class="tab-pane fade show active" id="tab-pane-kanban-impresion" role="tabpanel" aria-labelledby="tab-kanban-impresion">
+                    <div id="kanban-board"></div>
+                </div>
+                <div class="tab-pane fade" id="tab-pane-kanban-complementarias" role="tabpanel" aria-labelledby="tab-kanban-complementarias">
+                    <div id="kanban-board-complementarias"></div>
+                </div>
+                <div class="tab-pane fade" id="tab-pane-lista" role="tabpanel" aria-labelledby="tab-lista">
                     <!-- Botón Gráficos solo visible en Lista -->
-                    <button type="button" class="btn btn-outline-primary" id="btn-graficos" style="display:none;">Gráficos</button>
+                    <button type="button" class="btn btn-outline-primary my-2" id="btn-graficos">Gráficos</button>
                     <!-- Filtros rápidos para la lista -->
-                    <div id="list-filters" class="gap-2" style="display: none;">
+                    <div id="list-filters" class="gap-2 my-2">
                         <button class="btn btn-outline-secondary btn-sm" id="btn-filtrar-laminacion">Laminación</button>
                         <button class="btn btn-outline-secondary btn-sm" id="btn-filtrar-rebobinado">Rebobinado</button>
                         <button class="btn btn-outline-secondary btn-sm" id="btn-filtrar-perforado">Perforado</button>
@@ -86,7 +91,7 @@
                         <button class="btn btn-outline-secondary btn-sm" id="btn-filtrar-todos">Todos</button>
                     </div>
                     <!-- Botón exportar -->
-                    <div class="dropdown">
+                    <div class="dropdown my-2">
                         <button class="btn btn-success dropdown-toggle" type="button" id="btn-exportar-dropdown" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-download"></i> Exportar
                         </button>
@@ -96,15 +101,13 @@
                         </ul>
                     </div>
                     <!-- Botón agregar pedido a la derecha -->
-                    <button type="button" class="btn btn-success" id="btn-agregar-pedido">
+                    <button type="button" class="btn btn-success my-2" id="btn-agregar-pedido">
                         <i class="bi bi-plus-circle"></i> Agregar pedido
                     </button>
+                    <div id="list-view">
+                        <!-- La tabla se renderiza por JS -->
+                    </div>
                 </div>
-            </div>
-            <!-- Kanban y Lista -->
-            <div id="kanban-board"></div>
-            <div id="list-view" style="display:none;">
-                <!-- La tabla se renderiza por JS -->
             </div>
         </div>
 

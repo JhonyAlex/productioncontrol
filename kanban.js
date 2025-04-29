@@ -9,9 +9,14 @@ let kanbanSortAsc = true;
 
 // Renderiza el tablero Kanban
 export function renderKanban(pedidos, options = {}) {
-    const kanbanBoard = document.getElementById('kanban-board');
+    let kanbanBoard;
+    if (options.only === 'complementarias') {
+        kanbanBoard = document.getElementById('kanban-board-complementarias');
+    } else {
+        kanbanBoard = document.getElementById('kanban-board');
+    }
     if (!kanbanBoard) {
-        console.error("renderKanban: Elemento #kanban-board no encontrado.");
+        console.error("renderKanban: Elemento de Kanban no encontrado.");
         return;
     }
     console.log(`Renderizando Kanban con ${pedidos.length} pedidos.`);
