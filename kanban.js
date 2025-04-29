@@ -315,10 +315,12 @@ async function drop(e) {
 
     try {
         await updatePedido(window.db, pedidoId, { etapaActual: nuevaEtapa });
-        // Restaura el scroll después de la actualización de Firestore
-        if (kanbanBoard && prevScroll !== null) {
-            kanbanBoard.scrollLeft = prevScroll;
-        }
+        // Esperamos a que Firestore actualice y luego restauramos el scroll
+        requestAnimationFrame(() => {
+            if (kanbanBoard && prevScroll !== null) {
+                kanbanBoard.scrollLeft = prevScroll;
+            }
+        });
         console.log(`Pedido ${pedidoId} movido a etapa ${nuevaEtapa}`);
     } catch (error) {
         alert("Error al mover el pedido. Intenta de nuevo.");
@@ -330,6 +332,7 @@ function enableKanbanDragToScroll(container) {
     let startX;
     let scrollLeft;
     let isDraggingCard = false;
+    let lastX = 0;
 
     function isOnCard(e) {
         return e.target.closest('.kanban-card');
@@ -343,7 +346,8 @@ function enableKanbanDragToScroll(container) {
         }
         isDown = true;
         container.classList.add('drag-scroll-active', 'no-user-select');
-        startX = e.pageX - container.offsetLeft;
+        startX = e.pageX;
+        lastX = e.pageX;
         scrollLeft = container.scrollLeft;
     });
 
@@ -363,9 +367,11 @@ function enableKanbanDragToScroll(container) {
     container.addEventListener('mousemove', (e) => {
         if (!isDown || isDraggingCard) return;
         e.preventDefault();
-        const x = e.pageX - container.offsetLeft;
-        const walk = (x - startX) * 1.2;
-        container.scrollLeft = scrollLeft - walk;
+        
+        const x = e.pageX;
+        const walk = (x - lastX) * 2; // Multiplicador ajustado para mejor respuesta
+        container.scrollLeft -= walk;
+        lastX = x;
     });
 
     // Touch events
@@ -376,7 +382,8 @@ function enableKanbanDragToScroll(container) {
         }
         isDown = true;
         container.classList.add('drag-scroll-active', 'no-user-select');
-        startX = e.touches[0].pageX - container.offsetLeft;
+        startX = e.touches[0].pageX;
+        lastX = e.touches[0].pageX;
         scrollLeft = container.scrollLeft;
     });
 
@@ -388,8 +395,17 @@ function enableKanbanDragToScroll(container) {
 
     container.addEventListener('touchmove', (e) => {
         if (!isDown || isDraggingCard) return;
-        const x = e.touches[0].pageX - container.offsetLeft;
-        const walk = (x - startX) * 1.2;
-        container.scrollLeft = scrollLeft - walk;
+        const x = e.touches[0].pageX;
+        const walk = (x - lastX) * 2; // Multiplicador ajustado para mejor respuesta
+        container.scrollLeft -= walk;
+        lastX = x;
     });
+
+    // Prevenir el comportamiento por defecto del scroll en el contenedor
+    container.addEventListener('wheel', (e) => {
+        if (e.deltaY !== 0) {
+            e.preventDefault();
+            container.scrollLeft += e.deltaY;
+        }
+    }, { passive: false });
 }
