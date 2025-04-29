@@ -110,5 +110,3 @@ export function setupSearchAutocomplete() {
 
 import { renderKanban } from './kanban.js';
 import { renderList } from './listView.js';
-import { renderActiveView } from './ui.js';
-window.renderActiveView = renderActiveView;
