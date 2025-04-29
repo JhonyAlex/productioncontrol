@@ -59,17 +59,8 @@ function renderTable(containerId, headers, rows) {
     // Create chart container if it doesn't exist
     let chartContainer = document.getElementById(containerId.replace('tabla', 'grafico'));
     if (chartContainer) {
-        // Create a wrapper div for the chart
-        const chartWrapper = document.createElement('div');
-        chartWrapper.className = 'col-md-6';
-        chartContainer.parentNode.insertBefore(chartWrapper, chartContainer);
-        chartWrapper.appendChild(chartContainer);
-        
-        // Create a wrapper div for the table
-        const tableWrapper = document.createElement('div');
-        tableWrapper.className = 'col-md-6';
-        container.parentNode.insertBefore(tableWrapper, container);
-        tableWrapper.appendChild(container);
+        chartContainer.className = 'col-md-6';
+        container.className = 'col-md-6';
     }
     
     let html = `<div class="table-responsive"><table class="table table-sm table-bordered mb-0"><thead><tr>`;
