@@ -386,3 +386,54 @@ body {
     margin-left: 10px;
     margin-right: 10px;
 }
+
+/* Estilos para reportes gráficos */
+#reportes-graficos .card {
+    height: 100%;
+    overflow: hidden;
+}
+
+#reportes-graficos .card-body {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+}
+
+#reportes-graficos .card-title {
+    margin-bottom: 1rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #495057;
+}
+
+#reportes-graficos canvas {
+    max-width: 100%;
+    height: auto !important;
+    aspect-ratio: 1;
+}
+
+#reportes-graficos .table-responsive {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+#reportes-graficos .table {
+    margin-bottom: 0;
+    font-size: 0.875rem;
+}
+
+#reportes-graficos .table th,
+#reportes-graficos .table td {
+    padding: 0.5rem;
+    white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+    #reportes-graficos .row > div {
+        margin-bottom: 1rem;
+    }
+    
+    #reportes-graficos canvas {
+        aspect-ratio: 16/9;
+    }
+}
