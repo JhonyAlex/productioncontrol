@@ -102,6 +102,13 @@ export function resetUIOnLogout(domRefs, unsubscribePedidosRef) {
         // En vez de intentar asignar a una expresión inválida, simplemente reemplaza el contenido:
         domRefs.mainContent.innerHTML = '<h1 class="text-center">Cargando pedidos, actualiza la página.</h1>';
     }
+    // Limpia el Kanban y la lista al cerrar sesión
+    const kanbanBoard = document.getElementById('kanban-board');
+    if (kanbanBoard) kanbanBoard.innerHTML = '';
+    const kanbanBoardComp = document.getElementById('kanban-board-complementarias');
+    if (kanbanBoardComp) kanbanBoardComp.innerHTML = '';
+    const listView = document.getElementById('list-view');
+    if (listView) listView.innerHTML = '';
     // Si hay un listener de Firestore, desuscribirse
     if (typeof unsubscribePedidosRef === 'function') {
         unsubscribePedidosRef();

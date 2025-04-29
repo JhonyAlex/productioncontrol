@@ -131,6 +131,10 @@ function createKanbanCard(pedido) {
     card.id = `pedido-${pedido.id}`;
     card.draggable = true;
     card.dataset.id = pedido.id;
+    card.style.wordBreak = 'break-word';
+    card.style.overflowWrap = 'anywhere';
+    card.style.maxWidth = '100%';
+    card.style.minWidth = '0';
 
     const fechaDisplay = pedido.fecha ? ` (${pedido.fecha})` : '';
     let clienteBadge = '';
@@ -169,21 +173,21 @@ function createKanbanCard(pedido) {
     const etapaColor = etapaToColor(pedido.etapaActual || '');
 
     card.innerHTML = `
-        <div class="kanban-card-header">
-            <h6>${pedido.numeroPedido || 'N/A'}${fechaDisplay}</h6>
+        <div class="kanban-card-header" style="word-break:break-word;overflow-wrap:anywhere;max-width:100%;">
+            <h6 style="word-break:break-word;overflow-wrap:anywhere;max-width:100%;">${pedido.numeroPedido || 'N/A'}${fechaDisplay}</h6>
             <div>
                 ${clienteBadge}
                 ${metrosBadge}
             </div>
         </div>
-        <div class="kanban-card-body">
+        <div class="kanban-card-body" style="word-break:break-word;overflow-wrap:anywhere;max-width:100%;">
             <p><strong>Máquina:</strong> ${pedido.maquinaImpresion || 'N/A'}</p>
-            <div class="etapa-badge-kanban" style="background:${etapaColor};color:#333;display:inline-block;padding:0.2em 0.7em;border-radius:0.7em;font-size:0.85em;margin-bottom:0.3em;">
+            <div class="etapa-badge-kanban" style="background:${etapaColor};color:#333;display:inline-block;padding:0.2em 0.7em;border-radius:0.7em;font-size:0.85em;margin-bottom:0.3em;word-break:break-word;overflow-wrap:anywhere;max-width:100%;">
                 ${pedido.etapaActual || ''}
             </div>
             ${etapasHtml}
         </div>
-        <div class="kanban-card-footer">
+        <div class="kanban-card-footer" style="word-break:break-word;overflow-wrap:anywhere;max-width:100%;">
             <button class="btn btn-sm btn-outline-primary" onclick="openPedidoModal('${pedido.id}')">Ver/Editar</button>
             ${showEtapaBtn ? `<button class="btn btn-sm btn-outline-success mt-1" onclick="completeStage('${pedido.id}')">${etapaBtnText}</button>` : ''}
         </div>
@@ -295,10 +299,13 @@ function enableKanbanDragToScroll(container) {
     let startX;
     let scrollLeft;
 
+    function isOnCard(e) {
+        return e.target.closest('.kanban-card');
+    }
+
     // Mouse events
     container.addEventListener('mousedown', (e) => {
-        // Solo inicia drag si no es sobre una tarjeta
-        if (e.target.closest('.kanban-card')) return;
+        if (isOnCard(e)) return;
         isDown = true;
         container.classList.add('drag-scroll-active', 'no-user-select');
         startX = e.pageX - container.offsetLeft;
@@ -322,8 +329,7 @@ function enableKanbanDragToScroll(container) {
 
     // Touch events
     container.addEventListener('touchstart', (e) => {
-        // Solo inicia drag si no es sobre una tarjeta
-        if (e.target.closest('.kanban-card')) return;
+        if (isOnCard(e)) return;
         isDown = true;
         container.classList.add('drag-scroll-active', 'no-user-select');
         startX = e.touches[0].pageX - container.offsetLeft;
