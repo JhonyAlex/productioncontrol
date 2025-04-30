@@ -20,4 +20,9 @@
     color: white;
 }
 
+.button-filter.active {
+    background-color: #4CAF50;
+    color: white;
+}
+
 /* ...existing code... */
