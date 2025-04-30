@@ -1,6 +1,5 @@
 // Add this function to check if an order is in the completed list
 function isOrderCompleted(orderId) {
-    // Get the completed orders from local storage
     const completedOrders = JSON.parse(localStorage.getItem('completedOrders')) || [];
     return completedOrders.includes(orderId);
 }
@@ -10,11 +9,10 @@ function displayOrders(orders) {
     const listView = document.getElementById('list-view');
     listView.innerHTML = '';
     
-    // Get the current filter mode (if it's 'completed', show only completed orders)
-    const filterMode = listView.dataset.filterMode || 'active';
+    // Filtering orders based on the current mode
+    const filterMode = localStorage.getItem('orderFilterMode') || 'active';
     
     orders.forEach(order => {
-        // Check if the order is completed
         const isCompleted = isOrderCompleted(order.id);
         
         // Skip this order if it's completed and we're showing active orders,
@@ -34,32 +32,54 @@ function displayOrders(orders) {
 }
 
 // Add this function to handle the filter buttons
-function setupFilterButtons() {
+document.addEventListener('DOMContentLoaded', function() {
     const listView = document.getElementById('list-view');
+    
+    // Set default filter mode to 'active' if not already set
+    if (!localStorage.getItem('orderFilterMode')) {
+        localStorage.setItem('orderFilterMode', 'active');
+    }
+    
     const activeBtn = document.getElementById('active-orders-btn');
     const completedBtn = document.getElementById('completed-orders-btn');
     
-    activeBtn.addEventListener('click', () => {
-        listView.dataset.filterMode = 'active';
-        activeBtn.classList.add('active');
-        completedBtn.classList.remove('active');
-        displayOrders(currentOrders); // Assuming you have a currentOrders variable
-    });
-    
-    completedBtn.addEventListener('click', () => {
-        listView.dataset.filterMode = 'completed';
-        completedBtn.classList.add('active');
-        activeBtn.classList.remove('active');
-        displayOrders(currentOrders); // Assuming you have a currentOrders variable
-    });
-}
-
-// Call this function when the page loads
-document.addEventListener('DOMContentLoaded', () => {
-    // Set default filter mode to active
-    const listView = document.getElementById('list-view');
-    listView.dataset.filterMode = 'active';
-    
-    // Setup the filter buttons
-    setupFilterButtons();
+    if (activeBtn && completedBtn) {
+        // Apply styles to the active button based on the saved filter
+        const currentFilter = localStorage.getItem('orderFilterMode') || 'active';
+        if (currentFilter === 'active') {
+            activeBtn.classList.add('active');
+            completedBtn.classList.remove('active');
+        } else {
+            completedBtn.classList.add('active');
+            activeBtn.classList.remove('active');
+        }
+        
+        // Set up events for the buttons
+        activeBtn.addEventListener('click', function() {
+            localStorage.setItem('orderFilterMode', 'active');
+            activeBtn.classList.add('active');
+            completedBtn.classList.remove('active');
+            
+            // Reload the list with the new filter
+            loadOrders(); // Assuming you have a function loadOrders() that loads and displays orders
+        });
+        
+        completedBtn.addEventListener('click', function() {
+            localStorage.setItem('orderFilterMode', 'completed');
+            completedBtn.classList.add('active');
+            activeBtn.classList.remove('active');
+            
+            // Reload the list with the new filter
+            loadOrders(); // Assuming you have a function loadOrders() that loads and displays orders
+        });
+    }
 });
+
+// If you have a function that handles tab changes, ensure orders are reloaded
+// with the correct filter when switching to the LIST tab
+function handleTabChange(tabName) {
+    if (tabName === 'list') {
+        // Load orders applying the saved filter
+        loadOrders();
+    }
+}

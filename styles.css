@@ -15,4 +15,9 @@
     border-color: #3e8e41;
 }
 
+.filter-button.active {
+    background-color: #4CAF50; /* O el color que usen tus otros botones activos */
+    color: white;
+}
+
 /* ...existing code... */
