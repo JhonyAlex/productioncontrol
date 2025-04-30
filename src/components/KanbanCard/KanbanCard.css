@@ -6,8 +6,9 @@
 }
 
 .kanban-card-header {
-  /* Existing styles */
-  font-size: 0.95em;
+  font-weight: bold;
+  font-size: 0.9em;
+  margin-bottom: 0.2em;
 }
 
 .kanban-card .card-header,
