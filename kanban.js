@@ -560,8 +560,10 @@ function setupGroupContainer(group) {
     const columns = columnsContainer.querySelectorAll('.kanban-column');
     const columnWidth = 300; // px por columna
     
-    // Calcular el ancho necesario para las columnas SIN espacio extra al final
-    const calculatedWidth = (columns.length * (columnWidth + 20)) + 10; // Reducir a 10px de margen
+    // AJUSTADO: Calcular el ancho EXACTO para eliminar espacio extra al final
+    // Usamos fórmula exacta: ancho de columna * número de columnas + margen solo entre columnas
+    const totalMargin = (columns.length - 1) * 20; // 20px de margen solo ENTRE columnas
+    const calculatedWidth = (columns.length * columnWidth) + totalMargin;
     
     // Estilos para el contenedor de columnas - MEJORADO
     columnsContainer.style.position = 'relative';
@@ -620,7 +622,8 @@ function implementDirectScroll(board, container) {
         const boardWidth = board.clientWidth;
         const containerWidth = container.scrollWidth;
         
-        // Calcular límites de desplazamiento para ver todo el contenido sin espacio extra
+        // MEJORADO: Calcular límites de desplazamiento de forma precisa
+        // sin agregar espacio extra al final
         const minTranslate = Math.min(-(containerWidth - boardWidth), 0);
         
         // Aplicar límites sin espacio extra al final
@@ -725,10 +728,13 @@ function implementDirectScroll(board, container) {
 // Función para añadir botones de navegación mejorados
 function addScrollButtons(board, container) {
     // Eliminar botones anteriores
-    const oldButtons = board.querySelectorAll('.scroll-button');
+    const oldButtons = board.querySelectorAll('.scroll-button, .scroll-buttons-container');
     oldButtons.forEach(btn => btn.remove());
     
-    // Crear un contenedor para los botones que permanezca fijo
+    // CORREGIDO: Añadir los botones al BOARD directamente, no al container
+    // para que permanezcan fijos sin importar el desplazamiento del contenido
+    
+    // Añadir un contenedor a nivel de board, fuera del área de scroll
     const buttonContainer = document.createElement('div');
     buttonContainer.className = 'scroll-buttons-container';
     buttonContainer.style.cssText = `
@@ -738,8 +744,10 @@ function addScrollButtons(board, container) {
         width: 100%;
         height: 100%;
         pointer-events: none; /* Permite que los eventos pasen a través del contenedor */
-        z-index: 1000;
+        z-index: 9999;
     `;
+    
+    board.appendChild(buttonContainer);
     
     const leftBtn = document.createElement('button');
     leftBtn.innerHTML = '◀';
@@ -749,7 +757,7 @@ function addScrollButtons(board, container) {
         left: 5px;
         top: 50%;
         transform: translateY(-50%);
-        z-index: 1000;
+        z-index: 9999;
         background: rgba(0,0,0,0.3);
         color: white;
         border: none;
@@ -761,6 +769,7 @@ function addScrollButtons(board, container) {
         opacity: 0.7;
         transition: opacity 0.2s;
         pointer-events: auto; /* Reactivar eventos para el botón */
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     `;
     
     const rightBtn = document.createElement('button');
@@ -771,7 +780,7 @@ function addScrollButtons(board, container) {
         right: 5px;
         top: 50%;
         transform: translateY(-50%);
-        z-index: 1000;
+        z-index: 9999;
         background: rgba(0,0,0,0.3);
         color: white;
         border: none;
@@ -783,6 +792,7 @@ function addScrollButtons(board, container) {
         opacity: 0.7;
         transition: opacity 0.2s;
         pointer-events: auto; /* Reactivar eventos para el botón */
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     `;
     
     // Hover effect
@@ -816,7 +826,10 @@ function addScrollButtons(board, container) {
     // Desplazar con los botones - con movimiento más amplio
     const scrollAmount = 500; // Desplazarse más en cada clic
     
-    leftBtn.onclick = () => {
+    leftBtn.onclick = (e) => {
+        e.preventDefault(); // Evitar que el evento se propague
+        e.stopPropagation(); // Detener propagación
+        
         const currentX = getTranslateX();
         const newX = Math.min(0, currentX + scrollAmount);
         container.style.transform = `translateX(${newX}px)`;
@@ -825,10 +838,13 @@ function addScrollButtons(board, container) {
         board.scrollLeft = -newX;
     };
     
-    rightBtn.onclick = () => {
+    rightBtn.onclick = (e) => {
+        e.preventDefault(); // Evitar que el evento se propague
+        e.stopPropagation(); // Detener propagación
+        
         const currentX = getTranslateX();
         const minTranslate = board.clientWidth - container.scrollWidth;
-        const newX = Math.max(minTranslate, currentX - scrollAmount); // Eliminamos el -50 para no tener espacio extra
+        const newX = Math.max(minTranslate, currentX - scrollAmount);
         container.style.transform = `translateX(${newX}px)`;
         
         // Sincronizar con el scroll nativo
@@ -838,12 +854,6 @@ function addScrollButtons(board, container) {
     // Añadir los botones al contenedor fijo
     buttonContainer.appendChild(leftBtn);
     buttonContainer.appendChild(rightBtn);
-    
-    // Añadir el contenedor al board
-    board.appendChild(buttonContainer);
-    
-    // Asegurar que los botones permanezcan visibles incluso al hacer scroll
-    board.style.position = 'relative'; // Asegurarse de que el board tenga posición relativa
 }
 
 // Función para visualizar las dimensiones en debug (opcional)
