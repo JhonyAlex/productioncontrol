@@ -559,19 +559,22 @@ function setupGroupContainer(group) {
     // Calcular el ancho basado en columnas
     const columns = columnsContainer.querySelectorAll('.kanban-column');
     const columnWidth = 300; // px por columna
-    const totalWidth = Math.max(columns.length * columnWidth, 1500);
     
-    // Estilos para el contenedor de columnas
+    // Calcular el ancho REAL necesario para todas las columnas con un margen extra
+    const calculatedWidth = (columns.length * (columnWidth + 20)) + 50; // Añadir padding extra
+    const minWidth = Math.max(calculatedWidth, 1500); // Asegurarnos que es suficientemente ancho
+    
+    // Estilos para el contenedor de columnas - MEJORADO
     columnsContainer.style.position = 'relative';
     columnsContainer.style.display = 'flex';
     columnsContainer.style.flexDirection = 'row';
     columnsContainer.style.flexWrap = 'nowrap';
-    columnsContainer.style.width = `${totalWidth}px`;
-    columnsContainer.style.minWidth = `${totalWidth}px`;
+    columnsContainer.style.width = `${minWidth}px`; 
+    columnsContainer.style.minWidth = `${minWidth}px`;
     columnsContainer.style.transform = 'translateX(0px)';
     columnsContainer.style.transition = 'transform 0.1s ease-out';
     
-    // Estilos para cada columna
+    // Estilos para cada columna - asegurando que todas son visibles
     columns.forEach(column => {
         column.style.flex = '0 0 280px';
         column.style.width = '280px';
@@ -579,11 +582,12 @@ function setupGroupContainer(group) {
         column.style.position = 'relative';
         column.style.padding = '10px';
         column.style.boxSizing = 'border-box';
-        column.style.margin = '0 10px';
+        column.style.margin = '0 10px'; // 20px en total de margen
+        column.style.overflow = 'visible'; // Asegurar que el contenido no se corta
     });
     
-    // Debug info
-    console.log(`Board ${group.closest('[id]').id}: containerWidth=${totalWidth}, columns=${columns.length}, totalWidth=${totalWidth}`);
+    // Debug info más detallada
+    console.log(`Board ${group.closest('[id]')?.id || 'unknown'}: calculatedWidth=${calculatedWidth}px, columns=${columns.length}`);
     
     // Implementar el scroll con transformación
     implementDirectScroll(group, columnsContainer);
@@ -598,7 +602,7 @@ function setupGroupContainer(group) {
     }
 }
 
-// Función optimizada para implementar scroll directo
+// Función optimizada para implementar scroll directo que cubre todo el contenido
 function implementDirectScroll(board, container) {
     if (!board || !container) return;
     
@@ -606,7 +610,7 @@ function implementDirectScroll(board, container) {
     let startPos = 0;
     let currentTranslate = 0;
     let prevTranslate = 0;
-    let animationSpeed = 1.5; // Factor para ajustar la velocidad de desplazamiento
+    let animationSpeed = 2.0; // Aumentamos la velocidad para desplazamientos largos
     
     const getPositionX = (event) => {
         return event.type.includes('mouse') ? event.pageX : event.touches[0].pageX;
@@ -617,34 +621,43 @@ function implementDirectScroll(board, container) {
         const boardWidth = board.clientWidth;
         const containerWidth = container.scrollWidth;
         
-        // Calcular límites de desplazamiento
-        const minTranslate = boardWidth - containerWidth;
+        // Calcular límites de desplazamiento para ver todo el contenido
+        const minTranslate = Math.min(-(containerWidth - boardWidth), 0);
         
-        // Aplicar límites
-        if (currentTranslate > 0) {
-            currentTranslate = 0;
-        } else if (currentTranslate < minTranslate) {
-            currentTranslate = minTranslate;
+        // Aplicar límites con un poco de margen
+        if (currentTranslate > 20) { // Permitir un pequeño sobrepase al inicio
+            currentTranslate = 20;
+        } else if (currentTranslate < minTranslate - 20) { // Permitir un pequeño sobrepase al final
+            currentTranslate = minTranslate - 20;
         }
         
         // Aplicar transformación
         container.style.transform = `translateX(${currentTranslate}px)`;
         
-        // Debug info (solo si es necesario)
-        console.log(`Direct scroll: translate=${currentTranslate}, min=${minTranslate}, boardWidth=${boardWidth}, containerWidth=${containerWidth}`);
+        // Sincronizar con scroll nativo (para coordinar ambos mecanismos)
+        if (board.scrollLeft !== -currentTranslate) {
+            // Desactivar temporalmente listener para evitar ciclos
+            const temp = board.onscroll;
+            board.onscroll = null;
+            board.scrollLeft = -currentTranslate;
+            setTimeout(() => { board.onscroll = temp; }, 10);
+        }
     };
     
-    // Eventos para el mouse
+    // Eventos para el mouse con detección mejorada de elementos interactivos
     const handleMouseDown = (e) => {
-        // No iniciar scroll si el click es en una tarjeta o botón
-        if (e.target.closest('.kanban-card, button, .debug-overlay, .scroll-button')) return;
+        // MEJORADO: Lista más completa de elementos a ignorar
+        if (e.target.closest('.kanban-card, button, .debug-overlay, .scroll-button, a, input, select, textarea, [onclick], #add-pedido-btn, [data-toggle], [data-target], [role="button"]')) {
+            console.log("Click en elemento interactivo, no iniciando scroll");
+            return;
+        }
         
         isDragging = true;
         startPos = getPositionX(e);
         prevTranslate = currentTranslate;
         
         board.style.cursor = 'grabbing';
-        console.log('Direct scroll: Mouse down');
+        e.preventDefault(); // Prevenir comportamientos por defecto
     };
     
     const handleMouseMove = (e) => {
@@ -658,38 +671,59 @@ function implementDirectScroll(board, container) {
         e.preventDefault(); // Prevenir scroll página
     };
     
-    const handleMouseUp = () => {
+    const handleMouseUp = (e) => {
         if (!isDragging) return;
         
         isDragging = false;
         prevTranslate = currentTranslate;
         board.style.cursor = 'grab';
-        console.log('Direct scroll: Mouse up');
+        
+        // Asegurar que llegamos al final con un pequeño impulso
+        const boardWidth = board.clientWidth;
+        const containerWidth = container.scrollWidth;
+        if (currentTranslate < -(containerWidth - boardWidth) + 50) {
+            currentTranslate = -(containerWidth - boardWidth);
+            setContainerPosition();
+        }
     };
     
-    // Añadir los eventos
+    // Añadir los eventos - limitamos los globales para no interferir con otros componentes
     board.addEventListener('mousedown', handleMouseDown);
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener('mousemove', handleMouseMove); // Este sí debe ser global
+    document.addEventListener('mouseup', handleMouseUp); // Este también global
     
     // Touch events
     board.addEventListener('touchstart', handleMouseDown);
-    window.addEventListener('touchmove', handleMouseMove, { passive: false });
-    window.addEventListener('touchend', handleMouseUp);
+    document.addEventListener('touchmove', handleMouseMove, { passive: false });
+    document.addEventListener('touchend', handleMouseUp);
+    
+    // Añadir también wheel para scroll con rueda del ratón
+    board.addEventListener('wheel', (e) => {
+        if (e.deltaX !== 0) { // Solo responder a scroll horizontal con la rueda
+            currentTranslate -= e.deltaX;
+            prevTranslate = currentTranslate;
+            setContainerPosition();
+            e.preventDefault();
+        }
+    }, { passive: false });
     
     // Guardar referencias para limpieza futura
     board._scrollListeners = board._scrollListeners || [];
     board._scrollListeners.push(
         { element: board, type: 'mousedown', callback: handleMouseDown },
-        { element: window, type: 'mousemove', callback: handleMouseMove },
-        { element: window, type: 'mouseup', callback: handleMouseUp },
+        { element: document, type: 'mousemove', callback: handleMouseMove },
+        { element: document, type: 'mouseup', callback: handleMouseUp },
         { element: board, type: 'touchstart', callback: handleMouseDown },
-        { element: window, type: 'touchmove', callback: handleMouseMove },
-        { element: window, type: 'touchend', callback: handleMouseUp }
+        { element: document, type: 'touchmove', callback: handleMouseMove },
+        { element: document, type: 'touchend', callback: handleMouseUp },
+        { element: board, type: 'wheel', callback: handleMouseUp }
     );
+    
+    // Desplazamiento inicial para asegurar que toda la vista es accesible
+    setContainerPosition();
 }
 
-// Función para añadir botones de navegación
+// Función para añadir botones de navegación mejorados
 function addScrollButtons(board, container) {
     // Eliminar botones anteriores
     const oldButtons = board.querySelectorAll('.scroll-button');
@@ -748,29 +782,87 @@ function addScrollButtons(board, container) {
         this.style.background = 'rgba(0,0,0,0.3)';
     };
     
-    // Calcular el valor de traslación actual
+    // Calcular el valor de traslación actual - Compatible con todos los navegadores
     const getTranslateX = () => {
         const style = window.getComputedStyle(container);
-        const matrix = new DOMMatrix(style.transform);
-        return matrix.m41; // Valor de translateX en la matriz de transformación
+        const matrix = style.transform || style.webkitTransform || style.mozTransform;
+        
+        if (matrix === 'none' || typeof matrix === 'undefined') {
+            return 0;
+        }
+        
+        const matrixValues = matrix.match(/matrix.*\((.+)\)/);
+        if (matrixValues && matrixValues.length > 1) {
+            const values = matrixValues[1].split(', ');
+            return parseFloat(values[4]) || 0;
+        }
+        return 0;
     };
     
-    // Desplazar con los botones (300px cada vez)
+    // Desplazar con los botones - con movimiento más amplio
+    const scrollAmount = 500; // Desplazarse más en cada clic
+    
     leftBtn.onclick = () => {
         const currentX = getTranslateX();
-        const newX = Math.min(0, currentX + 300);
+        const newX = Math.min(0, currentX + scrollAmount);
         container.style.transform = `translateX(${newX}px)`;
+        
+        // Sincronizar con el scroll nativo
+        board.scrollLeft = -newX;
     };
     
     rightBtn.onclick = () => {
         const currentX = getTranslateX();
         const minTranslate = board.clientWidth - container.scrollWidth;
-        const newX = Math.max(minTranslate, currentX - 300);
+        const newX = Math.max(minTranslate - 50, currentX - scrollAmount); // -50 para ver el final
         container.style.transform = `translateX(${newX}px)`;
+        
+        // Sincronizar con el scroll nativo
+        board.scrollLeft = -newX;
+    };
+    
+    // Añadir un botón para ir al final directamente
+    const endBtn = document.createElement('button');
+    endBtn.innerHTML = '⏩';
+    endBtn.className = 'scroll-button scroll-end';
+    endBtn.style.cssText = `
+        position: absolute;
+        right: 50px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 1000;
+        background: rgba(0,0,0,0.3);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
+        cursor: pointer;
+        opacity: 0.7;
+        transition: opacity 0.2s;
+    `;
+    
+    endBtn.onmouseover = function() {
+        this.style.opacity = '1';
+        this.style.background = 'rgba(0,0,0,0.5)';
+    };
+    
+    endBtn.onmouseout = function() {
+        this.style.opacity = '0.7';
+        this.style.background = 'rgba(0,0,0,0.3)';
+    };
+    
+    // Ir directamente al final
+    endBtn.onclick = () => {
+        const minTranslate = board.clientWidth - container.scrollWidth;
+        container.style.transform = `translateX(${minTranslate}px)`;
+        board.scrollLeft = -minTranslate;
     };
     
     board.appendChild(leftBtn);
     board.appendChild(rightBtn);
+    board.appendChild(endBtn);
 }
 
 // Función para visualizar las dimensiones en debug (opcional)
