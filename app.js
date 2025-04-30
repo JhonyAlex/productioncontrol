@@ -36,7 +36,10 @@ document.addEventListener('DOMContentLoaded', () => {
         emailInput: document.getElementById('email'),
         passwordInput: document.getElementById('password'),
         loginError: document.getElementById('login-error'),
-        logoutButton: document.getElementById('logout-button')
+        logoutButton: document.getElementById('logout-button'),
+        forgotPasswordLink: document.getElementById('forgot-password-link'), // NUEVO
+        registerButton: document.getElementById('register-button'),         // NUEVO
+        authMessage: document.getElementById('auth-message')                // NUEVO
     });
     observeAuthState(auth, {
         loginContainer: document.getElementById('login-container'),

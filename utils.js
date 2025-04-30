@@ -5,7 +5,10 @@ export function getFirebaseErrorMessage(error) {
         case 'auth/user-not-found':
         case 'auth/wrong-password':
         case 'auth/invalid-credential': return 'Correo electrónico o contraseña incorrectos.';
+        case 'auth/email-already-in-use': return 'Este correo electrónico ya está registrado.';
+        case 'auth/weak-password': return 'La contraseña es demasiado débil. Debe tener al menos 6 caracteres.';
         case 'auth/too-many-requests': return 'Demasiados intentos fallidos. Inténtalo más tarde.';
+        // Añade aquí más códigos de error si es necesario
         default: return 'Error al iniciar sesión. Por favor, inténtalo de nuevo.';
     }
 }
