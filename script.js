@@ -7,28 +7,31 @@ function isOrderCompleted(orderId) {
     return completedOrders.includes(orderId);
 }
 
-// Asegúrate de que esta función sea global para que se pueda llamar desde el HTML
-window.filterOrders = function(filterType) {
+// Función para filtrar órdenes según el tipo (activas o completadas)
+function filterOrders(filterType) {
     currentFilter = filterType;
     
-    // Actualizar estilo de los botones (usando clases de Bootstrap)
-    const filterButtons = document.querySelectorAll('#list-filters .btn');
-    filterButtons.forEach(button => {
-        if ((button.innerText === 'Activos' && filterType === 'active') ||
-            (button.innerText === 'Completados' && filterType === 'completed')) {
-            button.classList.remove('btn-outline-secondary');
-            button.classList.add('btn-secondary');
-        } else {
-            button.classList.remove('btn-secondary');
-            button.classList.add('btn-outline-secondary');
-        }
-    });
+    // Actualizar estilo de los botones
+    const activeBtn = document.getElementById('active-filter');
+    const completedBtn = document.getElementById('completed-filter');
+    
+    if (filterType === 'active') {
+        activeBtn.classList.remove('btn-outline-secondary');
+        activeBtn.classList.add('btn-secondary');
+        completedBtn.classList.remove('btn-secondary');
+        completedBtn.classList.add('btn-outline-secondary');
+    } else {
+        completedBtn.classList.remove('btn-outline-secondary');
+        completedBtn.classList.add('btn-secondary');
+        activeBtn.classList.remove('btn-secondary');
+        activeBtn.classList.add('btn-outline-secondary');
+    }
     
     // Recargar la lista con el filtro aplicado
-    loadAndDisplayOrders();
-};
+    loadOrders(); // O la función que uses para cargar y mostrar los pedidos
+}
 
-// Modifica la función existente que muestra los pedidos para aplicar el filtro
+// Modificar tu función existente que muestra los pedidos
 function displayOrders(orders) {
     const listView = document.getElementById('list-view');
     listView.innerHTML = '';
@@ -36,8 +39,7 @@ function displayOrders(orders) {
     orders.forEach(order => {
         const isCompleted = isOrderCompleted(order.id);
         
-        // No mostrar pedidos completados si el filtro es 'active'
-        // No mostrar pedidos activos si el filtro es 'completed'
+        // Aplicar filtro
         if ((currentFilter === 'active' && isCompleted) || 
             (currentFilter === 'completed' && !isCompleted)) {
             return;
@@ -47,15 +49,6 @@ function displayOrders(orders) {
         const orderElement = createOrderElement(order);
         listView.appendChild(orderElement);
     });
-}
-
-// Si tienes una función separada que carga los pedidos y llama a displayOrders
-function loadAndDisplayOrders() {
-    // Obtener las órdenes desde donde sea que las estés guardando
-    const orders = JSON.parse(localStorage.getItem('orders')) || [];
-    
-    // Después de cargar los pedidos, llama a displayOrders con el filtro actual aplicado
-    displayOrders(orders);
 }
 
 // Función para crear un elemento de orden (puedes adaptarla a tu estructura existente)
@@ -70,21 +63,9 @@ function createOrderElement(order) {
 document.addEventListener('DOMContentLoaded', function() {
     const listView = document.getElementById('list-view');
     
-    // Establecer el filtro por defecto como 'active'
-    currentFilter = 'active';
-    
-    // Resaltar el botón "Activos" por defecto
-    const activeButton = document.querySelector('#list-filters button:nth-child(1)');
-    if (activeButton) {
-        activeButton.classList.remove('btn-outline-secondary');
-        activeButton.classList.add('btn-secondary');
-    }
-    
-    // También puedes llamar directamente a filterOrders para asegurar que el filtro se aplique
-    filterOrders('active');
-    
-    const activeBtn = document.getElementById('active-orders-btn');
-    const completedBtn = document.getElementById('completed-orders-btn');
+    // Configura los event listeners para los botones de filtro
+    const activeBtn = document.getElementById('active-filter');
+    const completedBtn = document.getElementById('completed-filter');
     
     if (activeBtn && completedBtn) {
         activeBtn.addEventListener('click', function() {
@@ -94,6 +75,9 @@ document.addEventListener('DOMContentLoaded', function() {
         completedBtn.addEventListener('click', function() {
             filterOrders('completed');
         });
+        
+        // Establece el filtro activo por defecto
+        filterOrders('active');
     }
 });
 
@@ -101,6 +85,6 @@ document.addEventListener('DOMContentLoaded', function() {
 function showTab(tabName) {
     if (tabName === 'list') {
         // Recargar la lista con el filtro actual
-        loadAndDisplayOrders();
+        loadOrders();
     }
 }
