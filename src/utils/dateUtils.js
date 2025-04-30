@@ -27,3 +27,18 @@ export function formatShortDate(dateString) {
   const [_, year, month, day] = match;
   return `${day}/${month}/${year.slice(2)}`;
 }
+
+/**
+ * Remove time portion from ISO date string and format to DD/MM/YY
+ * @param {string} dateString - ISO format date string like "2025-04-16T13:49"
+ * @returns {string} - Short date format "16/04/25"
+ */
+export function formatDateShort(dateString) {
+  if (!dateString) return '';
+  
+  const match = dateString.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!match) return dateString;
+  
+  const [_, year, month, day] = match;
+  return `${day}/${month}/${year.substring(2)}`;
+}
