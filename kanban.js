@@ -560,41 +560,53 @@ function setupGroupContainer(group) {
     const columns = columnsContainer.querySelectorAll('.kanban-column');
     const columnWidth = 300; // px por columna
     
-    // AJUSTADO: Calcular el ancho EXACTO para eliminar espacio extra al final
-    // Usamos fórmula exacta: ancho de columna * número de columnas + margen solo entre columnas
-    const totalMargin = (columns.length - 1) * 20; // 20px de margen solo ENTRE columnas
-    const calculatedWidth = (columns.length * columnWidth) + totalMargin;
+    // CORREGIDO: Calculamos el ancho exacto sumando el ancho real de cada columna
+    // Esto asegura que no haya espacio extra al final
+    let totalWidth = 0;
     
-    // Estilos para el contenedor de columnas - MEJORADO
+    // Estilos para cada columna - primero establecer tamaños
+    columns.forEach((column, index) => {
+        // Ancho base de cada columna
+        const width = columnWidth - 20; // 280px
+        
+        // Aplicar estilos
+        column.style.flex = `0 0 ${width}px`;
+        column.style.width = `${width}px`;
+        column.style.minWidth = `${width}px`;
+        column.style.position = 'relative';
+        column.style.padding = '10px';
+        column.style.boxSizing = 'border-box';
+        
+        // Sólo añadir margen derecho a todas las columnas menos a la última
+        const rightMargin = (index < columns.length - 1) ? 20 : 0;
+        column.style.marginRight = `${rightMargin}px`;
+        column.style.marginLeft = index === 0 ? '0' : '0'; // sin margen izquierdo
+        
+        // Acumular el ancho total (columna + margen derecho)
+        totalWidth += width + rightMargin;
+    });
+    
+    // Añadir un pequeño padding final para prevenir problemas de redondeo
+    totalWidth += 5;
+    
+    // Establecer el ancho exacto del contenedor
     columnsContainer.style.position = 'relative';
     columnsContainer.style.display = 'flex';
     columnsContainer.style.flexDirection = 'row';
     columnsContainer.style.flexWrap = 'nowrap';
-    columnsContainer.style.width = `${calculatedWidth}px`; 
-    columnsContainer.style.minWidth = `${calculatedWidth}px`;
+    columnsContainer.style.width = `${totalWidth}px`; 
+    columnsContainer.style.minWidth = `${totalWidth}px`;
     columnsContainer.style.transform = 'translateX(0px)';
     columnsContainer.style.transition = 'transform 0.1s ease-out';
     
-    // Estilos para cada columna - asegurando que todas son visibles
-    columns.forEach(column => {
-        column.style.flex = '0 0 280px';
-        column.style.width = '280px';
-        column.style.minWidth = '280px';
-        column.style.position = 'relative';
-        column.style.padding = '10px';
-        column.style.boxSizing = 'border-box';
-        column.style.margin = '0 10px'; // 20px en total de margen
-        column.style.overflow = 'visible'; // Asegurar que el contenido no se corta
-    });
-    
     // Debug info más detallada
-    console.log(`Board ${group.closest('[id]')?.id || 'unknown'}: calculatedWidth=${calculatedWidth}px, columns=${columns.length}`);
+    console.log(`Board ${group.closest('[id]')?.id || 'unknown'}: exactWidth=${totalWidth}px, columns=${columns.length}`);
     
     // Implementar el scroll con transformación
     implementDirectScroll(group, columnsContainer);
     
     // Añadir controles de navegación
-    addScrollButtons(group, columnsContainer);
+    addScrollButtons(group.closest('[id]'), columnsContainer);
     
     // Solo añadir overlay de debug en desarrollo si está habilitado
     const isDevMode = false; // Cambiar a true para habilitar
@@ -603,7 +615,7 @@ function setupGroupContainer(group) {
     }
 }
 
-// Función optimizada para implementar scroll directo que cubre todo el contenido
+// Función optimizada para implementar scroll directo con sensibilidad reducida
 function implementDirectScroll(board, container) {
     if (!board || !container) return;
     
@@ -611,7 +623,7 @@ function implementDirectScroll(board, container) {
     let startPos = 0;
     let currentTranslate = 0;
     let prevTranslate = 0;
-    let animationSpeed = 2.0; // Aumentamos la velocidad para desplazamientos largos
+    let animationSpeed = 1.0; // AJUSTADO: Reducir la velocidad para un control más preciso
     
     const getPositionX = (event) => {
         return event.type.includes('mouse') ? event.pageX : event.touches[0].pageX;
@@ -622,8 +634,7 @@ function implementDirectScroll(board, container) {
         const boardWidth = board.clientWidth;
         const containerWidth = container.scrollWidth;
         
-        // MEJORADO: Calcular límites de desplazamiento de forma precisa
-        // sin agregar espacio extra al final
+        // Calcular límites de desplazamiento de forma precisa
         const minTranslate = Math.min(-(containerWidth - boardWidth), 0);
         
         // Aplicar límites sin espacio extra al final
@@ -633,12 +644,11 @@ function implementDirectScroll(board, container) {
             currentTranslate = minTranslate;
         }
         
-        // Aplicar transformación
+        // Aplicar transformación con velocidad más suave
         container.style.transform = `translateX(${currentTranslate}px)`;
         
         // Sincronizar con scroll nativo (para coordinar ambos mecanismos)
         if (board.scrollLeft !== -currentTranslate) {
-            // Desactivar temporalmente listener para evitar ciclos
             const temp = board.onscroll;
             board.onscroll = null;
             board.scrollLeft = -currentTranslate;
@@ -648,10 +658,9 @@ function implementDirectScroll(board, container) {
     
     // Eventos para el mouse con detección mejorada de elementos interactivos
     const handleMouseDown = (e) => {
-        // MEJORADO: Lista más completa de elementos a ignorar
+        // Lista de elementos interactivos a ignorar
         if (e.target.closest('.kanban-card, button, .debug-overlay, .scroll-button, a, input, select, textarea, [onclick], #add-pedido-btn, [data-toggle], [data-target], [role="button"]')) {
-            console.log("Click en elemento interactivo, no iniciando scroll");
-            return;
+            return; // No iniciar scroll en elementos interactivos
         }
         
         isDragging = true;
@@ -659,7 +668,7 @@ function implementDirectScroll(board, container) {
         prevTranslate = currentTranslate;
         
         board.style.cursor = 'grabbing';
-        e.preventDefault(); // Prevenir comportamientos por defecto
+        e.preventDefault();
     };
     
     const handleMouseMove = (e) => {
@@ -667,10 +676,19 @@ function implementDirectScroll(board, container) {
         
         const currentPosition = getPositionX(e);
         const diff = currentPosition - startPos;
-        currentTranslate = prevTranslate + (diff * animationSpeed);
         
+        // Aplicar un factor de suavizado basado en la velocidad del movimiento
+        // Movimientos más rápidos se atenúan para mayor control
+        const absDiff = Math.abs(diff);
+        let factor = animationSpeed;
+        
+        // Reducir velocidad a mayor movimiento (para prevenir desplazamientos bruscos)
+        if (absDiff > 100) factor = 0.5;
+        else if (absDiff > 50) factor = 0.7;
+        
+        currentTranslate = prevTranslate + (diff * factor);
         setContainerPosition();
-        e.preventDefault(); // Prevenir scroll página
+        e.preventDefault();
     };
     
     const handleMouseUp = (e) => {
@@ -689,17 +707,15 @@ function implementDirectScroll(board, container) {
         }
     };
     
-    // Añadir los eventos - limitamos los globales para no interferir con otros componentes
+    // Añadir los eventos
     board.addEventListener('mousedown', handleMouseDown);
-    document.addEventListener('mousemove', handleMouseMove); // Este sí debe ser global
-    document.addEventListener('mouseup', handleMouseUp); // Este también global
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
     
-    // Touch events
     board.addEventListener('touchstart', handleMouseDown);
     document.addEventListener('touchmove', handleMouseMove, { passive: false });
     document.addEventListener('touchend', handleMouseUp);
     
-    // Añadir también wheel para scroll con rueda del ratón
     board.addEventListener('wheel', (e) => {
         if (e.deltaX !== 0) { // Solo responder a scroll horizontal con la rueda
             currentTranslate -= e.deltaX;
@@ -709,7 +725,6 @@ function implementDirectScroll(board, container) {
         }
     }, { passive: false });
     
-    // Guardar referencias para limpieza futura
     board._scrollListeners = board._scrollListeners || [];
     board._scrollListeners.push(
         { element: board, type: 'mousedown', callback: handleMouseDown },
@@ -721,20 +736,17 @@ function implementDirectScroll(board, container) {
         { element: board, type: 'wheel', callback: handleMouseUp }
     );
     
-    // Desplazamiento inicial para asegurar que toda la vista es accesible
     setContainerPosition();
 }
 
 // Función para añadir botones de navegación mejorados
-function addScrollButtons(board, container) {
-    // Eliminar botones anteriores
+function addScrollButtons(boardId, container) {
+    const board = document.getElementById(boardId);
+    if (!board) return;
+    
     const oldButtons = board.querySelectorAll('.scroll-button, .scroll-buttons-container');
     oldButtons.forEach(btn => btn.remove());
     
-    // CORREGIDO: Añadir los botones al BOARD directamente, no al container
-    // para que permanezcan fijos sin importar el desplazamiento del contenido
-    
-    // Añadir un contenedor a nivel de board, fuera del área de scroll
     const buttonContainer = document.createElement('div');
     buttonContainer.className = 'scroll-buttons-container';
     buttonContainer.style.cssText = `
@@ -743,11 +755,9 @@ function addScrollButtons(board, container) {
         left: 0;
         width: 100%;
         height: 100%;
-        pointer-events: none; /* Permite que los eventos pasen a través del contenedor */
+        pointer-events: none;
         z-index: 9999;
     `;
-    
-    board.appendChild(buttonContainer);
     
     const leftBtn = document.createElement('button');
     leftBtn.innerHTML = '◀';
@@ -768,7 +778,7 @@ function addScrollButtons(board, container) {
         cursor: pointer;
         opacity: 0.7;
         transition: opacity 0.2s;
-        pointer-events: auto; /* Reactivar eventos para el botón */
+        pointer-events: auto;
         box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     `;
     
@@ -791,11 +801,10 @@ function addScrollButtons(board, container) {
         cursor: pointer;
         opacity: 0.7;
         transition: opacity 0.2s;
-        pointer-events: auto; /* Reactivar eventos para el botón */
+        pointer-events: auto;
         box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     `;
     
-    // Hover effect
     leftBtn.onmouseover = rightBtn.onmouseover = function() {
         this.style.opacity = '1';
         this.style.background = 'rgba(0,0,0,0.5)';
@@ -806,7 +815,6 @@ function addScrollButtons(board, container) {
         this.style.background = 'rgba(0,0,0,0.3)';
     };
     
-    // Calcular el valor de traslación actual - Compatible con todos los navegadores
     const getTranslateX = () => {
         const style = window.getComputedStyle(container);
         const matrix = style.transform || style.webkitTransform || style.mozTransform;
@@ -823,46 +831,41 @@ function addScrollButtons(board, container) {
         return 0;
     };
     
-    // Desplazar con los botones - con movimiento más amplio
-    const scrollAmount = 500; // Desplazarse más en cada clic
+    const scrollAmount = 500;
     
     leftBtn.onclick = (e) => {
-        e.preventDefault(); // Evitar que el evento se propague
-        e.stopPropagation(); // Detener propagación
+        e.preventDefault();
+        e.stopPropagation();
         
         const currentX = getTranslateX();
         const newX = Math.min(0, currentX + scrollAmount);
         container.style.transform = `translateX(${newX}px)`;
         
-        // Sincronizar con el scroll nativo
         board.scrollLeft = -newX;
     };
     
     rightBtn.onclick = (e) => {
-        e.preventDefault(); // Evitar que el evento se propague
-        e.stopPropagation(); // Detener propagación
+        e.preventDefault();
+        e.stopPropagation();
         
         const currentX = getTranslateX();
         const minTranslate = board.clientWidth - container.scrollWidth;
         const newX = Math.max(minTranslate, currentX - scrollAmount);
         container.style.transform = `translateX(${newX}px)`;
         
-        // Sincronizar con el scroll nativo
         board.scrollLeft = -newX;
     };
     
-    // Añadir los botones al contenedor fijo
     buttonContainer.appendChild(leftBtn);
     buttonContainer.appendChild(rightBtn);
+    board.appendChild(buttonContainer);
 }
 
 // Función para visualizar las dimensiones en debug (opcional)
 function addDebugOverlay(board, container) {
-    // Eliminar cualquier overlay existente
     const existingOverlay = board.querySelector('.debug-overlay');
     if (existingOverlay) existingOverlay.remove();
     
-    // Crear nuevo overlay
     const debugOverlay = document.createElement('div');
     debugOverlay.className = 'debug-overlay';
     debugOverlay.style.cssText = `
@@ -892,11 +895,9 @@ function addDebugOverlay(board, container) {
         `;
     };
     
-    // Actualizar info inicialmente y cada segundo
     updateDebugInfo();
     const intervalId = setInterval(updateDebugInfo, 1000);
     
-    // Guardar el ID del intervalo para limpiarlo cuando sea necesario
     board._debugInterval = intervalId;
     board.appendChild(debugOverlay);
 }
