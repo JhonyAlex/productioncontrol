@@ -239,6 +239,9 @@ document.addEventListener('DOMContentLoaded', function() {
             $("#btn-filtrar-activos").click();
         }
     });
+
+    // Aplicar filtros por defecto al cargar la página
+    applyDefaultFilters();
 });
 
 // Asegurar que al cambiar a la pestaña "LISTA" se aplique el filtro
@@ -291,4 +294,10 @@ function setupFilterButtons() {
     if (btnFiltrarActivos) {
         btnFiltrarActivos.click();
     }
+}
+
+// Aplicar filtros por defecto al cargar la página
+function applyDefaultFilters() {
+    // Activar el filtro "Activos" por defecto
+    $("#btn-filtrar-activos").click();
 }
