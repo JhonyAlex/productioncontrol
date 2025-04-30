@@ -335,178 +335,82 @@ async function drop(e) {
     }
 }
 
-function enableKanbanDragToScroll(container) {
-    if (!container) {
-        console.error("Container para drag-to-scroll no encontrado");
-        return;
-    }
-    
-    console.log(`Configurando drag-to-scroll para ${container.id}`);
-    
-    // Verificar si el contenedor realmente tiene overflow
-    const contentWidth = container.scrollWidth;
-    const containerWidth = container.clientWidth;
-    console.log(`Container ${container.id}: scrollWidth=${contentWidth}, clientWidth=${containerWidth}, puede desplazarse: ${contentWidth > containerWidth}`);
-    
-    let isDown = false;
-    let startX;
-    let scrollLeft;
-    let isDraggingCard = false;
-    let lastX = 0;
-
-    function isOnCard(e) {
-        // Simplificar esta función para reducir falsos positivos
-        return !!e.target.closest('.kanban-card, button');
-    }
-
-    // Función para restablecer el estado
-    function resetDragState() {
-        isDown = false;
-        isDraggingCard = false;
-        container.classList.remove('drag-scroll-active', 'no-user-select');
-        container.style.cursor = 'grab';
-    }
-
-    // Asegurarnos de que los eventos de mouse se registren correctamente
-    container.addEventListener('mousedown', (e) => {
-        const onCard = isOnCard(e);
-        console.log(`${container.id} mousedown - onCard: ${onCard}`);
-        
-        if (onCard) {
-            isDraggingCard = true;
-            return;
-        }
-        
-        isDown = true;
-        container.classList.add('drag-scroll-active', 'no-user-select');
-        startX = e.pageX;
-        lastX = e.pageX;
-        scrollLeft = container.scrollLeft;
-        container.style.cursor = 'grabbing';
-    });
-
-    // Necesitamos capturar mouseup en todo el documento, no solo en el container
-    document.addEventListener('mouseup', () => {
-        if (isDown) {
-            console.log(`${container.id} mouseup - Reseteando estados`);
-            resetDragState();
-        }
-    });
-    
-    // El evento mouseleave debe funcionar igual
-    container.addEventListener('mouseleave', () => {
-        if (isDown) {
-            console.log(`${container.id} mouseleave - Reseteando estados`);
-            resetDragState();
-        }
-    });
-
-    container.addEventListener('mousemove', (e) => {
-        if (!isDown) return;
-        
-        // Modificación clave: usar un enfoque directo para el desplazamiento 
-        e.preventDefault();
-        
-        const x = e.pageX;
-        const diff = x - lastX;
-        
-        // Usar directamente el valor negativo para que la dirección sea natural
-        container.scrollLeft -= diff * 2;
-        
-        console.log(`Moviendo: diff=${diff}, scrollLeft=${container.scrollLeft}, maxScroll=${container.scrollWidth - container.clientWidth}`);
-        
-        lastX = x;
-    });
-
-    // Touch events - Aplicar la misma lógica que para mouse
-    container.addEventListener('touchstart', (e) => {
-        const onCard = isOnCard(e);
-        console.log(`${container.id} touchstart - onCard: ${onCard}`);
-        
-        if (onCard) {
-            isDraggingCard = true;
-            return;
-        }
-        
-        isDown = true;
-        container.classList.add('drag-scroll-active', 'no-user-select');
-        startX = e.touches[0].pageX;
-        lastX = startX;
-        scrollLeft = container.scrollLeft;
-    });
-
-    document.addEventListener('touchend', () => {
-        if (isDown) {
-            console.log(`${container.id} touchend - Reseteando estados`);
-            resetDragState();
-        }
-    });
-
-    container.addEventListener('touchmove', (e) => {
-        if (!isDown) return;
-        
-        const x = e.touches[0].pageX;
-        const diff = x - lastX;
-        container.scrollLeft -= diff * 2;
-        
-        console.log(`Touch moviendo: diff=${diff}, scrollLeft=${container.scrollLeft}`);
-        lastX = x;
-    });
-}
-
 // Asegurar que se configura el scroll para ambos tableros
 export function setupKanbanScrolling() {
-    const mainBoard = document.getElementById('kanban-board');
-    const complementaryBoard = document.getElementById('kanban-board-complementarias');
-    
     // Importante: primero quitar todos los eventos antiguos
     document.removeEventListener('mouseup', () => {});
     document.removeEventListener('touchend', () => {});
     
-    // Verificar la estructura del DOM antes de configurar
+    // En lugar de reconfigurar los tableros existentes, crearemos un wrapper alrededor
+    // de cada columna para forzar el scroll horizontal
+    
+    const complementaryBoard = document.getElementById('kanban-board-complementarias');
+    const mainBoard = document.getElementById('kanban-board');
+    
+    // Primero aplicar estilos antes de configurar eventos
+    applyKanbanStyles();
+    
+    // Luego forzar el ancho mínimo de las columnas para garantizar que hay overflow
+    forceMinimumColumnWidth();
+    
+    // Finalmente configurar los eventos de arrastre
     if (complementaryBoard) {
-        console.log("Estructura del tablero complementario:");
-        console.log(`- ID: ${complementaryBoard.id}`);
-        console.log(`- Contenido directo: ${complementaryBoard.children.length} elementos`);
-        console.log(`- scrollWidth: ${complementaryBoard.scrollWidth}`);
-        console.log(`- clientWidth: ${complementaryBoard.clientWidth}`);
-        
-        // Forzar overflow para asegurar que el scroll funcione
-        complementaryBoard.style.overflowX = 'auto';
-        complementaryBoard.style.overflowY = 'hidden';
-        
-        // Asegurarnos que el contenido es más ancho que el contenedor
-        const container = complementaryBoard.querySelector('.kanban-columns-container');
-        if (container) {
-            // Esto asegura que el contenido sea explícitamente ancho
-            container.style.display = 'inline-flex';
-            container.style.whiteSpace = 'nowrap';
-            container.style.minWidth = 'max-content';
-        }
-        
-        complementaryBoard.innerHTML = complementaryBoard.innerHTML;
         console.log("Reconfigurando scroll para tablero complementario");
         enableKanbanDragToScroll(complementaryBoard);
+    } else {
+        console.error("Tablero complementario no encontrado");
     }
     
     if (mainBoard) {
-        mainBoard.style.overflowX = 'auto';
-        mainBoard.style.overflowY = 'hidden';
-        
-        const container = mainBoard.querySelector('.kanban-columns-container');
-        if (container) {
-            container.style.display = 'inline-flex';
-            container.style.whiteSpace = 'nowrap';
-            container.style.minWidth = 'max-content';
-        }
-        
-        mainBoard.innerHTML = mainBoard.innerHTML;
         console.log("Reconfigurando scroll para tablero principal");
         enableKanbanDragToScroll(mainBoard);
+    } else {
+        console.error("Tablero principal no encontrado");
+    }
+}
+
+// Nueva función para forzar que las columnas tengan un ancho mínimo
+function forceMinimumColumnWidth() {
+    const columns = document.querySelectorAll('.kanban-column');
+    if (columns.length === 0) {
+        console.error("No se encontraron columnas en el kanban");
+        return;
     }
     
-    // Aplicar estilos después de configurar los eventos
-    applyKanbanStyles();
+    // Forzar un ancho mínimo para cada columna
+    columns.forEach(column => {
+        column.style.minWidth = "280px";
+        column.style.flexShrink = "0";
+    });
+    
+    // Intentar forzar el scroll modificando los contenedores de columnas
+    const containers = document.querySelectorAll('.kanban-columns-container');
+    containers.forEach(container => {
+        // Asegurarnos que este contenedor sea más ancho que su padre
+        const parentWidth = container.parentElement.clientWidth;
+        const totalColumnsWidth = columns.length * 300; // Ancho aproximado por columna + margen
+        
+        console.log(`Contenedor: ancho del padre=${parentWidth}px, ancho total de columnas=${totalColumnsWidth}px`);
+        
+        // Asegurar que el contenido siempre sea más ancho que el contenedor padre
+        container.style.display = "flex";
+        container.style.flexWrap = "nowrap";
+        container.style.width = `${Math.max(totalColumnsWidth, parentWidth + 300)}px`;
+        container.style.minWidth = `${Math.max(totalColumnsWidth, parentWidth + 300)}px`;
+    });
+    
+    // Verificar si hay contenido más ancho que el contenedor
+    const boards = document.querySelectorAll('#kanban-board, #kanban-board-complementarias');
+    boards.forEach(board => {
+        const contentWidth = board.scrollWidth;
+        const containerWidth = board.clientWidth;
+        
+        console.log(`Board ${board.id}: contentWidth=${contentWidth}, containerWidth=${containerWidth}, overflow=${contentWidth > containerWidth}`);
+        
+        if (contentWidth <= containerWidth) {
+            console.warn(`¡Advertencia! El contenedor ${board.id} no tiene overflow horizontal.`);
+        }
+    });
 }
 
 // Modificar el estilo del contenedor del Kanban
@@ -522,13 +426,14 @@ function applyKanbanStyles() {
         
         // Estilos críticos para el scroll
         board.style.cursor = 'grab';
-        board.style.overflowX = 'auto';
+        board.style.overflowX = 'scroll'; // Cambiado a scroll para forzar las barras de desplazamiento
         board.style.overflowY = 'hidden';
         board.style.scrollBehavior = 'auto'; // Cambiado a auto para scroll inmediato
         board.style.scrollbarWidth = 'thin';
         board.style.scrollbarColor = '#dee2e6 #f8f9fa';
         board.style.display = 'block'; // Asegurar que el contenedor es un bloque
         board.style.width = '100%';   // Asegurar que toma el ancho completo
+        board.style.position = 'relative'; // Para posicionamiento de elementos internos
         
         // Asegurar que estos estilos se apliquen siempre
         board.style.userSelect = 'none';
@@ -537,11 +442,81 @@ function applyKanbanStyles() {
         board.style.msUserSelect = 'none';
     });
     
+    // Estilo para grupos kanban
+    const groups = document.querySelectorAll('.kanban-group');
+    groups.forEach(group => {
+        group.style.width = "100%";
+        group.style.minWidth = "100%";
+        group.style.boxSizing = "border-box";
+    });
+    
     // También asegurarnos que los contenedores internos sean correctos
     const containers = document.querySelectorAll('.kanban-columns-container');
     containers.forEach(container => {
-        container.style.display = 'inline-flex';
-        container.style.whiteSpace = 'nowrap';
-        container.style.minWidth = 'max-content';
+        container.style.display = 'flex';
+        container.style.flexWrap = 'nowrap';
+        container.style.overflowX = 'visible';
+        container.style.width = "max-content"; // Esto es crucial para que el contenido sea más ancho
+        container.style.minWidth = "100%";
+    });
+}
+
+// Añadir un pequeño indicador visual para el scroll
+function addScrollIndicator() {
+    const boards = document.querySelectorAll('#kanban-board, #kanban-board-complementarias');
+    boards.forEach(board => {
+        // Primero eliminar indicadores previos
+        const oldIndicators = board.querySelectorAll('.scroll-indicator');
+        oldIndicators.forEach(ind => ind.remove());
+        
+        // Verificar si necesita indicador
+        if (board.scrollWidth > board.clientWidth) {
+            const leftIndicator = document.createElement('div');
+            leftIndicator.className = 'scroll-indicator scroll-left';
+            leftIndicator.innerHTML = '◀';
+            leftIndicator.style.cssText = `
+                position: absolute;
+                left: 5px;
+                top: 50%;
+                transform: translateY(-50%);
+                background: rgba(200,200,200,0.7);
+                color: #333;
+                padding: 10px;
+                border-radius: 50%;
+                cursor: pointer;
+                z-index: 100;
+                opacity: 0.7;
+            `;
+            
+            const rightIndicator = document.createElement('div');
+            rightIndicator.className = 'scroll-indicator scroll-right';
+            rightIndicator.innerHTML = '▶';
+            rightIndicator.style.cssText = `
+                position: absolute;
+                right: 5px;
+                top: 50%;
+                transform: translateY(-50%);
+                background: rgba(200,200,200,0.7);
+                color: #333;
+                padding: 10px;
+                border-radius: 50%;
+                cursor: pointer;
+                z-index: 100;
+                opacity: 0.7;
+            `;
+            
+            leftIndicator.onclick = () => {
+                board.scrollLeft -= 300;
+            };
+            
+            rightIndicator.onclick = () => {
+                board.scrollLeft += 300;
+            };
+            
+            board.appendChild(leftIndicator);
+            board.appendChild(rightIndicator);
+            
+            console.log(`Indicadores de desplazamiento añadidos a ${board.id}`);
+        }
     });
 }
