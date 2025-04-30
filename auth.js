@@ -104,7 +104,7 @@ export function setupAuthListeners(auth, domRefs) {
                 }
             }
         });
-    });
+    };
 }
 
 // --- NUEVO: Funciones para manejar el temporizador de inactividad ---
