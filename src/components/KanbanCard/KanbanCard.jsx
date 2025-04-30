@@ -46,10 +46,10 @@ const KanbanCard = ({ production }) => {
   return (
     <div className="kanban-card">
       <div className="kanban-card-header">
-        Prueba123 (2025-03-12T13:50)
+        Prueba123 ({soloFecha('2025-03-12T13:50')})
       </div>
       <div className="title">{production.title}</div>
-      <div style={{ fontWeight: 'bold', marginBottom: '0.2em' }}>
+      <div className="kanban-card-header">
         {mostrarIdYFecha(`${production.id} (${production.date})`)}
       </div>
       <div className="description">{production.description}</div>
