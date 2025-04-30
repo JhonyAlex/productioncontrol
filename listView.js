@@ -46,7 +46,7 @@ export function renderList(pedidos) {
     });
 
     // Aplicar filtro rápido de etapa (laminacion, etc.) sobre los pedidos ya filtrados por estado
-    let filteredPedidos = pedidos.slice();
+    let filteredPedidos = basePedidos.slice(); // <-- CORREGIDO: Empezar desde basePedidos
     if (quickStageFilter) {
         const startsWith = {
             laminacion: 'lamin',
@@ -259,7 +259,6 @@ if (typeof window !== 'undefined') {
                     });
                     if (val !== null) btn.classList.add('active');
                     else document.getElementById('btn-filtrar-todos').classList.add('active');
-                    renderList(window.currentPedidos || []);
 
                     if (val === 'activos') {
                         showCompleted = false;
