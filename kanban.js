@@ -560,17 +560,16 @@ function setupGroupContainer(group) {
     const columns = columnsContainer.querySelectorAll('.kanban-column');
     const columnWidth = 300; // px por columna
     
-    // Calcular el ancho REAL necesario para todas las columnas con un margen extra
-    const calculatedWidth = (columns.length * (columnWidth + 20)) + 50; // Añadir padding extra
-    const minWidth = Math.max(calculatedWidth, 1500); // Asegurarnos que es suficientemente ancho
+    // Calcular el ancho necesario para las columnas SIN espacio extra al final
+    const calculatedWidth = (columns.length * (columnWidth + 20)) + 10; // Reducir a 10px de margen
     
     // Estilos para el contenedor de columnas - MEJORADO
     columnsContainer.style.position = 'relative';
     columnsContainer.style.display = 'flex';
     columnsContainer.style.flexDirection = 'row';
     columnsContainer.style.flexWrap = 'nowrap';
-    columnsContainer.style.width = `${minWidth}px`; 
-    columnsContainer.style.minWidth = `${minWidth}px`;
+    columnsContainer.style.width = `${calculatedWidth}px`; 
+    columnsContainer.style.minWidth = `${calculatedWidth}px`;
     columnsContainer.style.transform = 'translateX(0px)';
     columnsContainer.style.transition = 'transform 0.1s ease-out';
     
@@ -621,14 +620,14 @@ function implementDirectScroll(board, container) {
         const boardWidth = board.clientWidth;
         const containerWidth = container.scrollWidth;
         
-        // Calcular límites de desplazamiento para ver todo el contenido
+        // Calcular límites de desplazamiento para ver todo el contenido sin espacio extra
         const minTranslate = Math.min(-(containerWidth - boardWidth), 0);
         
-        // Aplicar límites con un poco de margen
-        if (currentTranslate > 20) { // Permitir un pequeño sobrepase al inicio
-            currentTranslate = 20;
-        } else if (currentTranslate < minTranslate - 20) { // Permitir un pequeño sobrepase al final
-            currentTranslate = minTranslate - 20;
+        // Aplicar límites sin espacio extra al final
+        if (currentTranslate > 0) { 
+            currentTranslate = 0;
+        } else if (currentTranslate < minTranslate) { 
+            currentTranslate = minTranslate;
         }
         
         // Aplicar transformación
@@ -729,6 +728,19 @@ function addScrollButtons(board, container) {
     const oldButtons = board.querySelectorAll('.scroll-button');
     oldButtons.forEach(btn => btn.remove());
     
+    // Crear un contenedor para los botones que permanezca fijo
+    const buttonContainer = document.createElement('div');
+    buttonContainer.className = 'scroll-buttons-container';
+    buttonContainer.style.cssText = `
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none; /* Permite que los eventos pasen a través del contenedor */
+        z-index: 1000;
+    `;
+    
     const leftBtn = document.createElement('button');
     leftBtn.innerHTML = '◀';
     leftBtn.className = 'scroll-button scroll-left';
@@ -748,6 +760,7 @@ function addScrollButtons(board, container) {
         cursor: pointer;
         opacity: 0.7;
         transition: opacity 0.2s;
+        pointer-events: auto; /* Reactivar eventos para el botón */
     `;
     
     const rightBtn = document.createElement('button');
@@ -769,6 +782,7 @@ function addScrollButtons(board, container) {
         cursor: pointer;
         opacity: 0.7;
         transition: opacity 0.2s;
+        pointer-events: auto; /* Reactivar eventos para el botón */
     `;
     
     // Hover effect
@@ -814,55 +828,22 @@ function addScrollButtons(board, container) {
     rightBtn.onclick = () => {
         const currentX = getTranslateX();
         const minTranslate = board.clientWidth - container.scrollWidth;
-        const newX = Math.max(minTranslate - 50, currentX - scrollAmount); // -50 para ver el final
+        const newX = Math.max(minTranslate, currentX - scrollAmount); // Eliminamos el -50 para no tener espacio extra
         container.style.transform = `translateX(${newX}px)`;
         
         // Sincronizar con el scroll nativo
         board.scrollLeft = -newX;
     };
     
-    // Añadir un botón para ir al final directamente
-    const endBtn = document.createElement('button');
-    endBtn.innerHTML = '⏩';
-    endBtn.className = 'scroll-button scroll-end';
-    endBtn.style.cssText = `
-        position: absolute;
-        right: 50px;
-        top: 50%;
-        transform: translateY(-50%);
-        z-index: 1000;
-        background: rgba(0,0,0,0.3);
-        color: white;
-        border: none;
-        border-radius: 50%;
-        width: 36px;
-        height: 36px;
-        font-size: 16px;
-        cursor: pointer;
-        opacity: 0.7;
-        transition: opacity 0.2s;
-    `;
+    // Añadir los botones al contenedor fijo
+    buttonContainer.appendChild(leftBtn);
+    buttonContainer.appendChild(rightBtn);
     
-    endBtn.onmouseover = function() {
-        this.style.opacity = '1';
-        this.style.background = 'rgba(0,0,0,0.5)';
-    };
+    // Añadir el contenedor al board
+    board.appendChild(buttonContainer);
     
-    endBtn.onmouseout = function() {
-        this.style.opacity = '0.7';
-        this.style.background = 'rgba(0,0,0,0.3)';
-    };
-    
-    // Ir directamente al final
-    endBtn.onclick = () => {
-        const minTranslate = board.clientWidth - container.scrollWidth;
-        container.style.transform = `translateX(${minTranslate}px)`;
-        board.scrollLeft = -minTranslate;
-    };
-    
-    board.appendChild(leftBtn);
-    board.appendChild(rightBtn);
-    board.appendChild(endBtn);
+    // Asegurar que los botones permanezcan visibles incluso al hacer scroll
+    board.style.position = 'relative'; // Asegurarse de que el board tenga posición relativa
 }
 
 // Función para visualizar las dimensiones en debug (opcional)
