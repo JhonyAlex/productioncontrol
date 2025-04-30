@@ -6,22 +6,9 @@
 export function formatDateCustom(dateString) {
   if (!dateString || typeof dateString !== 'string') return '';
   
-  // Check if the string matches the ISO format pattern
-  const isISOFormat = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(dateString);
-  if (!isISOFormat) return dateString;
+  const match = dateString.match(/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+  if (!match) return dateString;
   
-  try {
-    const date = new Date(dateString);
-    
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = String(date.getFullYear()).slice(2); // Get last 2 digits
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    
-    return `${day}/${month}/${year} ${hours}:${minutes}`;
-  } catch (error) {
-    console.error('Error formatting date:', error);
-    return dateString;
-  }
+  const [_, year, month, day, hours, minutes] = match;
+  return `${day}/${month}/${year.slice(2)} ${hours}:${minutes}`;
 }

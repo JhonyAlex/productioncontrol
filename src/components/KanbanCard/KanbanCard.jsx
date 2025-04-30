@@ -12,13 +12,25 @@ const KanbanCard = ({ production }) => {
     return formatDateCustom(text);
   };
 
+  const formatHeaderText = (text) => {
+    const regex = /(\d+) \((\d{4}-\d{2}-\d{2}T\d{2}:\d{2})\)/;
+    const match = text.match(regex);
+    
+    if (match) {
+      const id = match[1];
+      const date = formatDateCustom(match[2]);
+      return `${id} (${date})`;
+    }
+    return text;
+  };
+
   const headerContent = `${production.id} (${formatDateCustom(production.date)})`;
 
   return (
     <div className="kanban-card">
       <div className="title">{production.title}</div>
       <div style={{ fontWeight: 'bold', fontSize: '0.95em', marginBottom: '0.2em' }}>
-        {headerContent}
+        {formatHeaderText(headerContent)}
       </div>
       <div className="description">{production.description}</div>
     </div>
