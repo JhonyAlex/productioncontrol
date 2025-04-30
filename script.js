@@ -37,17 +37,20 @@ function displayOrders(orders) {
     listView.innerHTML = '';
     
     orders.forEach(order => {
-        const isCompleted = isOrderCompleted(order.id);
+        // Crear el elemento para el pedido
+        const orderItem = document.createElement('div');
+        orderItem.className = 'order-item';
+        orderItem.setAttribute('data-id', order.id);
+        orderItem.setAttribute('data-tipo', order.tipo); // Asegúrate de que tus pedidos tienen este dato
         
-        // Aplicar filtro
-        if ((currentFilter === 'active' && isCompleted) || 
-            (currentFilter === 'completed' && !isCompleted)) {
-            return;
+        // Verificar si está completado para ocultarlo inicialmente si es necesario
+        const isCompleted = isOrderCompleted(order.id);
+        if (isCompleted) {
+            orderItem.style.display = 'none'; // Oculta los completados por defecto
         }
         
-        // Crear el elemento de la orden y agregarlo a la lista
-        const orderElement = createOrderElement(order);
-        listView.appendChild(orderElement);
+        orderItem.textContent = `Order ID: ${order.id}, Status: ${isCompleted ? 'Completed' : 'Active'}`;
+        listView.appendChild(orderItem);
     });
 }
 
@@ -67,6 +70,102 @@ document.addEventListener('DOMContentLoaded', function() {
     const activeBtn = document.getElementById('active-filter');
     const completedBtn = document.getElementById('completed-filter');
     
+    const btnFiltrarLaminacion = document.getElementById('btn-filtrar-laminacion');
+    const btnFiltrarRebobinado = document.getElementById('btn-filtrar-rebobinado');
+    const btnFiltrarPerforado = document.getElementById('btn-filtrar-perforado');
+    const btnFiltrarPendiente = document.getElementById('btn-filtrar-pendiente');
+    const btnFiltrarTodos = document.getElementById('btn-filtrar-todos');
+    
+    const btnFiltrarActivos = document.getElementById('btn-filtrar-activos');
+    const btnFiltrarCompletados = document.getElementById('btn-filtrar-completados');
+    
+    let filtroCompletados = false;
+    
+    function activarFiltro(boton) {
+        [btnFiltrarLaminacion, btnFiltrarRebobinado, btnFiltrarPerforado, 
+         btnFiltrarPendiente, btnFiltrarTodos, btnFiltrarActivos, 
+         btnFiltrarCompletados].forEach(btn => {
+            if (btn) btn.classList.remove('active');
+        });
+        
+        if (boton) boton.classList.add('active');
+    }
+    
+    if (btnFiltrarLaminacion) {
+        btnFiltrarLaminacion.addEventListener('click', function() {
+            activarFiltro(btnFiltrarLaminacion);
+            filtrarPedidos('laminacion', filtroCompletados);
+        });
+    }
+    
+    if (btnFiltrarRebobinado) {
+        btnFiltrarRebobinado.addEventListener('click', function() {
+            activarFiltro(btnFiltrarRebobinado);
+            filtrarPedidos('rebobinado', filtroCompletados);
+        });
+    }
+    
+    if (btnFiltrarPerforado) {
+        btnFiltrarPerforado.addEventListener('click', function() {
+            activarFiltro(btnFiltrarPerforado);
+            filtrarPedidos('perforado', filtroCompletados);
+        });
+    }
+    
+    if (btnFiltrarPendiente) {
+        btnFiltrarPendiente.addEventListener('click', function() {
+            activarFiltro(btnFiltrarPendiente);
+            filtrarPedidos('pendiente', filtroCompletados);
+        });
+    }
+    
+    if (btnFiltrarTodos) {
+        btnFiltrarTodos.addEventListener('click', function() {
+            activarFiltro(btnFiltrarTodos);
+            filtrarPedidos('todos', filtroCompletados);
+        });
+    }
+    
+    if (btnFiltrarActivos) {
+        btnFiltrarActivos.addEventListener('click', function() {
+            activarFiltro(btnFiltrarActivos);
+            filtroCompletados = false;
+            filtrarPedidos('todos', filtroCompletados);
+        });
+    }
+    
+    if (btnFiltrarCompletados) {
+        btnFiltrarCompletados.addEventListener('click', function() {
+            activarFiltro(btnFiltrarCompletados);
+            filtroCompletados = true;
+            filtrarPedidos('todos', filtroCompletados);
+        });
+    }
+    
+    function filtrarPedidos(tipo, mostrarCompletados) {
+        const pedidos = document.querySelectorAll('#list-view .order-item');
+        
+        pedidos.forEach(pedido => {
+            const pedidoTipo = pedido.getAttribute('data-tipo');
+            const pedidoId = pedido.getAttribute('data-id');
+            const esCompletado = isOrderCompleted(pedidoId);
+            
+            if (mostrarCompletados !== esCompletado) {
+                pedido.style.display = 'none';
+                return;
+            }
+            
+            if (tipo === 'todos' || pedidoTipo === tipo) {
+                pedido.style.display = '';
+            } else {
+                pedido.style.display = 'none';
+            }
+        });
+    }
+    
+    filtroCompletados = false;
+    filtrarPedidos('perforado', filtroCompletados);
+    
     if (activeBtn && completedBtn) {
         activeBtn.addEventListener('click', function() {
             filterOrders('active');
@@ -76,7 +175,6 @@ document.addEventListener('DOMContentLoaded', function() {
             filterOrders('completed');
         });
         
-        // Establece el filtro activo por defecto
         filterOrders('active');
     }
 });
@@ -84,7 +182,6 @@ document.addEventListener('DOMContentLoaded', function() {
 // Asegurar que al cambiar a la pestaña "LISTA" se aplique el filtro
 function showTab(tabName) {
     if (tabName === 'list') {
-        // Recargar la lista con el filtro actual
         loadOrders();
     }
 }
