@@ -203,13 +203,30 @@ export function renderKanban(pedidos, options = {}) {
 function createKanbanGroup(groupTitle, etapasInGroup, allPedidos) {
     const groupDiv = document.createElement('div');
     groupDiv.className = 'kanban-group';
+    groupDiv.style.width = '100%';
+    groupDiv.style.overflowX = 'auto'; // Añadir scroll al grupo
+    
     const columnsContainer = document.createElement('div');
     columnsContainer.className = 'kanban-columns-container';
+    
+    // Forzar ancho total basado en número de columnas
+    const columnWidth = 300; // ancho fijo por columna
+    const totalWidth = Math.max(etapasInGroup.length * columnWidth, 1200);
+    columnsContainer.style.width = `${totalWidth}px`;
+    columnsContainer.style.minWidth = `${totalWidth}px`;
+    columnsContainer.style.display = 'flex';
+    columnsContainer.style.flexDirection = 'row';
+    columnsContainer.style.flexWrap = 'nowrap';
 
     etapasInGroup.forEach(etapa => {
         const columnDiv = document.createElement('div');
         columnDiv.className = 'kanban-column';
         columnDiv.dataset.etapa = etapa;
+        
+        // Forzar ancho fijo a cada columna
+        columnDiv.style.width = `${columnWidth - 20}px`;
+        columnDiv.style.minWidth = `${columnWidth - 20}px`;
+        columnDiv.style.flexShrink = '0';
 
         // Filtrar pedidos para la etapa actual
         const pedidosInEtapa = allPedidos.filter(p => p.etapaActual === etapa);
@@ -510,28 +527,37 @@ function forceMinimumColumnWidth() {
         column.style.minWidth = "280px";
         column.style.width = "280px"; // Establecer ancho fijo
         column.style.flexShrink = "0";
+        column.style.boxSizing = "border-box";
     });
     
-    // Intentar forzar el scroll modificando los contenedores de columnas
+    // Forzar el ancho total de los contenedores de columnas
     const containers = document.querySelectorAll('.kanban-columns-container');
     containers.forEach((container, index) => {
-        // Asegurarnos que este contenedor sea más ancho que su padre
-        const parentElement = container.parentElement;
-        const parentWidth = parentElement ? parentElement.clientWidth : 800;
         const columnsInContainer = container.querySelectorAll('.kanban-column').length;
-        const totalColumnsWidth = columnsInContainer * 300; // 280px + margen
         
-        console.log(`Contenedor ${index}: columnas=${columnsInContainer}, ancho del padre=${parentWidth}px, ancho total de columnas=${totalColumnsWidth}px`);
+        // Calcular ancho total necesario (más grande que el ancho visible)
+        const columnWidth = 300; // ancho por columna incluyendo margen
+        const minTotalWidth = columnsInContainer * columnWidth;
+        // Asegurar un mínimo de 1500px o el ancho necesario para todas las columnas
+        const forcedWidth = Math.max(minTotalWidth, 1500); 
         
-        // Asegurar que el contenido siempre sea más ancho que el contenedor padre
+        console.log(`Contenedor ${index}: columnas=${columnsInContainer}, ancho forzado=${forcedWidth}px`);
+        
+        // Aplicar estilos de manera forzada
+        container.style.width = `${forcedWidth}px`;
+        container.style.minWidth = `${forcedWidth}px`;
+        container.style.maxWidth = "none";
         container.style.display = "flex";
         container.style.flexWrap = "nowrap";
-        container.style.width = `${Math.max(totalColumnsWidth, 1200)}px`; // Al menos 1200px de ancho
-        container.style.minWidth = `${Math.max(totalColumnsWidth, 1200)}px`;
+        container.style.flexDirection = "row";
+        container.style.alignItems = "flex-start";
         
-        // Forzar al padre a mostrar barras de desplazamiento
+        // Asegurarnos que el contenedor padre tenga scroll
+        const parentElement = container.parentElement;
         if (parentElement) {
-            parentElement.style.overflowX = "scroll";
+            parentElement.style.overflowX = "auto";
+            parentElement.style.width = "100%";
+            parentElement.style.display = "block";
         }
     });
     
@@ -549,15 +575,20 @@ function forceMinimumColumnWidth() {
         if (contentWidth <= containerWidth) {
             console.warn(`¡Advertencia! El contenedor ${board.id} no tiene overflow horizontal.`);
             
-            // Intentar forzar el overflow
+            // Intento más agresivo para forzar overflow
             const columnsContainer = board.querySelector('.kanban-columns-container');
             if (columnsContainer) {
-                columnsContainer.style.width = (containerWidth * 1.5) + "px";
-                columnsContainer.style.minWidth = (containerWidth * 1.5) + "px";
+                const newWidth = containerWidth * 2; // Duplicar el ancho
+                columnsContainer.style.width = `${newWidth}px`;
+                columnsContainer.style.minWidth = `${newWidth}px`;
                 
-                // Verificar de nuevo
-                void board.offsetWidth;
-                console.log(`Intento de corrección para ${board.id}: contentWidth=${board.scrollWidth}, containerWidth=${board.clientWidth}`);
+                // Para asegurarnos de que los estilos se aplican inmediatamente
+                setTimeout(() => {
+                    // Verificar de nuevo después de aplicar estilos
+                    const updatedContentWidth = board.scrollWidth;
+                    const updatedContainerWidth = board.clientWidth;
+                    console.log(`CORRECCIÓN ${board.id}: contentWidth=${updatedContentWidth}, containerWidth=${updatedContainerWidth}, overflow=${updatedContentWidth > updatedContainerWidth}`);
+                }, 100);
             }
         }
     });
