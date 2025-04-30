@@ -76,11 +76,8 @@ export function renderKanban(pedidos, options = {}) {
     // Listeners de drag & drop
     addDragAndDropListeners();
 
-    // Habilitar drag-to-scroll horizontal en el contenedor correcto
-    enableKanbanDragToScroll(kanbanBoard);
-
-    // Aplicar estilos después de renderizar
-    applyKanbanStyles();
+    // Configurar el scroll para ambos tableros
+    setupKanbanScrolling();
 }
 
 function createKanbanGroup(groupTitle, etapasInGroup, allPedidos) {
@@ -339,6 +336,13 @@ async function drop(e) {
 }
 
 function enableKanbanDragToScroll(container) {
+    if (!container) {
+        console.error("Container para drag-to-scroll no encontrado");
+        return;
+    }
+    
+    console.log(`Configurando drag-to-scroll para ${container.id}`);
+    
     let isDown = false;
     let startX;
     let scrollLeft;
@@ -346,15 +350,24 @@ function enableKanbanDragToScroll(container) {
     let lastX = 0;
 
     function isOnCard(e) {
-        return e.target.closest('.kanban-card');
+        const card = e.target.closest('.kanban-card');
+        const cardHeader = e.target.closest('.kanban-card-header');
+        const cardBody = e.target.closest('.kanban-card-body');
+        const cardFooter = e.target.closest('.kanban-card-footer');
+        const result = !!(card || cardHeader || cardBody || cardFooter);
+        return result;
     }
 
     // Mouse events
     container.addEventListener('mousedown', (e) => {
-        if (isOnCard(e)) {
+        const onCard = isOnCard(e);
+        console.log(`${container.id} mousedown - onCard: ${onCard}`);
+        
+        if (onCard) {
             isDraggingCard = true;
             return;
         }
+        
         isDown = true;
         container.classList.add('drag-scroll-active', 'no-user-select');
         startX = e.pageX;
@@ -370,6 +383,7 @@ function enableKanbanDragToScroll(container) {
     });
 
     container.addEventListener('mouseup', () => {
+        console.log(`${container.id} mouseup - isDown: ${isDown}, isDraggingCard: ${isDraggingCard}`);
         isDown = false;
         isDraggingCard = false;
         container.classList.remove('drag-scroll-active', 'no-user-select');
@@ -383,14 +397,21 @@ function enableKanbanDragToScroll(container) {
         const walk = (x - lastX) * 2; // Multiplicador ajustado para mejor respuesta
         container.scrollLeft -= walk;
         lastX = x;
+        
+        // Añadir feedback visual
+        container.style.cursor = 'grabbing';
     });
 
     // Touch events
     container.addEventListener('touchstart', (e) => {
-        if (isOnCard(e)) {
+        const onCard = isOnCard(e);
+        console.log(`${container.id} touchstart - onCard: ${onCard}`);
+        
+        if (onCard) {
             isDraggingCard = true;
             return;
         }
+        
         isDown = true;
         container.classList.add('drag-scroll-active', 'no-user-select');
         startX = e.touches[0].pageX;
@@ -399,6 +420,7 @@ function enableKanbanDragToScroll(container) {
     });
 
     container.addEventListener('touchend', () => {
+        console.log(`${container.id} touchend - isDown: ${isDown}, isDraggingCard: ${isDraggingCard}`);
         isDown = false;
         isDraggingCard = false;
         container.classList.remove('drag-scroll-active', 'no-user-select');
@@ -406,6 +428,7 @@ function enableKanbanDragToScroll(container) {
 
     container.addEventListener('touchmove', (e) => {
         if (!isDown || isDraggingCard) return;
+        
         const x = e.touches[0].pageX;
         const walk = (x - lastX) * 2; // Multiplicador ajustado para mejor respuesta
         container.scrollLeft -= walk;
@@ -417,11 +440,42 @@ function enableKanbanDragToScroll(container) {
 function applyKanbanStyles() {
     const kanbanBoards = document.querySelectorAll('#kanban-board, #kanban-board-complementarias');
     kanbanBoards.forEach(board => {
+        if (!board) {
+            console.error("No se encontró el tablero Kanban");
+            return;
+        }
+        
+        console.log(`Aplicando estilos a ${board.id}`);
         board.style.cursor = 'grab';
         board.style.overflowX = 'auto';
         board.style.overflowY = 'hidden';
         board.style.scrollBehavior = 'smooth';
         board.style.scrollbarWidth = 'thin';
         board.style.scrollbarColor = '#dee2e6 #f8f9fa';
+        board.style.webkitUserSelect = 'none';
+        board.style.userSelect = 'none';
     });
+}
+
+// Asegurar que se configura el scroll para ambos tableros
+export function setupKanbanScrolling() {
+    const mainBoard = document.getElementById('kanban-board');
+    const complementaryBoard = document.getElementById('kanban-board-complementarias');
+    
+    if (mainBoard) {
+        console.log("Configurando scroll para tablero principal");
+        enableKanbanDragToScroll(mainBoard);
+    } else {
+        console.error("Tablero principal no encontrado");
+    }
+    
+    if (complementaryBoard) {
+        console.log("Configurando scroll para tablero complementario");
+        enableKanbanDragToScroll(complementaryBoard);
+    } else {
+        console.error("Tablero complementario no encontrado");
+    }
+    
+    // Aplicar estilos después de configurar los eventos
+    applyKanbanStyles();
 }

@@ -42,11 +42,16 @@ body {
     box-sizing: border-box;
     cursor: grab;
     user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    touch-action: pan-y; /* Permitir scroll táctil horizontal */
 }
 
 #kanban-board.drag-scroll-active,
 #kanban-board-complementarias.drag-scroll-active {
     cursor: grabbing !important;
+    scroll-behavior: auto !important; /* Scroll instantáneo durante arrastre */
 }
 
 #kanban-board.no-user-select,
@@ -127,6 +132,7 @@ body {
     max-width: 100%;
     min-width: 0;
     /* Evita que el contenido se desborde */
+    touch-action: none; /* Prevenir comportamientos táctiles predeterminados */
 }
 .kanban-card:active {
     cursor: grabbing;
