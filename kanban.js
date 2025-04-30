@@ -478,81 +478,127 @@ export function setupKanbanScrolling() {
     document.removeEventListener('mouseup', () => {});
     document.removeEventListener('touchend', () => {});
     
-    // Utilizar un enfoque completamente diferente para el scroll
-    // En lugar de usar overflow, usaremos transform directo
-    
-    // 1. Configurar una estructura de CSS inline obligatoria
+    // Utilizar un enfoque de transformación para el scroll
     const mainBoard = document.getElementById('kanban-board');
     const complementaryBoard = document.getElementById('kanban-board-complementarias');
     
+    // Limpiar cualquier contenedor o estilo duplicado
+    cleanupKanbanStructure();
+    
+    // Configurar cada tablero
     [mainBoard, complementaryBoard].forEach(board => {
         if (!board) return;
         
         // Limpiar eventos anteriores
-        const existingListeners = board._scrollListeners || [];
-        existingListeners.forEach(listener => {
-            if (listener.element && listener.type && listener.callback) {
-                listener.element.removeEventListener(listener.type, listener.callback);
-            }
-        });
-        board._scrollListeners = [];
+        cleanupEventListeners(board);
         
-        // Aplicar estilos específicos para forzar scrolling
-        board.style.position = 'relative';
-        board.style.overflow = 'hidden';
-        board.style.width = '100%';
-        board.style.padding = '0';
+        // Aplicar estilos base
+        setupBoardStyles(board);
         
-        // Obtener el contenedor de grupos
+        // Procesar cada grupo de columnas
         const groups = board.querySelectorAll('.kanban-group');
         groups.forEach(group => {
-            group.style.width = '100%';
-            
-            const columnsContainer = group.querySelector('.kanban-columns-container');
-            if (columnsContainer) {
-                // Forzar ancho explícito basado en columnas
-                const columns = columnsContainer.querySelectorAll('.kanban-column');
-                const columnWidth = 300; // px por columna
-                const totalWidth = Math.max(columns.length * columnWidth, 1500);
-                
-                // Estilos críticos para el container de columnas
-                columnsContainer.style.position = 'relative';
-                columnsContainer.style.display = 'flex';
-                columnsContainer.style.flexDirection = 'row';
-                columnsContainer.style.flexWrap = 'nowrap';
-                columnsContainer.style.minWidth = `${totalWidth}px`;
-                columnsContainer.style.width = `${totalWidth}px`;
-                columnsContainer.style.transform = 'translateX(0px)'; // Para la animación
-                columnsContainer.style.transition = 'transform 0.1s ease-out';
-                
-                // Aplicar estilos a cada columna
-                columns.forEach(column => {
-                    column.style.flex = '0 0 280px';
-                    column.style.width = '280px';
-                    column.style.minWidth = '280px';
-                    column.style.position = 'relative';
-                    column.style.padding = '10px';
-                    column.style.boxSizing = 'border-box';
-                    column.style.margin = '0 10px';
-                });
-                
-                // Establecer información de debugging
-                console.log(`Board ${board.id}: containerWidth=${columnsContainer.offsetWidth}, columns=${columns.length}, totalWidth=${totalWidth}`);
-                
-                // Implementar nuevo sistema de scroll con transformación directa
-                implementDirectScroll(board, columnsContainer);
-                
-                // Añadir botones de navegación estándar como fallback
-                addScrollButtons(board, columnsContainer);
-                
-                // Debug: Añadir indicador visual de las dimensiones
-                addDebugOverlay(board, columnsContainer);
-            }
+            setupGroupContainer(group);
         });
     });
 }
 
-// Función para implementar scroll directo mediante transform
+// Función para limpiar toda la estructura del Kanban
+function cleanupKanbanStructure() {
+    // Eliminar cualquier overlay de debug
+    document.querySelectorAll('.debug-overlay').forEach(el => el.remove());
+    
+    // Eliminar botones de navegación duplicados
+    document.querySelectorAll('.scroll-button').forEach(el => el.remove());
+    
+    // Asegurar que no haya estilos conflictivos
+    document.querySelectorAll('#kanban-board, #kanban-board-complementarias').forEach(board => {
+        // Asegurarse de que solo el contenido tenga scroll, no el tablero principal
+        board.style.overflowX = 'hidden';
+        board.style.overflowY = 'hidden';
+        
+        // Eliminar cualquier barra de desplazamiento nativa
+        const groups = board.querySelectorAll('.kanban-group');
+        groups.forEach(group => {
+            group.style.overflowX = 'hidden';
+            group.style.overflowY = 'hidden';
+        });
+    });
+}
+
+// Función para limpiar event listeners anteriores
+function cleanupEventListeners(board) {
+    const existingListeners = board._scrollListeners || [];
+    existingListeners.forEach(listener => {
+        if (listener.element && listener.type && listener.callback) {
+            listener.element.removeEventListener(listener.type, listener.callback);
+        }
+    });
+    board._scrollListeners = [];
+}
+
+// Función para configurar los estilos base del tablero
+function setupBoardStyles(board) {
+    board.style.position = 'relative';
+    board.style.overflow = 'hidden';
+    board.style.width = '100%';
+    board.style.padding = '0';
+    board.style.cursor = 'grab';
+    board.style.userSelect = 'none';
+}
+
+// Configurar el grupo y sus columnas
+function setupGroupContainer(group) {
+    group.style.width = '100%';
+    group.style.position = 'relative';
+    group.style.overflow = 'hidden';
+    
+    const columnsContainer = group.querySelector('.kanban-columns-container');
+    if (!columnsContainer) return;
+    
+    // Calcular el ancho basado en columnas
+    const columns = columnsContainer.querySelectorAll('.kanban-column');
+    const columnWidth = 300; // px por columna
+    const totalWidth = Math.max(columns.length * columnWidth, 1500);
+    
+    // Estilos para el contenedor de columnas
+    columnsContainer.style.position = 'relative';
+    columnsContainer.style.display = 'flex';
+    columnsContainer.style.flexDirection = 'row';
+    columnsContainer.style.flexWrap = 'nowrap';
+    columnsContainer.style.width = `${totalWidth}px`;
+    columnsContainer.style.minWidth = `${totalWidth}px`;
+    columnsContainer.style.transform = 'translateX(0px)';
+    columnsContainer.style.transition = 'transform 0.1s ease-out';
+    
+    // Estilos para cada columna
+    columns.forEach(column => {
+        column.style.flex = '0 0 280px';
+        column.style.width = '280px';
+        column.style.minWidth = '280px';
+        column.style.position = 'relative';
+        column.style.padding = '10px';
+        column.style.boxSizing = 'border-box';
+        column.style.margin = '0 10px';
+    });
+    
+    // Debug info
+    console.log(`Board ${group.closest('[id]').id}: containerWidth=${totalWidth}, columns=${columns.length}, totalWidth=${totalWidth}`);
+    
+    // Implementar el scroll con transformación
+    implementDirectScroll(group, columnsContainer);
+    
+    // Añadir controles de navegación
+    addScrollButtons(group, columnsContainer);
+    
+    // Solo añadir overlay de debug en desarrollo si está habilitado
+    const isDevMode = false; // Cambiar a true para habilitar
+    if (isDevMode) {
+        addDebugOverlay(group, columnsContainer);
+    }
+}
+
+// Función optimizada para implementar scroll directo
 function implementDirectScroll(board, container) {
     if (!board || !container) return;
     
@@ -560,6 +606,7 @@ function implementDirectScroll(board, container) {
     let startPos = 0;
     let currentTranslate = 0;
     let prevTranslate = 0;
+    let animationSpeed = 1.5; // Factor para ajustar la velocidad de desplazamiento
     
     const getPositionX = (event) => {
         return event.type.includes('mouse') ? event.pageX : event.touches[0].pageX;
@@ -583,13 +630,14 @@ function implementDirectScroll(board, container) {
         // Aplicar transformación
         container.style.transform = `translateX(${currentTranslate}px)`;
         
-        // Debug info
+        // Debug info (solo si es necesario)
         console.log(`Direct scroll: translate=${currentTranslate}, min=${minTranslate}, boardWidth=${boardWidth}, containerWidth=${containerWidth}`);
     };
     
     // Eventos para el mouse
     const handleMouseDown = (e) => {
-        if (e.target.closest('.kanban-card, button')) return; // No iniciar scroll en cards o botones
+        // No iniciar scroll si el click es en una tarjeta o botón
+        if (e.target.closest('.kanban-card, button, .debug-overlay, .scroll-button')) return;
         
         isDragging = true;
         startPos = getPositionX(e);
@@ -604,7 +652,7 @@ function implementDirectScroll(board, container) {
         
         const currentPosition = getPositionX(e);
         const diff = currentPosition - startPos;
-        currentTranslate = prevTranslate + diff;
+        currentTranslate = prevTranslate + (diff * animationSpeed);
         
         setContainerPosition();
         e.preventDefault(); // Prevenir scroll página
@@ -656,15 +704,16 @@ function addScrollButtons(board, container) {
         top: 50%;
         transform: translateY(-50%);
         z-index: 1000;
-        background: rgba(0,0,0,0.5);
+        background: rgba(0,0,0,0.3);
         color: white;
         border: none;
         border-radius: 50%;
-        width: 40px;
-        height: 40px;
-        font-size: 18px;
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
         cursor: pointer;
-        opacity: 0.8;
+        opacity: 0.7;
+        transition: opacity 0.2s;
     `;
     
     const rightBtn = document.createElement('button');
@@ -676,78 +725,95 @@ function addScrollButtons(board, container) {
         top: 50%;
         transform: translateY(-50%);
         z-index: 1000;
-        background: rgba(0,0,0,0.5);
+        background: rgba(0,0,0,0.3);
         color: white;
         border: none;
         border-radius: 50%;
-        width: 40px;
-        height: 40px;
-        font-size: 18px;
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
         cursor: pointer;
-        opacity: 0.8;
+        opacity: 0.7;
+        transition: opacity 0.2s;
     `;
     
-    // Calcular el valor de traslación actual para el container
+    // Hover effect
+    leftBtn.onmouseover = rightBtn.onmouseover = function() {
+        this.style.opacity = '1';
+        this.style.background = 'rgba(0,0,0,0.5)';
+    };
+    
+    leftBtn.onmouseout = rightBtn.onmouseout = function() {
+        this.style.opacity = '0.7';
+        this.style.background = 'rgba(0,0,0,0.3)';
+    };
+    
+    // Calcular el valor de traslación actual
     const getTranslateX = () => {
         const style = window.getComputedStyle(container);
-        const matrix = new WebKitCSSMatrix(style.transform);
+        const matrix = new DOMMatrix(style.transform);
         return matrix.m41; // Valor de translateX en la matriz de transformación
     };
     
-    // Desplazar izquierda y derecha con los botones
+    // Desplazar con los botones (300px cada vez)
     leftBtn.onclick = () => {
         const currentX = getTranslateX();
-        const newX = Math.min(0, currentX + 300); // 300px a la derecha, máximo 0
+        const newX = Math.min(0, currentX + 300);
         container.style.transform = `translateX(${newX}px)`;
-        console.log(`Button scroll left: ${currentX} -> ${newX}`);
     };
     
     rightBtn.onclick = () => {
         const currentX = getTranslateX();
         const minTranslate = board.clientWidth - container.scrollWidth;
-        const newX = Math.max(minTranslate, currentX - 300); // 300px a la izquierda, mínimo (containerWidth - boardWidth)
+        const newX = Math.max(minTranslate, currentX - 300);
         container.style.transform = `translateX(${newX}px)`;
-        console.log(`Button scroll right: ${currentX} -> ${newX}`);
     };
     
     board.appendChild(leftBtn);
     board.appendChild(rightBtn);
 }
 
-// Función para visualizar las dimensiones en debug
+// Función para visualizar las dimensiones en debug (opcional)
 function addDebugOverlay(board, container) {
-    // Solo añadir en modo desarrollo
+    // Eliminar cualquier overlay existente
+    const existingOverlay = board.querySelector('.debug-overlay');
+    if (existingOverlay) existingOverlay.remove();
+    
+    // Crear nuevo overlay
     const debugOverlay = document.createElement('div');
     debugOverlay.className = 'debug-overlay';
     debugOverlay.style.cssText = `
         position: absolute;
         bottom: 5px;
         right: 5px;
-        background: rgba(0,0,0,0.7);
+        background: rgba(0,0,0,0.6);
         color: white;
-        padding: 5px;
-        font-size: 10px;
+        padding: 3px 6px;
+        font-size: 9px;
         z-index: 1000;
         pointer-events: none;
+        border-radius: 3px;
     `;
     
     const updateDebugInfo = () => {
         const boardWidth = board.clientWidth;
         const containerWidth = container.scrollWidth;
         const style = window.getComputedStyle(container);
-        const matrix = new WebKitCSSMatrix(style.transform);
+        const matrix = new DOMMatrix(style.transform);
         const translateX = matrix.m41;
         
         debugOverlay.innerHTML = `
             Board: ${boardWidth}px<br>
             Content: ${containerWidth}px<br>
-            TranslateX: ${translateX}px
+            TranslateX: ${Math.round(translateX)}px
         `;
     };
     
-    // Actualizar info cada segundo
+    // Actualizar info inicialmente y cada segundo
     updateDebugInfo();
-    setInterval(updateDebugInfo, 1000);
+    const intervalId = setInterval(updateDebugInfo, 1000);
     
+    // Guardar el ID del intervalo para limpiarlo cuando sea necesario
+    board._debugInterval = intervalId;
     board.appendChild(debugOverlay);
 }
