@@ -70,3 +70,17 @@ export function formatAnyContent(content) {
   }
   return content;
 }
+
+/**
+ * Format date to DD/MM/YY, supporting both "YYYY-MM-DDThh:mm" and "YYYY-MM-DD"
+ * @param {string} dateString - ISO date string
+ * @returns {string} Formatted date
+ */
+export function soloFecha(dateString) {
+  if (!dateString) return '';
+  // Soporta tanto "2025-04-16T13:49" como "2025-04-16"
+  const match = dateString.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!match) return dateString;
+  const [_, y, m, d] = match;
+  return `${d}/${m}/${y.slice(2)}`;
+}

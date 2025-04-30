@@ -1,12 +1,12 @@
 import React from 'react';
-import { formatDateCustom, formatAnyContent } from '../../utils/dateUtils';
+import { formatDateCustom, formatAnyContent, soloFecha } from '../../utils/dateUtils';
 
 const isDateFormat = (text) => {
   return typeof text === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(text);
 };
 
-const renderCellContent = (cellData) => {
-  return formatAnyContent(cellData);
+const renderCellContent = (cellData, columnKey) => {
+  return columnKey === 'fecha' ? soloFecha(cellData) : formatAnyContent(cellData);
 };
 
 const Table = ({ columns, data }) => {
@@ -24,7 +24,7 @@ const Table = ({ columns, data }) => {
           <tr key={rowIndex}>
             {columns.map((column) => (
               <td key={column.key}>
-                {renderCellContent(row[column.key])}
+                {renderCellContent(row[column.key], column.key)}
               </td>
             ))}
           </tr>

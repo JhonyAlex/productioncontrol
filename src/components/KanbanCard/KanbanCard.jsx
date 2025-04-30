@@ -1,6 +1,6 @@
 import React from 'react';
 import './KanbanCard.css';
-import { formatDateCustom, formatShortDate, formatDateNoTime } from '../../utils/dateUtils';
+import { formatDateCustom, formatShortDate, formatDateNoTime, soloFecha } from '../../utils/dateUtils';
 
 const KanbanCard = ({ production }) => {
   const formatDateText = (text) => {
@@ -33,13 +33,13 @@ const KanbanCard = ({ production }) => {
     });
   };
 
-  const headerContent = `${production.id} (${formatDateCustom(production.date)})`;
+  const headerContent = `${production.id} (${production.date})`;
 
   return (
     <div className="kanban-card">
       <div className="title">{production.title}</div>
       <div style={{ fontWeight: 'bold', fontSize: '0.95em', marginBottom: '0.2em' }}>
-        {formatCardTitle(headerContent)}
+        {production.id} ({soloFecha(production.date)})
       </div>
       <div className="description">{production.description}</div>
     </div>
