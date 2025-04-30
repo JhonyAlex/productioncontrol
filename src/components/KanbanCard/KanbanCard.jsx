@@ -49,7 +49,7 @@ const KanbanCard = ({ production }) => {
         Prueba123 (2025-03-12T13:50)
       </div>
       <div className="title">{production.title}</div>
-      <div style={{ fontWeight: 'bold', fontSize: '0.95em', marginBottom: '0.2em' }}>
+      <div style={{ fontWeight: 'bold', marginBottom: '0.2em' }}>
         {mostrarIdYFecha(`${production.id} (${production.date})`)}
       </div>
       <div className="description">{production.description}</div>
