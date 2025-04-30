@@ -313,3 +313,25 @@ $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
 $(document).ready(function() {
     applyDefaultFilters();
 });
+
+// Si tienes una función para cargar/actualizar la lista de pedidos, añade esto al final:
+function actualizarPedidos() {
+    const pedidos = document.querySelectorAll('#list-view .order-item');
+    
+    pedidos.forEach(pedido => {
+        const pedidoId = pedido.getAttribute('data-id');
+        const esCompletado = isOrderCompleted(pedidoId);
+        
+        if ($("#btn-filtrar-completados").hasClass("active")) {
+            pedido.style.display = esCompletado ? '' : 'none';
+        } else {
+            pedido.style.display = esCompletado ? 'none' : '';
+        }
+    });
+    
+    if ($("#btn-filtrar-completados").hasClass("active")) {
+        $("#btn-filtrar-completados").click();
+    } else {
+        applyDefaultFilters();
+    }
+}
