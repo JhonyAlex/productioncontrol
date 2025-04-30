@@ -343,6 +343,11 @@ function enableKanbanDragToScroll(container) {
     
     console.log(`Configurando drag-to-scroll para ${container.id}`);
     
+    // Verificar si el contenedor realmente tiene overflow
+    const contentWidth = container.scrollWidth;
+    const containerWidth = container.clientWidth;
+    console.log(`Container ${container.id}: scrollWidth=${contentWidth}, clientWidth=${containerWidth}, puede desplazarse: ${contentWidth > containerWidth}`);
+    
     let isDown = false;
     let startX;
     let scrollLeft;
@@ -399,13 +404,17 @@ function enableKanbanDragToScroll(container) {
     container.addEventListener('mousemove', (e) => {
         if (!isDown) return;
         
-        // Menos condiciones para bloquear el movimiento
+        // Modificación clave: usar un enfoque directo para el desplazamiento 
         e.preventDefault();
         
         const x = e.pageX;
-        const walk = (x - lastX) * 3; // Mayor multiplicador para respuesta más rápida
-        container.scrollLeft = scrollLeft - (x - startX);
-        console.log(`Moviendo: diff=${x - lastX}, walk=${walk}, scrollLeft=${container.scrollLeft}`);
+        const diff = x - lastX;
+        
+        // Usar directamente el valor negativo para que la dirección sea natural
+        container.scrollLeft -= diff * 2;
+        
+        console.log(`Moviendo: diff=${diff}, scrollLeft=${container.scrollLeft}, maxScroll=${container.scrollWidth - container.clientWidth}`);
+        
         lastX = x;
     });
 
@@ -437,9 +446,10 @@ function enableKanbanDragToScroll(container) {
         if (!isDown) return;
         
         const x = e.touches[0].pageX;
-        const walk = (x - lastX) * 3;
-        container.scrollLeft = scrollLeft - (x - startX);
-        console.log(`Touch moviendo: diff=${x - lastX}, scrollLeft=${container.scrollLeft}`);
+        const diff = x - lastX;
+        container.scrollLeft -= diff * 2;
+        
+        console.log(`Touch moviendo: diff=${diff}, scrollLeft=${container.scrollLeft}`);
         lastX = x;
     });
 }
@@ -453,16 +463,46 @@ export function setupKanbanScrolling() {
     document.removeEventListener('mouseup', () => {});
     document.removeEventListener('touchend', () => {});
     
-    if (mainBoard) {
-        mainBoard.innerHTML = mainBoard.innerHTML;  // Truco para eliminar listeners sin perder contenido
-        console.log("Reconfigurando scroll para tablero principal");
-        enableKanbanDragToScroll(mainBoard);
-    }
-    
+    // Verificar la estructura del DOM antes de configurar
     if (complementaryBoard) {
+        console.log("Estructura del tablero complementario:");
+        console.log(`- ID: ${complementaryBoard.id}`);
+        console.log(`- Contenido directo: ${complementaryBoard.children.length} elementos`);
+        console.log(`- scrollWidth: ${complementaryBoard.scrollWidth}`);
+        console.log(`- clientWidth: ${complementaryBoard.clientWidth}`);
+        
+        // Forzar overflow para asegurar que el scroll funcione
+        complementaryBoard.style.overflowX = 'auto';
+        complementaryBoard.style.overflowY = 'hidden';
+        
+        // Asegurarnos que el contenido es más ancho que el contenedor
+        const container = complementaryBoard.querySelector('.kanban-columns-container');
+        if (container) {
+            // Esto asegura que el contenido sea explícitamente ancho
+            container.style.display = 'inline-flex';
+            container.style.whiteSpace = 'nowrap';
+            container.style.minWidth = 'max-content';
+        }
+        
         complementaryBoard.innerHTML = complementaryBoard.innerHTML;
         console.log("Reconfigurando scroll para tablero complementario");
         enableKanbanDragToScroll(complementaryBoard);
+    }
+    
+    if (mainBoard) {
+        mainBoard.style.overflowX = 'auto';
+        mainBoard.style.overflowY = 'hidden';
+        
+        const container = mainBoard.querySelector('.kanban-columns-container');
+        if (container) {
+            container.style.display = 'inline-flex';
+            container.style.whiteSpace = 'nowrap';
+            container.style.minWidth = 'max-content';
+        }
+        
+        mainBoard.innerHTML = mainBoard.innerHTML;
+        console.log("Reconfigurando scroll para tablero principal");
+        enableKanbanDragToScroll(mainBoard);
     }
     
     // Aplicar estilos después de configurar los eventos
@@ -479,17 +519,29 @@ function applyKanbanStyles() {
         }
         
         console.log(`Aplicando estilos a ${board.id}`);
+        
+        // Estilos críticos para el scroll
         board.style.cursor = 'grab';
         board.style.overflowX = 'auto';
         board.style.overflowY = 'hidden';
-        board.style.scrollBehavior = 'smooth';
+        board.style.scrollBehavior = 'auto'; // Cambiado a auto para scroll inmediato
         board.style.scrollbarWidth = 'thin';
         board.style.scrollbarColor = '#dee2e6 #f8f9fa';
+        board.style.display = 'block'; // Asegurar que el contenedor es un bloque
+        board.style.width = '100%';   // Asegurar que toma el ancho completo
         
         // Asegurar que estos estilos se apliquen siempre
         board.style.userSelect = 'none';
         board.style.webkitUserSelect = 'none';
         board.style.mozUserSelect = 'none';
         board.style.msUserSelect = 'none';
+    });
+    
+    // También asegurarnos que los contenedores internos sean correctos
+    const containers = document.querySelectorAll('.kanban-columns-container');
+    containers.forEach(container => {
+        container.style.display = 'inline-flex';
+        container.style.whiteSpace = 'nowrap';
+        container.style.minWidth = 'max-content';
     });
 }
