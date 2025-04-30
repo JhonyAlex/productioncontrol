@@ -254,15 +254,44 @@ document.addEventListener('DOMContentLoaded', function() {
         filtrarPedidos('todos', filtroCompletados);
     });
 
+    // Añade los nuevos handlers AQUÍ, exactamente en el mismo bloque que los existentes
+    $("#btn-filtrar-activos").click(function() {
+        $("#list-filters .btn").removeClass("active");
+        $(this).addClass("active");
+        
+        $(".order-item").each(function() {
+            var id = $(this).attr("id");
+            
+            if (isOrderCompleted(id)) {
+                $(this).hide();
+            } else {
+                $(this).show();
+            }
+        });
+    });
+    
+    $("#btn-filtrar-completados").click(function() {
+        $("#list-filters .btn").removeClass("active");
+        $(this).addClass("active");
+        
+        $(".order-item").each(function() {
+            var id = $(this).attr("id");
+            
+            if (isOrderCompleted(id)) {
+                $(this).show();
+            } else {
+                $(this).hide();
+            }
+        });
+    });
+
     // Llama a applyDefaultFilters después de cargar los pedidos inicialmente
     applyDefaultFilters();
 
     // Hacer que por defecto los pedidos completados estén ocultos
-    // (simular click en el botón Activos al cargar)
     $("#btn-filtrar-activos").click();
     
     // Activar el filtro de Activos por defecto cuando se carga la página
-    // o cuando se navega a la pestaña "list"
     $(document).on("shown.bs.tab", 'a[data-toggle="tab"]', function(e) {
         if ($(e.target).attr("href") === "#list") {
             $("#btn-filtrar-activos").click();
@@ -271,6 +300,38 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Aplicar filtros por defecto al cargar la página
     applyDefaultFilters();
+
+    // Añadir click handlers para los filtros Activos y Completados
+    $("#btn-filtrar-activos").click(function() {
+        $("#list-filters .btn").removeClass("active");
+        $(this).addClass("active");
+        
+        $(".pedido").each(function() {
+            var id = $(this).attr("data-id");
+            if (isOrderCompleted(id)) {
+                $(this).hide();
+            } else {
+                $(this).show();
+            }
+        });
+    });
+
+    $("#btn-filtrar-completados").click(function() {
+        $("#list-filters .btn").removeClass("active");
+        $(this).addClass("active");
+        
+        $(".pedido").each(function() {
+            var id = $(this).attr("data-id");
+            if (isOrderCompleted(id)) {
+                $(this).show();
+            } else {
+                $(this).hide();
+            }
+        });
+    });
+
+    // Activar el filtro "Activos" por defecto
+    $("#btn-filtrar-activos").click();
 });
 
 // Asegurar que al cambiar a la pestaña "LISTA" se aplique el filtro
@@ -287,11 +348,9 @@ function setupFilterButtons() {
     
     if (btnFiltrarActivos) {
         btnFiltrarActivos.addEventListener('click', function() {
-            // Resaltar este botón
             btnFiltrarActivos.classList.add('active');
             if (btnFiltrarCompletados) btnFiltrarCompletados.classList.remove('active');
             
-            // Filtrar pedidos para mostrar solo activos
             const pedidos = document.querySelectorAll('#list-view .order-item');
             pedidos.forEach(pedido => {
                 const pedidoId = pedido.getAttribute('data-id');
@@ -304,11 +363,9 @@ function setupFilterButtons() {
     
     if (btnFiltrarCompletados) {
         btnFiltrarCompletados.addEventListener('click', function() {
-            // Resaltar este botón
             btnFiltrarCompletados.classList.add('active');
             if (btnFiltrarActivos) btnFiltrarActivos.classList.remove('active');
             
-            // Filtrar pedidos para mostrar solo completados
             const pedidos = document.querySelectorAll('#list-view .order-item');
             pedidos.forEach(pedido => {
                 const pedidoId = pedido.getAttribute('data-id');
@@ -319,7 +376,6 @@ function setupFilterButtons() {
         });
     }
     
-    // Activar filtro de activos por defecto al cargar la página
     if (btnFiltrarActivos) {
         btnFiltrarActivos.click();
     }
@@ -327,13 +383,12 @@ function setupFilterButtons() {
 
 // Aplicar filtros por defecto al cargar la página
 function applyDefaultFilters() {
-    // Activar el filtro "Activos" por defecto
     $("#btn-filtrar-activos").click();
 }
 
 // Si tienes un evento de cambio de pestaña como este:
 $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-    if ($(e.target).attr('href') === '#list') {  // Ajusta '#list' al ID de tu pestaña de lista
+    if ($(e.target).attr('href') === '#list') {
         applyDefaultFilters();
     }
 });
