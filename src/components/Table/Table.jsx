@@ -24,7 +24,7 @@ const Table = ({ columns, data }) => {
           <tr key={rowIndex}>
             {columns.map((column) => (
               <td key={column.key}>
-                {renderCellContent(row[column.key], column.key)}
+                {column.key === 'fecha' ? soloFecha(row[column.key]) : row[column.key]}
               </td>
             ))}
           </tr>

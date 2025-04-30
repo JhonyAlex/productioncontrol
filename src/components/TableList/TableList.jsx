@@ -1,5 +1,5 @@
 import React from 'react';
-import { formatShortDate } from '../../utils/dateUtils';
+import { formatShortDate, soloFecha } from '../../utils/dateUtils';
 
 const MainTableComponent = ({ data }) => {
   const formatCellContent = (content) => {
@@ -21,8 +21,10 @@ const MainTableComponent = ({ data }) => {
       <tbody>
         {data.rows.map((row, rowIndex) => (
           <tr key={rowIndex}>
-            {row.map((cell, cellIndex) => (
-              <td key={cellIndex}>{formatCellContent(cell.value)}</td>
+            {data.headers.map((col, cellIndex) => (
+              <td key={cellIndex}>
+                {col.key === 'fecha' ? soloFecha(row[col.key]) : row[col.key]}
+              </td>
             ))}
           </tr>
         ))}
