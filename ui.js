@@ -30,11 +30,16 @@ export function initializeAppEventListeners() {
         setupSearchAutocomplete();
     }
 
-    // Botón agregar pedido
+    // Botón agregar pedido - CORREGIDO: Usar window.openPedidoModal directamente
     const agregarPedidoBtn = document.getElementById('btn-agregar-pedido');
-    if (agregarPedidoBtn && !agregarPedidoBtn.dataset.listenerAttached) {
-        agregarPedidoBtn.addEventListener('click', () => window.openPedidoModal());
-        agregarPedidoBtn.dataset.listenerAttached = 'true';
+    if (agregarPedidoBtn) {
+        // Eliminamos listeners anteriores para evitar duplicados
+        agregarPedidoBtn.replaceWith(agregarPedidoBtn.cloneNode(true));
+        const newBtn = document.getElementById('btn-agregar-pedido');
+        newBtn.addEventListener('click', function() {
+            window.openPedidoModal(); // Asegurarse de usar la función global
+        });
+        newBtn.dataset.listenerAttached = 'true';
     }
 
     // Botón "Gráficos" dentro de la pestaña Lista

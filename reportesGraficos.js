@@ -42,6 +42,19 @@ function safeGetCanvas(id) {
     return el && el.offsetParent !== null ? el : null;
 }
 
+// Añadir función de ayuda para formatear números con 2 decimales máximo
+function formatNumber(value) {
+    if (typeof value === 'number') {
+        // Si es un número entero o tiene menos de 2 decimales, no hacer nada
+        if (Number.isInteger(value) || (value.toString().split('.')[1] || '').length <= 2) {
+            return value;
+        }
+        // Si tiene más de 2 decimales, formatear a 2 decimales
+        return Number(value.toFixed(2));
+    }
+    return value;
+}
+
 // --- NUEVO: Renderiza tabla HTML para cada gráfico ---
 function renderTable(containerId, headers, rows) {
     const container = document.getElementById(containerId);
@@ -87,7 +100,7 @@ export function renderGraficosReportes(pedidos) {
         maquinas[maq] = (maquinas[maq] || 0) + (Number(p.metros) || 0);
     });
     const maqLabels = Object.keys(maquinas);
-    const maqData = maqLabels.map(k => maquinas[k]);
+    const maqData = maqLabels.map(k => formatNumber(maquinas[k]));
     const canvasMaq = safeGetCanvas('grafico-metros-maquina');
     if (canvasMaq) {
         charts.metrosMaquina = new Chart(canvasMaq, {
@@ -110,7 +123,7 @@ export function renderGraficosReportes(pedidos) {
         Todo: _ => true
     };
     const tipoLabels = Object.keys(tipos);
-    const tipoData = tipoLabels.map(t => sum(pedidos.filter(tipos[t]), p => p.metros));
+    const tipoData = tipoLabels.map(t => formatNumber(sum(pedidos.filter(tipos[t]), p => p.metros)));
     const canvasEtapa = safeGetCanvas('grafico-metros-etapa');
     if (canvasEtapa) {
         charts.metrosEtapa = new Chart(canvasEtapa, {
@@ -176,7 +189,7 @@ export function renderGraficosReportes(pedidos) {
             type: 'line',
             data: {
                 labels: last14,
-                datasets: [{ label: 'Pedidos', data: last14.map(k=>fechas[k]), borderColor:'#6610f2', backgroundColor:'#b197fc', fill:true }]
+                datasets: [{ label: 'Pedidos', data: last14.map(k=>formatNumber(fechas[k])), borderColor:'#6610f2', backgroundColor:'#b197fc', fill:true }]
             },
             options: { responsive: true }
         });
@@ -268,7 +281,7 @@ function exportarReportesExcel() {
     if (canvas1 && charts.metrosMaquina) {
         const data = charts.metrosMaquina.data;
         for (let i = 0; i < data.labels.length; i++) {
-            tablaMaquina.push([data.labels[i], data.datasets[0].data[i]]);
+            tablaMaquina.push([data.labels[i], formatNumber(data.datasets[0].data[i])]);
         }
         const ws1 = XLSX.utils.aoa_to_sheet(tablaMaquina);
         XLSX.utils.book_append_sheet(wb, ws1, 'Metros por Máquina');
@@ -279,7 +292,7 @@ function exportarReportesExcel() {
     if (charts.metrosEtapa) {
         const data = charts.metrosEtapa.data;
         for (let i = 0; i < data.labels.length; i++) {
-            tablaEtapa.push([data.labels[i], data.datasets[0].data[i]]);
+            tablaEtapa.push([data.labels[i], formatNumber(data.datasets[0].data[i])]);
         }
         const ws2 = XLSX.utils.aoa_to_sheet(tablaEtapa);
         XLSX.utils.book_append_sheet(wb, ws2, 'Metros por Etapa');
@@ -290,7 +303,7 @@ function exportarReportesExcel() {
     if (charts.etapasActual) {
         const data = charts.etapasActual.data;
         for (let i = 0; i < data.labels.length; i++) {
-            tablaEstado.push([data.labels[i], data.datasets[0].data[i]]);
+            tablaEstado.push([data.labels[i], formatNumber(data.datasets[0].data[i])]);
         }
         const ws3 = XLSX.utils.aoa_to_sheet(tablaEstado);
         XLSX.utils.book_append_sheet(wb, ws3, 'Pedidos por Estado');
@@ -301,7 +314,7 @@ function exportarReportesExcel() {
     if (charts.clientes) {
         const data = charts.clientes.data;
         for (let i = 0; i < data.labels.length; i++) {
-            tablaClientes.push([data.labels[i], data.datasets[0].data[i]]);
+            tablaClientes.push([data.labels[i], formatNumber(data.datasets[0].data[i])]);
         }
         const ws4 = XLSX.utils.aoa_to_sheet(tablaClientes);
         XLSX.utils.book_append_sheet(wb, ws4, 'Top 5 Clientes');
@@ -312,7 +325,7 @@ function exportarReportesExcel() {
     if (charts.evolucionFecha) {
         const data = charts.evolucionFecha.data;
         for (let i = 0; i < data.labels.length; i++) {
-            tablaEvol.push([data.labels[i], data.datasets[0].data[i]]);
+            tablaEvol.push([data.labels[i], formatNumber(data.datasets[0].data[i])]);
         }
         const ws5 = XLSX.utils.aoa_to_sheet(tablaEvol);
         XLSX.utils.book_append_sheet(wb, ws5, 'Evolución por Fecha');
@@ -323,7 +336,7 @@ function exportarReportesExcel() {
     if (charts.transparencia) {
         const data = charts.transparencia.data;
         for (let i = 0; i < data.labels.length; i++) {
-            tablaTrans.push([data.labels[i], data.datasets[0].data[i]]);
+            tablaTrans.push([data.labels[i], formatNumber(data.datasets[0].data[i])]);
         }
         const ws6 = XLSX.utils.aoa_to_sheet(tablaTrans);
         XLSX.utils.book_append_sheet(wb, ws6, 'Transparencia');
@@ -334,7 +347,7 @@ function exportarReportesExcel() {
     if (charts.superficie) {
         const data = charts.superficie.data;
         for (let i = 0; i < data.labels.length; i++) {
-            tablaSup.push([data.labels[i], data.datasets[0].data[i]]);
+            tablaSup.push([data.labels[i], formatNumber(data.datasets[0].data[i])]);
         }
         const ws7 = XLSX.utils.aoa_to_sheet(tablaSup);
         XLSX.utils.book_append_sheet(wb, ws7, 'Superficie');
