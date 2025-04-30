@@ -478,241 +478,276 @@ export function setupKanbanScrolling() {
     document.removeEventListener('mouseup', () => {});
     document.removeEventListener('touchend', () => {});
     
-    // Primero aplicar estilos antes de configurar eventos
-    applyKanbanStyles();
+    // Utilizar un enfoque completamente diferente para el scroll
+    // En lugar de usar overflow, usaremos transform directo
     
-    // Luego forzar el ancho mínimo de las columnas para garantizar que hay overflow
-    setTimeout(() => {
-        // Esperamos un poco para que el DOM termine de renderizarse
-        forceMinimumColumnWidth();
-        
-        const complementaryBoard = document.getElementById('kanban-board-complementarias');
-        const mainBoard = document.getElementById('kanban-board');
-        
-        // Finalmente configurar los eventos de arrastre
-        if (complementaryBoard) {
-            console.log("Reconfigurando scroll para tablero complementario");
-            enableKanbanDragToScroll(complementaryBoard);
-            
-            // Agregar botones de navegación para alternativa al arrastre
-            addScrollIndicator(complementaryBoard);
-        } else {
-            console.error("Tablero complementario no encontrado");
-        }
-        
-        if (mainBoard) {
-            console.log("Reconfigurando scroll para tablero principal");
-            enableKanbanDragToScroll(mainBoard);
-            
-            // Agregar botones de navegación para alternativa al arrastre
-            addScrollIndicator(mainBoard);
-        } else {
-            console.error("Tablero principal no encontrado");
-        }
-    }, 200); // Esperar 200ms para que el DOM se actualice
-}
-
-// Nueva función para forzar que las columnas tengan un ancho mínimo
-function forceMinimumColumnWidth() {
-    const columns = document.querySelectorAll('.kanban-column');
-    if (columns.length === 0) {
-        console.error("No se encontraron columnas en el kanban");
-        return;
-    }
+    // 1. Configurar una estructura de CSS inline obligatoria
+    const mainBoard = document.getElementById('kanban-board');
+    const complementaryBoard = document.getElementById('kanban-board-complementarias');
     
-    console.log(`Forzando ancho mínimo para ${columns.length} columnas`);
-    
-    // Forzar un ancho mínimo para cada columna
-    columns.forEach(column => {
-        column.style.minWidth = "280px";
-        column.style.width = "280px"; // Establecer ancho fijo
-        column.style.flexShrink = "0";
-        column.style.boxSizing = "border-box";
-    });
-    
-    // Forzar el ancho total de los contenedores de columnas
-    const containers = document.querySelectorAll('.kanban-columns-container');
-    containers.forEach((container, index) => {
-        const columnsInContainer = container.querySelectorAll('.kanban-column').length;
+    [mainBoard, complementaryBoard].forEach(board => {
+        if (!board) return;
         
-        // Calcular ancho total necesario (más grande que el ancho visible)
-        const columnWidth = 300; // ancho por columna incluyendo margen
-        const minTotalWidth = columnsInContainer * columnWidth;
-        // Asegurar un mínimo de 1500px o el ancho necesario para todas las columnas
-        const forcedWidth = Math.max(minTotalWidth, 1500); 
-        
-        console.log(`Contenedor ${index}: columnas=${columnsInContainer}, ancho forzado=${forcedWidth}px`);
-        
-        // Aplicar estilos de manera forzada
-        container.style.width = `${forcedWidth}px`;
-        container.style.minWidth = `${forcedWidth}px`;
-        container.style.maxWidth = "none";
-        container.style.display = "flex";
-        container.style.flexWrap = "nowrap";
-        container.style.flexDirection = "row";
-        container.style.alignItems = "flex-start";
-        
-        // Asegurarnos que el contenedor padre tenga scroll
-        const parentElement = container.parentElement;
-        if (parentElement) {
-            parentElement.style.overflowX = "auto";
-            parentElement.style.width = "100%";
-            parentElement.style.display = "block";
-        }
-    });
-    
-    // Verificar si hay contenido más ancho que el contenedor
-    const boards = document.querySelectorAll('#kanban-board, #kanban-board-complementarias');
-    boards.forEach(board => {
-        // Forzar recálculo de layout
-        void board.offsetWidth;
-        
-        const contentWidth = board.scrollWidth;
-        const containerWidth = board.clientWidth;
-        
-        console.log(`Board ${board.id}: contentWidth=${contentWidth}, containerWidth=${containerWidth}, overflow=${contentWidth > containerWidth}`);
-        
-        if (contentWidth <= containerWidth) {
-            console.warn(`¡Advertencia! El contenedor ${board.id} no tiene overflow horizontal.`);
-            
-            // Intento más agresivo para forzar overflow
-            const columnsContainer = board.querySelector('.kanban-columns-container');
-            if (columnsContainer) {
-                const newWidth = containerWidth * 2; // Duplicar el ancho
-                columnsContainer.style.width = `${newWidth}px`;
-                columnsContainer.style.minWidth = `${newWidth}px`;
-                
-                // Para asegurarnos de que los estilos se aplican inmediatamente
-                setTimeout(() => {
-                    // Verificar de nuevo después de aplicar estilos
-                    const updatedContentWidth = board.scrollWidth;
-                    const updatedContainerWidth = board.clientWidth;
-                    console.log(`CORRECCIÓN ${board.id}: contentWidth=${updatedContentWidth}, containerWidth=${updatedContainerWidth}, overflow=${updatedContentWidth > updatedContainerWidth}`);
-                }, 100);
+        // Limpiar eventos anteriores
+        const existingListeners = board._scrollListeners || [];
+        existingListeners.forEach(listener => {
+            if (listener.element && listener.type && listener.callback) {
+                listener.element.removeEventListener(listener.type, listener.callback);
             }
-        }
+        });
+        board._scrollListeners = [];
+        
+        // Aplicar estilos específicos para forzar scrolling
+        board.style.position = 'relative';
+        board.style.overflow = 'hidden';
+        board.style.width = '100%';
+        board.style.padding = '0';
+        
+        // Obtener el contenedor de grupos
+        const groups = board.querySelectorAll('.kanban-group');
+        groups.forEach(group => {
+            group.style.width = '100%';
+            
+            const columnsContainer = group.querySelector('.kanban-columns-container');
+            if (columnsContainer) {
+                // Forzar ancho explícito basado en columnas
+                const columns = columnsContainer.querySelectorAll('.kanban-column');
+                const columnWidth = 300; // px por columna
+                const totalWidth = Math.max(columns.length * columnWidth, 1500);
+                
+                // Estilos críticos para el container de columnas
+                columnsContainer.style.position = 'relative';
+                columnsContainer.style.display = 'flex';
+                columnsContainer.style.flexDirection = 'row';
+                columnsContainer.style.flexWrap = 'nowrap';
+                columnsContainer.style.minWidth = `${totalWidth}px`;
+                columnsContainer.style.width = `${totalWidth}px`;
+                columnsContainer.style.transform = 'translateX(0px)'; // Para la animación
+                columnsContainer.style.transition = 'transform 0.1s ease-out';
+                
+                // Aplicar estilos a cada columna
+                columns.forEach(column => {
+                    column.style.flex = '0 0 280px';
+                    column.style.width = '280px';
+                    column.style.minWidth = '280px';
+                    column.style.position = 'relative';
+                    column.style.padding = '10px';
+                    column.style.boxSizing = 'border-box';
+                    column.style.margin = '0 10px';
+                });
+                
+                // Establecer información de debugging
+                console.log(`Board ${board.id}: containerWidth=${columnsContainer.offsetWidth}, columns=${columns.length}, totalWidth=${totalWidth}`);
+                
+                // Implementar nuevo sistema de scroll con transformación directa
+                implementDirectScroll(board, columnsContainer);
+                
+                // Añadir botones de navegación estándar como fallback
+                addScrollButtons(board, columnsContainer);
+                
+                // Debug: Añadir indicador visual de las dimensiones
+                addDebugOverlay(board, columnsContainer);
+            }
+        });
     });
 }
 
-// Modificar el estilo del contenedor del Kanban
-function applyKanbanStyles() {
-    const kanbanBoards = document.querySelectorAll('#kanban-board, #kanban-board-complementarias');
-    kanbanBoards.forEach(board => {
-        if (!board) {
-            console.error("No se encontró el tablero Kanban");
-            return;
+// Función para implementar scroll directo mediante transform
+function implementDirectScroll(board, container) {
+    if (!board || !container) return;
+    
+    let isDragging = false;
+    let startPos = 0;
+    let currentTranslate = 0;
+    let prevTranslate = 0;
+    
+    const getPositionX = (event) => {
+        return event.type.includes('mouse') ? event.pageX : event.touches[0].pageX;
+    };
+    
+    const setContainerPosition = () => {
+        // Limitar el desplazamiento para que no vaya demasiado lejos
+        const boardWidth = board.clientWidth;
+        const containerWidth = container.scrollWidth;
+        
+        // Calcular límites de desplazamiento
+        const minTranslate = boardWidth - containerWidth;
+        
+        // Aplicar límites
+        if (currentTranslate > 0) {
+            currentTranslate = 0;
+        } else if (currentTranslate < minTranslate) {
+            currentTranslate = minTranslate;
         }
         
-        console.log(`Aplicando estilos a ${board.id}`);
+        // Aplicar transformación
+        container.style.transform = `translateX(${currentTranslate}px)`;
         
-        // Estilos críticos para el scroll
+        // Debug info
+        console.log(`Direct scroll: translate=${currentTranslate}, min=${minTranslate}, boardWidth=${boardWidth}, containerWidth=${containerWidth}`);
+    };
+    
+    // Eventos para el mouse
+    const handleMouseDown = (e) => {
+        if (e.target.closest('.kanban-card, button')) return; // No iniciar scroll en cards o botones
+        
+        isDragging = true;
+        startPos = getPositionX(e);
+        prevTranslate = currentTranslate;
+        
+        board.style.cursor = 'grabbing';
+        console.log('Direct scroll: Mouse down');
+    };
+    
+    const handleMouseMove = (e) => {
+        if (!isDragging) return;
+        
+        const currentPosition = getPositionX(e);
+        const diff = currentPosition - startPos;
+        currentTranslate = prevTranslate + diff;
+        
+        setContainerPosition();
+        e.preventDefault(); // Prevenir scroll página
+    };
+    
+    const handleMouseUp = () => {
+        if (!isDragging) return;
+        
+        isDragging = false;
+        prevTranslate = currentTranslate;
         board.style.cursor = 'grab';
-        board.style.overflowX = 'scroll'; // Cambiado a scroll para forzar las barras de desplazamiento
-        board.style.overflowY = 'hidden';
-        board.style.scrollBehavior = 'auto'; // Cambiado a auto para scroll inmediato
-        board.style.scrollbarWidth = 'thin';
-        board.style.scrollbarColor = '#dee2e6 #f8f9fa';
-        board.style.display = 'block'; // Asegurar que el contenedor es un bloque
-        board.style.width = '100%';   // Asegurar que toma el ancho completo
-        board.style.position = 'relative'; // Para posicionamiento de elementos internos
-        
-        // Asegurar que estos estilos se apliquen siempre
-        board.style.userSelect = 'none';
-        board.style.webkitUserSelect = 'none';
-        board.style.mozUserSelect = 'none';
-        board.style.msUserSelect = 'none';
-    });
+        console.log('Direct scroll: Mouse up');
+    };
     
-    // Estilo para grupos kanban
-    const groups = document.querySelectorAll('.kanban-group');
-    groups.forEach(group => {
-        group.style.width = "100%";
-        group.style.minWidth = "100%";
-        group.style.boxSizing = "border-box";
-    });
+    // Añadir los eventos
+    board.addEventListener('mousedown', handleMouseDown);
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
     
-    // También asegurarnos que los contenedores internos sean correctos
-    const containers = document.querySelectorAll('.kanban-columns-container');
-    containers.forEach(container => {
-        container.style.display = 'flex';
-        container.style.flexWrap = 'nowrap';
-        container.style.overflowX = 'visible';
-        container.style.width = "max-content"; // Esto es crucial para que el contenido sea más ancho
-        container.style.minWidth = "100%";
-    });
+    // Touch events
+    board.addEventListener('touchstart', handleMouseDown);
+    window.addEventListener('touchmove', handleMouseMove, { passive: false });
+    window.addEventListener('touchend', handleMouseUp);
+    
+    // Guardar referencias para limpieza futura
+    board._scrollListeners = board._scrollListeners || [];
+    board._scrollListeners.push(
+        { element: board, type: 'mousedown', callback: handleMouseDown },
+        { element: window, type: 'mousemove', callback: handleMouseMove },
+        { element: window, type: 'mouseup', callback: handleMouseUp },
+        { element: board, type: 'touchstart', callback: handleMouseDown },
+        { element: window, type: 'touchmove', callback: handleMouseMove },
+        { element: window, type: 'touchend', callback: handleMouseUp }
+    );
 }
 
-// Añadir un pequeño indicador visual para el scroll
-function addScrollIndicator(board) {
-    if (!board) return;
+// Función para añadir botones de navegación
+function addScrollButtons(board, container) {
+    // Eliminar botones anteriores
+    const oldButtons = board.querySelectorAll('.scroll-button');
+    oldButtons.forEach(btn => btn.remove());
     
-    // Primero eliminar indicadores previos
-    const oldIndicators = board.querySelectorAll('.scroll-indicator');
-    oldIndicators.forEach(ind => ind.remove());
-    
-    // Siempre añadir los indicadores como alternativa
-    const leftIndicator = document.createElement('div');
-    leftIndicator.className = 'scroll-indicator scroll-left';
-    leftIndicator.innerHTML = '◀';
-    leftIndicator.style.cssText = `
+    const leftBtn = document.createElement('button');
+    leftBtn.innerHTML = '◀';
+    leftBtn.className = 'scroll-button scroll-left';
+    leftBtn.style.cssText = `
         position: absolute;
         left: 5px;
         top: 50%;
         transform: translateY(-50%);
-        background: rgba(0,0,0,0.2);
+        z-index: 1000;
+        background: rgba(0,0,0,0.5);
         color: white;
-        padding: 8px 12px;
+        border: none;
         border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
         cursor: pointer;
-        z-index: 100;
-        opacity: 0.7;
-        transition: opacity 0.3s;
+        opacity: 0.8;
     `;
     
-    leftIndicator.onmouseover = () => {
-        leftIndicator.style.opacity = '1';
-    };
-    
-    leftIndicator.onmouseout = () => {
-        leftIndicator.style.opacity = '0.7';
-    };
-    
-    const rightIndicator = document.createElement('div');
-    rightIndicator.className = 'scroll-indicator scroll-right';
-    rightIndicator.innerHTML = '▶';
-    rightIndicator.style.cssText = `
+    const rightBtn = document.createElement('button');
+    rightBtn.innerHTML = '▶';
+    rightBtn.className = 'scroll-button scroll-right';
+    rightBtn.style.cssText = `
         position: absolute;
         right: 5px;
         top: 50%;
         transform: translateY(-50%);
-        background: rgba(0,0,0,0.2);
+        z-index: 1000;
+        background: rgba(0,0,0,0.5);
         color: white;
-        padding: 8px 12px;
+        border: none;
         border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
         cursor: pointer;
-        z-index: 100;
-        opacity: 0.7;
-        transition: opacity 0.3s;
+        opacity: 0.8;
     `;
     
-    rightIndicator.onmouseover = () => {
-        rightIndicator.style.opacity = '1';
+    // Calcular el valor de traslación actual para el container
+    const getTranslateX = () => {
+        const style = window.getComputedStyle(container);
+        const matrix = new WebKitCSSMatrix(style.transform);
+        return matrix.m41; // Valor de translateX en la matriz de transformación
     };
     
-    rightIndicator.onmouseout = () => {
-        rightIndicator.style.opacity = '0.7';
+    // Desplazar izquierda y derecha con los botones
+    leftBtn.onclick = () => {
+        const currentX = getTranslateX();
+        const newX = Math.min(0, currentX + 300); // 300px a la derecha, máximo 0
+        container.style.transform = `translateX(${newX}px)`;
+        console.log(`Button scroll left: ${currentX} -> ${newX}`);
     };
     
-    leftIndicator.onclick = () => {
-        board.scrollLeft -= 300;
+    rightBtn.onclick = () => {
+        const currentX = getTranslateX();
+        const minTranslate = board.clientWidth - container.scrollWidth;
+        const newX = Math.max(minTranslate, currentX - 300); // 300px a la izquierda, mínimo (containerWidth - boardWidth)
+        container.style.transform = `translateX(${newX}px)`;
+        console.log(`Button scroll right: ${currentX} -> ${newX}`);
     };
     
-    rightIndicator.onclick = () => {
-        board.scrollLeft += 300;
+    board.appendChild(leftBtn);
+    board.appendChild(rightBtn);
+}
+
+// Función para visualizar las dimensiones en debug
+function addDebugOverlay(board, container) {
+    // Solo añadir en modo desarrollo
+    const debugOverlay = document.createElement('div');
+    debugOverlay.className = 'debug-overlay';
+    debugOverlay.style.cssText = `
+        position: absolute;
+        bottom: 5px;
+        right: 5px;
+        background: rgba(0,0,0,0.7);
+        color: white;
+        padding: 5px;
+        font-size: 10px;
+        z-index: 1000;
+        pointer-events: none;
+    `;
+    
+    const updateDebugInfo = () => {
+        const boardWidth = board.clientWidth;
+        const containerWidth = container.scrollWidth;
+        const style = window.getComputedStyle(container);
+        const matrix = new WebKitCSSMatrix(style.transform);
+        const translateX = matrix.m41;
+        
+        debugOverlay.innerHTML = `
+            Board: ${boardWidth}px<br>
+            Content: ${containerWidth}px<br>
+            TranslateX: ${translateX}px
+        `;
     };
     
-    board.appendChild(leftIndicator);
-    board.appendChild(rightIndicator);
+    // Actualizar info cada segundo
+    updateDebugInfo();
+    setInterval(updateDebugInfo, 1000);
     
-    console.log(`Indicadores de desplazamiento añadidos a ${board.id}`);
+    board.appendChild(debugOverlay);
 }
