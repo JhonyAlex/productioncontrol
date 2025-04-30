@@ -4,7 +4,11 @@
  * @returns {string} - Formatted date string
  */
 export function formatDateCustom(dateString) {
-  if (!dateString) return '';
+  if (!dateString || typeof dateString !== 'string') return '';
+  
+  // Check if the string matches the ISO format pattern
+  const isISOFormat = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(dateString);
+  if (!isISOFormat) return dateString;
   
   try {
     const date = new Date(dateString);

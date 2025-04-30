@@ -1,6 +1,10 @@
 import React from 'react';
 import { formatDateCustom } from '../../utils/dateUtils';
 
+const isDateFormat = (text) => {
+  return typeof text === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(text);
+};
+
 const Table = ({ columns, data }) => {
   return (
     <table>
@@ -16,7 +20,7 @@ const Table = ({ columns, data }) => {
           <tr key={rowIndex}>
             {columns.map((column) => (
               <td key={column.key}>
-                {column.type === 'date' ? formatDateCustom(row[column.key]) : row[column.key]}
+                {isDateFormat(row[column.key]) ? formatDateCustom(row[column.key]) : row[column.key]}
               </td>
             ))}
           </tr>
