@@ -301,3 +301,15 @@ function applyDefaultFilters() {
     // Activar el filtro "Activos" por defecto
     $("#btn-filtrar-activos").click();
 }
+
+// Si tienes un evento de cambio de pestaña como este:
+$('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+    if ($(e.target).attr('href') === '#list') {  // Ajusta '#list' al ID de tu pestaña de lista
+        applyDefaultFilters();
+    }
+});
+
+// Y en el evento ready:
+$(document).ready(function() {
+    applyDefaultFilters();
+});
