@@ -196,32 +196,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Agregar evento click al botón de filtro Activos (siguiendo el mismo patrón que los otros botones)
     $("#btn-filtrar-activos").on("click", function() {
-        // Remover clase active de todos los botones de filtro
         $("#list-filters .btn").removeClass("active");
-        // Agregar clase active a este botón
         $(this).addClass("active");
         
-        // Mostrar todos los pedidos excepto los completados
         $(".order-item").each(function() {
             const orderId = $(this).data("id");
             const isCompleted = isOrderCompleted(orderId);
             
-            if (isCompleted) {
-                $(this).hide();
-            } else {
+            if (!isCompleted) {
                 $(this).show();
+            } else {
+                $(this).hide();
             }
         });
     });
     
     // Agregar evento click al botón de filtro Completados
     $("#btn-filtrar-completados").on("click", function() {
-        // Remover clase active de todos los botones de filtro
         $("#list-filters .btn").removeClass("active");
-        // Agregar clase active a este botón
         $(this).addClass("active");
         
-        // Mostrar solo los pedidos completados
         $(".order-item").each(function() {
             const orderId = $(this).data("id");
             const isCompleted = isOrderCompleted(orderId);
@@ -237,6 +231,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // Hacer que por defecto los pedidos completados estén ocultos
     // (simular click en el botón Activos al cargar)
     $("#btn-filtrar-activos").click();
+    
+    // Activar el filtro de Activos por defecto cuando se carga la página
+    // o cuando se navega a la pestaña "list"
+    $(document).on("shown.bs.tab", 'a[data-toggle="tab"]', function(e) {
+        if ($(e.target).attr("href") === "#list") {
+            $("#btn-filtrar-activos").click();
+        }
+    });
 });
 
 // Asegurar que al cambiar a la pestaña "LISTA" se aplique el filtro
