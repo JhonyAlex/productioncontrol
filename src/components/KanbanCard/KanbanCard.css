@@ -5,6 +5,11 @@
   font-size: 0.95em;
 }
 
+.kanban-card-header {
+  /* Existing styles */
+  font-size: 0.95em;
+}
+
 /* Additional styles */
 
 .small-text {
