@@ -227,7 +227,36 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
-    
+
+    // Handlers existentes de los otros botones de filtro
+    $("#btn-filtrar-laminacion").click(function() {
+        activarFiltro(btnFiltrarLaminacion);
+        filtrarPedidos('laminacion', filtroCompletados);
+    });
+
+    $("#btn-filtrar-rebobinado").click(function() {
+        activarFiltro(btnFiltrarRebobinado);
+        filtrarPedidos('rebobinado', filtroCompletados);
+    });
+
+    $("#btn-filtrar-perforado").click(function() {
+        activarFiltro(btnFiltrarPerforado);
+        filtrarPedidos('perforado', filtroCompletados);
+    });
+
+    $("#btn-filtrar-pendiente").click(function() {
+        activarFiltro(btnFiltrarPendiente);
+        filtrarPedidos('pendiente', filtroCompletados);
+    });
+
+    $("#btn-filtrar-todos").click(function() {
+        activarFiltro(btnFiltrarTodos);
+        filtrarPedidos('todos', filtroCompletados);
+    });
+
+    // Llama a applyDefaultFilters después de cargar los pedidos inicialmente
+    applyDefaultFilters();
+
     // Hacer que por defecto los pedidos completados estén ocultos
     // (simular click en el botón Activos al cargar)
     $("#btn-filtrar-activos").click();
@@ -316,6 +345,28 @@ $(document).ready(function() {
 
 // Si tienes una función para cargar/actualizar la lista de pedidos, añade esto al final:
 function actualizarPedidos() {
+    const pedidos = document.querySelectorAll('#list-view .order-item');
+    
+    pedidos.forEach(pedido => {
+        const pedidoId = pedido.getAttribute('data-id');
+        const esCompletado = isOrderCompleted(pedidoId);
+        
+        if ($("#btn-filtrar-completados").hasClass("active")) {
+            pedido.style.display = esCompletado ? '' : 'none';
+        } else {
+            pedido.style.display = esCompletado ? 'none' : '';
+        }
+    });
+    
+    if ($("#btn-filtrar-completados").hasClass("active")) {
+        $("#btn-filtrar-completados").click();
+    } else {
+        applyDefaultFilters();
+    }
+}
+
+// Si tienes una función que actualiza/recarga la lista de pedidos, añade esto al final:
+function loadOrders() {
     const pedidos = document.querySelectorAll('#list-view .order-item');
     
     pedidos.forEach(pedido => {
