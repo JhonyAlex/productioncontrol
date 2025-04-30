@@ -222,5 +222,59 @@ if (typeof window !== 'undefined') {
     }, 0);
 }
 
+/**
+ * Cierra un modal de Bootstrap de manera segura evitando problemas de accesibilidad
+ * @param {string|HTMLElement} modalElement - El ID del modal o el elemento DOM del modal
+ */
+export function safeCloseModal(modalElement) {
+    // Si se pasa un string, buscamos el elemento por ID
+    if (typeof modalElement === 'string') {
+        modalElement = document.getElementById(modalElement);
+    }
+    
+    if (!modalElement) return;
+    
+    try {
+        // Asegurarnos de que ningún elemento dentro del modal tenga el foco
+        document.activeElement.blur();
+        
+        // Obtenemos la instancia del modal
+        let modalInstance = bootstrap.Modal.getInstance(modalElement);
+        
+        // Si no hay instancia, creamos una
+        if (!modalInstance) {
+            modalInstance = new bootstrap.Modal(modalElement);
+        }
+        
+        // Cerramos el modal
+        modalInstance.hide();
+        
+        // En algunos casos, puede haber un problema con el evento hide.bs.modal
+        // Así que después de un pequeño retraso, verificamos y forzamos el cierre si es necesario
+        setTimeout(() => {
+            if (modalElement.classList.contains('show')) {
+                modalElement.classList.remove('show');
+                document.body.classList.remove('modal-open');
+                const backdrop = document.querySelector('.modal-backdrop');
+                if (backdrop) {
+                    backdrop.remove();
+                }
+                modalElement.style.display = 'none';
+                modalElement.setAttribute('aria-hidden', 'true');
+            }
+        }, 300);
+    } catch (error) {
+        console.error("Error al cerrar el modal:", error);
+        
+        // Intento de recuperación en caso de error
+        modalElement.style.display = 'none';
+        document.body.classList.remove('modal-open');
+        const backdrop = document.querySelector('.modal-backdrop');
+        if (backdrop) {
+            backdrop.remove();
+        }
+    }
+}
+
 import { renderKanban } from './kanban.js';
 import { renderList } from './listView.js';

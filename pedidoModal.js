@@ -1,6 +1,7 @@
 // Dependencias necesarias (ajusta los imports según tu estructura real)
 import { currentPedidos, etapasImpresion, etapasComplementarias } from './firestore.js';
 import { doc, updateDoc, addDoc, deleteDoc, serverTimestamp, collection } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+import { handleSearch, setupSearchAutocomplete, safeCloseModal } from './utils.js';
 
 // Secuencia por defecto (puedes ajustar el orden si lo deseas)
 const SECUENCIA_ETAPAS_DEFAULT = [
@@ -291,10 +292,8 @@ window.openPedidoModal = openPedidoModal;
 
 // --- NUEVA FUNCIÓN ---
 function duplicarPedido(pedido) {
-    // Cierra el modal actual
-    const pedidoModalElement = document.getElementById('pedidoModal');
-    const pedidoModal = pedidoModalElement ? bootstrap.Modal.getInstance(pedidoModalElement) : null;
-    if (pedidoModal) pedidoModal.hide();
+    // Cerrar el modal actual usando la función de utilidad
+    safeCloseModal('pedidoModal');
 
     setTimeout(() => {
         // Abre el modal en modo "nuevo", rellenando los campos con los datos del pedido original
@@ -419,12 +418,8 @@ export async function savePedido(event) {
             pedidoData.createdAt = serverTimestamp();
             await addDoc(window.pedidosCollection, pedidoData);
         }
-        // Cerrar el modal correctamente usando la instancia de Bootstrap
-        const pedidoModalElement = document.getElementById('pedidoModal');
-        if (pedidoModalElement) {
-            const modalInstance = bootstrap.Modal.getInstance(pedidoModalElement);
-            if (modalInstance) modalInstance.hide();
-        }
+        // Cerrar el modal correctamente usando la función de utilidad
+        safeCloseModal('pedidoModal');
         pedidoForm.reset();
     } catch (error) {
         alert(`Error al guardar el pedido: ${error.message}`);
@@ -446,11 +441,8 @@ export async function deletePedido() {
     try {
         const pedidoRef = doc(window.db, "pedidos", pedidoId);
         await deleteDoc(pedidoRef);
-        // Cerrar el modal correctamente usando la instancia de Bootstrap
-        if (pedidoModalElement) {
-            const modalInstance = bootstrap.Modal.getInstance(pedidoModalElement);
-            if (modalInstance) modalInstance.hide();
-        }
+        // Cerrar el modal correctamente usando la función de utilidad
+        safeCloseModal('pedidoModal');
     } catch (error) {
         alert("Error al eliminar el pedido. Inténtalo de nuevo.");
     }
@@ -460,7 +452,6 @@ export async function returnToPrintStage() {
     // Obtén referencias DOM dinámicamente
     const pedidoIdInput = document.getElementById('pedido-id');
     const pedidoModalElement = document.getElementById('pedidoModal');
-    const pedidoModal = pedidoModalElement ? new bootstrap.Modal(pedidoModalElement) : null;
 
     const pedidoId = pedidoIdInput.value;
     if (!pedidoId) {
@@ -488,14 +479,12 @@ export async function returnToPrintStage() {
             etapaActual: targetPrintStage,
             lastMoved: serverTimestamp()
         });
-        // --- ARREGLADO: Cierra el modal correctamente usando la instancia de Bootstrap ---
-        if (pedidoModalElement) {
-            let modalInstance = bootstrap.Modal.getInstance(pedidoModalElement);
-            if (!modalInstance) modalInstance = new bootstrap.Modal(pedidoModalElement);
-            modalInstance.hide();
-        }
+        
+        // Usar la función de utilidad para cerrar el modal de manera segura
+        safeCloseModal(pedidoModalElement);
     } catch (error) {
         alert("Error al regresar el pedido a impresión. Inténtalo de nuevo.");
+        console.error("Error al regresar pedido a impresión:", error);
     }
 }
 
