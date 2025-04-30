@@ -193,6 +193,50 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Configurar los botones de filtro
     setupFilterButtons();
+
+    // Agregar evento click al botón de filtro Activos (siguiendo el mismo patrón que los otros botones)
+    $("#btn-filtrar-activos").on("click", function() {
+        // Remover clase active de todos los botones de filtro
+        $("#list-filters .btn").removeClass("active");
+        // Agregar clase active a este botón
+        $(this).addClass("active");
+        
+        // Mostrar todos los pedidos excepto los completados
+        $(".order-item").each(function() {
+            const orderId = $(this).data("id");
+            const isCompleted = isOrderCompleted(orderId);
+            
+            if (isCompleted) {
+                $(this).hide();
+            } else {
+                $(this).show();
+            }
+        });
+    });
+    
+    // Agregar evento click al botón de filtro Completados
+    $("#btn-filtrar-completados").on("click", function() {
+        // Remover clase active de todos los botones de filtro
+        $("#list-filters .btn").removeClass("active");
+        // Agregar clase active a este botón
+        $(this).addClass("active");
+        
+        // Mostrar solo los pedidos completados
+        $(".order-item").each(function() {
+            const orderId = $(this).data("id");
+            const isCompleted = isOrderCompleted(orderId);
+            
+            if (isCompleted) {
+                $(this).show();
+            } else {
+                $(this).hide();
+            }
+        });
+    });
+    
+    // Hacer que por defecto los pedidos completados estén ocultos
+    // (simular click en el botón Activos al cargar)
+    $("#btn-filtrar-activos").click();
 });
 
 // Asegurar que al cambiar a la pestaña "LISTA" se aplique el filtro
