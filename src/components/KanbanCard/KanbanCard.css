@@ -15,6 +15,11 @@
   font-size: 0.95em;
 }
 
+.card-title,
+.kanban-card-header {
+  font-size: 0.95em;
+}
+
 /* Additional styles */
 
 .small-text {

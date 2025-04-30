@@ -1,8 +1,12 @@
 import React from 'react';
-import { formatDateCustom } from '../../utils/dateUtils';
+import { formatDateCustom, formatAnyContent } from '../../utils/dateUtils';
 
 const isDateFormat = (text) => {
   return typeof text === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(text);
+};
+
+const renderCellContent = (cellData) => {
+  return formatAnyContent(cellData);
 };
 
 const Table = ({ columns, data }) => {
@@ -20,7 +24,7 @@ const Table = ({ columns, data }) => {
           <tr key={rowIndex}>
             {columns.map((column) => (
               <td key={column.key}>
-                {isDateFormat(row[column.key]) ? formatDateCustom(row[column.key]) : row[column.key]}
+                {renderCellContent(row[column.key])}
               </td>
             ))}
           </tr>
