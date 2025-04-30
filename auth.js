@@ -8,6 +8,7 @@ let appLoaded = false;
 // --- NUEVO: Lógica de inactividad ---
 const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutos en milisegundos
 let inactivityTimer = null;
+let activityHandler = null; // Definir una variable para almacenar la referencia al handler
 const activityEvents = ['mousemove', 'keydown', 'click', 'touchstart'];
 // --- FIN NUEVO ---
 
@@ -120,12 +121,12 @@ function resetInactivityTimer(auth) {
 function startInactivityTimer(auth) {
     if (inactivityTimer) clearTimeout(inactivityTimer); // Limpia cualquier timer previo
 
-    // Función para reiniciar el timer en cada evento de actividad
-    const resetHandler = () => resetInactivityTimer(auth);
+    // Crea un handler que podemos referenciar más tarde para removerlo
+    activityHandler = () => resetInactivityTimer(auth);
 
     // Añade listeners para los eventos de actividad
     activityEvents.forEach(event => {
-        document.addEventListener(event, resetHandler, true); // Usar captura para detectar eventos antes
+        document.addEventListener(event, activityHandler, true);
     });
 
     // Inicia el primer temporizador
@@ -135,9 +136,11 @@ function startInactivityTimer(auth) {
 
 function stopInactivityTimer() {
     clearTimeout(inactivityTimer);
-    activityEvents.forEach(event => {
-        document.removeEventListener(event, () => resetInactivityTimer(window.auth), true); // Asegúrate de pasar la instancia de auth si es necesario
-    });
+    if (activityHandler) {
+        activityEvents.forEach(event => {
+            document.removeEventListener(event, activityHandler, true);
+        });
+    }
     inactivityTimer = null;
     console.log("Temporizador de inactividad detenido.");
 }
