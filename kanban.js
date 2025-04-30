@@ -204,7 +204,7 @@ function createKanbanGroup(groupTitle, etapasInGroup, allPedidos) {
     const groupDiv = document.createElement('div');
     groupDiv.className = 'kanban-group';
     groupDiv.style.width = '100%';
-    groupDiv.style.overflowX = 'auto'; // Añadir scroll al grupo
+    groupDiv.style.overflowX = 'hidden'; // Mantener hidden para evitar barras de desplazamiento nativas
     
     const columnsContainer = document.createElement('div');
     columnsContainer.className = 'kanban-columns-container';
@@ -503,26 +503,25 @@ export function setupKanbanScrolling() {
     });
 }
 
-// Función para limpiar toda la estructura del Kanban
+// Función para limpiar toda la estructura del Kanban - MEJORADA
 function cleanupKanbanStructure() {
     // Eliminar cualquier overlay de debug
     document.querySelectorAll('.debug-overlay').forEach(el => el.remove());
     
     // Eliminar botones de navegación duplicados
-    document.querySelectorAll('.scroll-button').forEach(el => el.remove());
+    document.querySelectorAll('.scroll-button, .scroll-buttons-container').forEach(el => el.remove());
     
-    // Asegurar que no haya estilos conflictivos
-    document.querySelectorAll('#kanban-board, #kanban-board-complementarias').forEach(board => {
-        // Asegurarse de que solo el contenido tenga scroll, no el tablero principal
-        board.style.overflowX = 'hidden';
-        board.style.overflowY = 'hidden';
+    // IMPORTANTE: Asegurar que no haya NINGUNA barra de desplazamiento nativa
+    document.querySelectorAll('#kanban-board, #kanban-board-complementarias, .kanban-group, .kanban-columns-container').forEach(el => {
+        el.style.overflowX = 'hidden';
+        el.style.overflowY = 'hidden';
+        el.style.overflow = 'hidden';
         
-        // Eliminar cualquier barra de desplazamiento nativa
-        const groups = board.querySelectorAll('.kanban-group');
-        groups.forEach(group => {
-            group.style.overflowX = 'hidden';
-            group.style.overflowY = 'hidden';
-        });
+        // Eliminar cualquier scroll nativo que pueda estar configurado
+        el.scrollLeft = 0;
+        
+        // Añadir atributo para evitar scroll
+        el.setAttribute('data-no-native-scroll', 'true');
     });
 }
 
@@ -537,7 +536,7 @@ function cleanupEventListeners(board) {
     board._scrollListeners = [];
 }
 
-// Función para configurar los estilos base del tablero
+// Función para configurar los estilos base del tablero - MEJORADA
 function setupBoardStyles(board) {
     board.style.position = 'relative';
     board.style.overflow = 'hidden';
@@ -545,13 +544,18 @@ function setupBoardStyles(board) {
     board.style.padding = '0';
     board.style.cursor = 'grab';
     board.style.userSelect = 'none';
+    
+    // Deshabilitar completamente el scroll nativo
+    board.style.overflowX = 'hidden';
+    board.style.overflowY = 'hidden';
+    board.style.overflow = 'hidden';
 }
 
 // Configurar el grupo y sus columnas
 function setupGroupContainer(group) {
     group.style.width = '100%';
     group.style.position = 'relative';
-    group.style.overflow = 'hidden';
+    group.style.overflow = 'hidden'; // Importante: mantener hidden para evitar barras de desplazamiento nativas
     
     const columnsContainer = group.querySelector('.kanban-columns-container');
     if (!columnsContainer) return;
@@ -560,46 +564,46 @@ function setupGroupContainer(group) {
     const columns = columnsContainer.querySelectorAll('.kanban-column');
     const columnWidth = 300; // px por columna
     
-    // CORREGIDO: Calculamos el ancho exacto sumando el ancho real de cada columna
-    // Esto asegura que no haya espacio extra al final
+    // AJUSTADO: Calculamos el ancho exacto para cada columna sin espacio extra
     let totalWidth = 0;
     
-    // Estilos para cada columna - primero establecer tamaños
+    // Estilos para cada columna - afinado para eliminar espacios extras
     columns.forEach((column, index) => {
-        // Ancho base de cada columna
-        const width = columnWidth - 20; // 280px
+        const width = columnWidth - 20; // 280px base por columna
         
-        // Aplicar estilos
         column.style.flex = `0 0 ${width}px`;
         column.style.width = `${width}px`;
         column.style.minWidth = `${width}px`;
+        column.style.maxWidth = `${width}px`; // Forzar tamaño máximo también
         column.style.position = 'relative';
         column.style.padding = '10px';
         column.style.boxSizing = 'border-box';
         
-        // Sólo añadir margen derecho a todas las columnas menos a la última
-        const rightMargin = (index < columns.length - 1) ? 20 : 0;
-        column.style.marginRight = `${rightMargin}px`;
-        column.style.marginLeft = index === 0 ? '0' : '0'; // sin margen izquierdo
+        // AJUSTADO: Eliminar todos los márgenes y usar gap en su lugar
+        column.style.margin = '0';
         
-        // Acumular el ancho total (columna + margen derecho)
-        totalWidth += width + rightMargin;
+        // Acumular el ancho total exacto de columna
+        totalWidth += width;
+        
+        // Añadir separación solo entre columnas, no al final
+        if (index < columns.length - 1) {
+            totalWidth += 10; // Espacio fijo entre columnas: más pequeño
+        }
     });
     
-    // Añadir un pequeño padding final para prevenir problemas de redondeo
-    totalWidth += 5;
-    
-    // Establecer el ancho exacto del contenedor
+    // Estilos para el contenedor de columnas - optimizado
     columnsContainer.style.position = 'relative';
     columnsContainer.style.display = 'flex';
     columnsContainer.style.flexDirection = 'row';
     columnsContainer.style.flexWrap = 'nowrap';
-    columnsContainer.style.width = `${totalWidth}px`; 
+    columnsContainer.style.gap = '10px'; // Usar gap para espaciado uniforme, más pequeño
+    columnsContainer.style.width = `${totalWidth}px`;
     columnsContainer.style.minWidth = `${totalWidth}px`;
+    columnsContainer.style.maxWidth = `${totalWidth}px`; // Forzar también el ancho máximo
     columnsContainer.style.transform = 'translateX(0px)';
     columnsContainer.style.transition = 'transform 0.1s ease-out';
     
-    // Debug info más detallada
+    // Debug info
     console.log(`Board ${group.closest('[id]')?.id || 'unknown'}: exactWidth=${totalWidth}px, columns=${columns.length}`);
     
     // Implementar el scroll con transformación
@@ -615,7 +619,7 @@ function setupGroupContainer(group) {
     }
 }
 
-// Función optimizada para implementar scroll directo con sensibilidad reducida
+// Función optimizada para el scroll - AJUSTADA
 function implementDirectScroll(board, container) {
     if (!board || !container) return;
     
@@ -831,7 +835,7 @@ function addScrollButtons(boardId, container) {
         return 0;
     };
     
-    const scrollAmount = 500;
+    const scrollAmount = 300; // REDUCIR la cantidad de scroll para más precisión
     
     leftBtn.onclick = (e) => {
         e.preventDefault();
@@ -840,8 +844,6 @@ function addScrollButtons(boardId, container) {
         const currentX = getTranslateX();
         const newX = Math.min(0, currentX + scrollAmount);
         container.style.transform = `translateX(${newX}px)`;
-        
-        board.scrollLeft = -newX;
     };
     
     rightBtn.onclick = (e) => {
@@ -852,8 +854,6 @@ function addScrollButtons(boardId, container) {
         const minTranslate = board.clientWidth - container.scrollWidth;
         const newX = Math.max(minTranslate, currentX - scrollAmount);
         container.style.transform = `translateX(${newX}px)`;
-        
-        board.scrollLeft = -newX;
     };
     
     buttonContainer.appendChild(leftBtn);
