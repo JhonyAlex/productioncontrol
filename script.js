@@ -52,6 +52,19 @@ function displayOrders(orders) {
         orderItem.textContent = `Order ID: ${order.id}, Status: ${isCompleted ? 'Completed' : 'Active'}`;
         listView.appendChild(orderItem);
     });
+    
+    // Aplicar el filtro de activos/completados actual
+    const btnFiltrarActivos = document.getElementById('btn-filtrar-activos');
+    const btnFiltrarCompletados = document.getElementById('btn-filtrar-completados');
+    
+    if (btnFiltrarActivos && btnFiltrarActivos.classList.contains('active')) {
+        btnFiltrarActivos.click();
+    } else if (btnFiltrarCompletados && btnFiltrarCompletados.classList.contains('active')) {
+        btnFiltrarCompletados.click();
+    } else if (btnFiltrarActivos) {
+        // Por defecto, activar el filtro de activos
+        btnFiltrarActivos.click();
+    }
 }
 
 // Función para crear un elemento de orden (puedes adaptarla a tu estructura existente)
@@ -177,11 +190,59 @@ document.addEventListener('DOMContentLoaded', function() {
         
         filterOrders('active');
     }
+    
+    // Configurar los botones de filtro
+    setupFilterButtons();
 });
 
 // Asegurar que al cambiar a la pestaña "LISTA" se aplique el filtro
 function showTab(tabName) {
     if (tabName === 'list') {
         loadOrders();
+    }
+}
+
+// Agregar esta función para manejar los filtros de activos/completados
+function setupFilterButtons() {
+    const btnFiltrarActivos = document.getElementById('btn-filtrar-activos');
+    const btnFiltrarCompletados = document.getElementById('btn-filtrar-completados');
+    
+    if (btnFiltrarActivos) {
+        btnFiltrarActivos.addEventListener('click', function() {
+            // Resaltar este botón
+            btnFiltrarActivos.classList.add('active');
+            if (btnFiltrarCompletados) btnFiltrarCompletados.classList.remove('active');
+            
+            // Filtrar pedidos para mostrar solo activos
+            const pedidos = document.querySelectorAll('#list-view .order-item');
+            pedidos.forEach(pedido => {
+                const pedidoId = pedido.getAttribute('data-id');
+                const esCompletado = isOrderCompleted(pedidoId);
+                
+                pedido.style.display = esCompletado ? 'none' : '';
+            });
+        });
+    }
+    
+    if (btnFiltrarCompletados) {
+        btnFiltrarCompletados.addEventListener('click', function() {
+            // Resaltar este botón
+            btnFiltrarCompletados.classList.add('active');
+            if (btnFiltrarActivos) btnFiltrarActivos.classList.remove('active');
+            
+            // Filtrar pedidos para mostrar solo completados
+            const pedidos = document.querySelectorAll('#list-view .order-item');
+            pedidos.forEach(pedido => {
+                const pedidoId = pedido.getAttribute('data-id');
+                const esCompletado = isOrderCompleted(pedidoId);
+                
+                pedido.style.display = esCompletado ? '' : 'none';
+            });
+        });
+    }
+    
+    // Activar filtro de activos por defecto al cargar la página
+    if (btnFiltrarActivos) {
+        btnFiltrarActivos.click();
     }
 }
