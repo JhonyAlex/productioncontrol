@@ -78,7 +78,6 @@ export function formatAnyContent(content) {
  */
 export function soloFecha(dateString) {
   if (!dateString) return '';
-  // Soporta tanto "2025-04-16T13:49" como "2025-04-16"
   const match = dateString.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (!match) return dateString;
   const [_, y, m, d] = match;

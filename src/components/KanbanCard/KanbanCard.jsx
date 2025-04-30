@@ -33,13 +33,21 @@ const KanbanCard = ({ production }) => {
     });
   };
 
+  const mostrarIdYFecha = (texto) => {
+    const match = texto.match(/^(\d+)\s+\((\d{4}-\d{2}-\d{2}T\d{2}:\d{2})\)$/);
+    if (match) {
+      return `${match[1]} (${soloFecha(match[2])})`;
+    }
+    return texto;
+  };
+
   const headerContent = `${production.id} (${production.date})`;
 
   return (
     <div className="kanban-card">
       <div className="title">{production.title}</div>
       <div style={{ fontWeight: 'bold', fontSize: '0.95em', marginBottom: '0.2em' }}>
-        {production.id} ({soloFecha(production.date)})
+        {mostrarIdYFecha(`${production.id} (${production.date})`)}
       </div>
       <div className="description">{production.description}</div>
     </div>
