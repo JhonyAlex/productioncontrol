@@ -24,6 +24,12 @@ export function setupAuthListeners(auth, domRefs) {
         authMessage         // NUEVO: Div para mensajes generales (reset, registro)
     } = domRefs;
 
+    // Añadir referencia al campo de confirmación de contraseña
+    const confirmPasswordContainer = document.getElementById('confirm-password-container');
+    const confirmPasswordInput = document.getElementById('confirm-password');
+    // Variable para controlar si estamos en modo registro o inicio de sesión
+    let registrationMode = false;
+
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         loginError.style.display = 'none';
@@ -76,36 +82,76 @@ export function setupAuthListeners(auth, domRefs) {
     // --- NUEVO: Listener para "Registrar Usuario" ---
     if (registerButton) {
         registerButton.addEventListener('click', async () => {
+            // Si no está en modo registro, cambia a modo registro
+            if (!registrationMode) {
+                registrationMode = true;
+                registerButton.textContent = 'Completar Registro';
+                confirmPasswordContainer.style.display = 'block';
+                if (authMessage) authMessage.style.display = 'none';
+                return;
+            }
+
+            // Si está en modo registro, intenta registrar al usuario
             const email = emailInput.value;
             const password = passwordInput.value;
-            if (!email || !password) {
-                 if (authMessage) {
-                    authMessage.textContent = 'Por favor, introduce correo y contraseña para registrarte.';
+            const confirmPassword = confirmPasswordInput.value;
+
+            if (!email || !password || !confirmPassword) {
+                if (authMessage) {
+                    authMessage.textContent = 'Por favor, completa todos los campos para registrarte.';
                     authMessage.style.color = 'red';
                     authMessage.style.display = 'block';
                 }
                 return;
             }
+
+            // Verificar que las contraseñas coinciden
+            if (password !== confirmPassword) {
+                if (authMessage) {
+                    authMessage.textContent = 'Las contraseñas no coinciden.';
+                    authMessage.style.color = 'red';
+                    authMessage.style.display = 'block';
+                }
+                return;
+            }
+
             try {
                 await createUserWithEmailAndPassword(auth, email, password);
-                 if (authMessage) {
+                if (authMessage) {
                     authMessage.textContent = '¡Usuario registrado con éxito! Ahora puedes iniciar sesión.';
                     authMessage.style.color = 'green';
                     authMessage.style.display = 'block';
                 }
-                 if (loginError) loginError.style.display = 'none'; // Ocultar error de login
-                 // Opcional: Limpiar campos o redirigir
-                 // emailInput.value = '';
-                 // passwordInput.value = '';
+                if (loginError) loginError.style.display = 'none';
+
+                // Resetear el modo de registro y ocultar el campo de confirmación
+                registrationMode = false;
+                registerButton.textContent = 'Registrar Nuevo Usuario';
+                confirmPasswordContainer.style.display = 'none';
+                confirmPasswordInput.value = '';
+                // Opcional: Limpiar los otros campos
+                emailInput.value = '';
+                passwordInput.value = '';
             } catch (error) {
-                 if (authMessage) {
+                if (authMessage) {
                     authMessage.textContent = `Error al registrar: ${getFirebaseErrorMessage(error)}`;
                     authMessage.style.color = 'red';
                     authMessage.style.display = 'block';
                 }
             }
         });
-    };
+    }
+
+    // Añadir listener para el formulario de login para resetear el modo de registro
+    if (loginForm) {
+        loginForm.addEventListener('submit', () => {
+            if (registrationMode && registerButton) {
+                registrationMode = false;
+                registerButton.textContent = 'Registrar Nuevo Usuario';
+                if (confirmPasswordContainer) confirmPasswordContainer.style.display = 'none';
+            }
+        });
+    }
 }
 
 // --- NUEVO: Funciones para manejar el temporizador de inactividad ---

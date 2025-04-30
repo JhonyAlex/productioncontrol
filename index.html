@@ -27,6 +27,13 @@
                 <label for="password" class="form-label">Contraseña</label>
                 <input type="password" class="form-control" id="password" required>
             </div>
+
+            <!-- Nuevo campo para confirmar contraseña - inicialmente oculto -->
+            <div class="mb-3" id="confirm-password-container" style="display: none;">
+                <label for="confirm-password" class="form-label">Confirmar Contraseña</label>
+                <input type="password" class="form-control" id="confirm-password" required>
+            </div>
+
             <!-- Mensaje de error de login -->
             <div id="login-error" class="alert alert-danger mt-3" style="display: none;"></div>
             <!-- Mensajes generales (reset, registro) -->
