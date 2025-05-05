@@ -117,7 +117,6 @@ export function renderList(pedidos) {
     } else {
         filteredPedidos.forEach(pedido => {
             const etapaColor = etapaToColor(pedido.etapaActual || '');
-            // --- NUEVO: badge de cliente con color consistente ---
             let clienteBadge = '';
             if (pedido.cliente) {
                 const color = stringToColor(pedido.cliente);
@@ -128,7 +127,7 @@ export function renderList(pedidos) {
                     <td>${pedido.secuenciaPedido || ''}</td>
                     <td>${pedido.desarrTexto || ''}${pedido.desarrNumero ? ` (${pedido.desarrNumero})` : ''}</td>
                     <td>${clienteBadge || '-'}</td>
-                    <td>${pedido.numeroPedido || 'Nº Pedido'}</td>
+                    <td>${pedido.numeroPedido || '-'}</td>
                     <td>${pedido.metros || '-'}</td>
                     <td>${pedido.superficie === 'true' ? 'Sí' : 'No'}</td>
                     <td>${pedido.transparencia === 'true' ? 'Sí' : 'No'}</td>
