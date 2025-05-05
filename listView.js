@@ -259,7 +259,6 @@ if (typeof window !== 'undefined') {
                     });
                     btn.classList.add('active');
 
-                    // Lógica de filtrado personalizada
                     let pedidos = window.currentPedidos || [];
                     let filtrados = [];
 
@@ -270,20 +269,17 @@ if (typeof window !== 'undefined') {
                     } else if (val === 'perforado') {
                         filtrados = pedidos.filter(p => (p.etapaActual || '').toLowerCase().startsWith('perfor'));
                     } else if (val === 'pend-lam') {
-                        filtrados = pedidos.filter(p => (p.etapaActual || '').toLowerCase() === 'pendiente laminación');
+                        filtrados = pedidos.filter(p => (p.etapaActual || '').toLowerCase() === 'pendiente de laminar');
                     } else if (val === 'pend-reb') {
-                        filtrados = pedidos.filter(p => (p.etapaActual || '').toLowerCase() === 'pendiente rebobinado');
+                        filtrados = pedidos.filter(p => (p.etapaActual || '').toLowerCase() === 'pendiente de rebobinado');
                     } else if (val === 'todos') {
-                        // Mostrar todos excepto completados y etapas de impresión
-                        filtrados = pedidos.filter(p => {
-                            const etapa = (p.etapaActual || '').toLowerCase();
-                            return etapa !== 'completado' && etapa !== 'impresión' && etapa !== 'impresion';
-                        });
+                        // Mostrar absolutamente todos los pedidos
+                        filtrados = pedidos;
                     } else if (val === 'activos') {
-                        // Mostrar todos excepto completados y etapas de impresión
                         filtrados = pedidos.filter(p => {
                             const etapa = (p.etapaActual || '').toLowerCase();
-                            return etapa !== 'completado' && etapa !== 'impresión' && etapa !== 'impresion';
+                            if (etapa === 'completado') return false;
+                            return !etapasImpresion.map(e => e.toLowerCase()).includes(etapa);
                         });
                     } else if (val === 'completados') {
                         filtrados = pedidos.filter(p => (p.etapaActual || '').toLowerCase() === 'completado');
