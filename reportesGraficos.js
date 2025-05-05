@@ -363,6 +363,71 @@ function exportarReportesExcel() {
     XLSX.writeFile(wb, `ReportesGraficos_${new Date().toISOString().slice(0,10)}.xlsx`);
 }
 
+// --- EXPORTAR LISTA FILTRADA A PDF ---
+function exportarListaFiltradaPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('l', 'mm', 'a4');
+    let y = 10;
+
+    // Logo
+    const logoImg = new Image();
+    logoImg.src = 'logo.png';
+    logoImg.onload = () => {
+        doc.addImage(logoImg, 'PNG', 10, y, 220, 45);
+        y += 50;
+        doc.setFontSize(18);
+        doc.text('Listado de Producción', 150, y, { align: 'center' });
+        y += 15;
+
+        // Obtén la tabla visible
+        const tabla = document.querySelector('#list-view table');
+        if (!tabla) {
+            alert('No se encontró la tabla de la lista filtrada.');
+            return;
+        }
+
+        // Convierte la tabla HTML a array de arrays
+        const rows = Array.from(tabla.rows).map(row =>
+            Array.from(row.cells).map(cell => cell.innerText)
+        );
+
+        // Usa autoTable para formatear la tabla (requiere jsPDF autotable plugin)
+        if (doc.autoTable) {
+            doc.autoTable({
+                startY: y,
+                head: [rows[0]],
+                body: rows.slice(1),
+                styles: { fontSize: 9 },
+                margin: { left: 10, right: 10 }
+            });
+        } else {
+            alert('jsPDF autoTable plugin no está cargado.');
+        }
+
+        doc.save(`ListaFiltrada_${new Date().toISOString().slice(0,10)}.pdf`);
+    };
+}
+
+// --- EXPORTAR LISTA FILTRADA A EXCEL ---
+function exportarListaFiltradaExcel() {
+    if (typeof XLSX === 'undefined') {
+        alert('No se encontró la librería XLSX para exportar a Excel.');
+        return;
+    }
+    const tabla = document.querySelector('#list-view table');
+    if (!tabla) {
+        alert('No se encontró la tabla de la lista filtrada.');
+        return;
+    }
+    const rows = Array.from(tabla.rows).map(row =>
+        Array.from(row.cells).map(cell => cell.innerText)
+    );
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Lista Filtrada');
+    XLSX.writeFile(wb, `ListaFiltrada_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
 // --- EVENTOS ---
 if (typeof window !== 'undefined') {
     setTimeout(() => {
@@ -373,8 +438,8 @@ if (typeof window !== 'undefined') {
     }, 500);
 
     // Exportar funciones para los enlaces del menú
-    window.exportToPDF = exportarReportesPDF;
-    window.exportToExcel = exportarReportesExcel;
+    window.exportToPDF = exportarListaFiltradaPDF;
+    window.exportToExcel = exportarListaFiltradaExcel;
 }
 
 window.renderGraficosReportes = renderGraficosReportes;
