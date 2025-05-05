@@ -241,10 +241,11 @@ function exportarReportesPDF() {
     const logoImg = new Image();
     logoImg.src = 'logo.png';
     logoImg.onload = () => {
-        doc.addImage(logoImg, 'PNG', 10, y, 30, 15);
-        y += 5;
+        // Cambia dimensiones a 220x45 mm
+        doc.addImage(logoImg, 'PNG', 10, y, 220, 45);
+        y += 50; // Ajusta el espacio después del logo
         doc.setFontSize(18);
-        doc.text('Reportes Gráficos de Producción', 150, y + 10, { align: 'center' });
+        doc.text('Reportes Gráficos de Producción', 150, y, { align: 'center' });
         y += 15;
 
         // Para cada gráfico, exportar imagen y título
@@ -263,6 +264,7 @@ function exportarReportesPDF() {
             doc.setFontSize(13);
             doc.text(title, 15, y + 15);
             const imgData = canvas.toDataURL('image/png', 1.0);
+            // Mantén el tamaño de los gráficos igual, solo cambia el logo
             doc.addImage(imgData, 'PNG', 15, y + 18, 100, 45);
             y += 65;
         });
@@ -273,6 +275,11 @@ function exportarReportesPDF() {
 
 // --- EXPORTAR EXCEL ---
 function exportarReportesExcel() {
+    // Verifica que XLSX esté disponible
+    if (typeof XLSX === 'undefined') {
+        alert('No se encontró la librería XLSX para exportar a Excel.');
+        return;
+    }
     const wb = XLSX.utils.book_new();
 
     // 1. Metros por máquina
