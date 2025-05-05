@@ -390,24 +390,49 @@ function exportarListaFiltradaPDF() {
             return;
         }
 
-        // --- SELECCIÓN DE COLUMNAS A EXPORTAR ---
-        const encabezados = Array.from(tabla.rows[0].cells).map(cell => cell.innerText);
-        const idxAcciones = encabezados.findIndex(h => h.trim().toLowerCase() === 'acciones');
-        const idxFecha = encabezados.findIndex(h => h.trim().toLowerCase() === 'fecha');
-        // ...puedes agregar más columnas a ocultar aquí...
+        // --- ORDEN Y SELECCIÓN DE COLUMNAS PARA EXPORTAR ---
+        // Define el orden y los nombres de las columnas a exportar (sin Nº Secuencia)
+        const columnasExportar = [
+            "Desarr.",
+            "Cliente",
+            "Nº Pedido",
+            "Metros",
+            "SUP",
+            "TTE",
+            "Capa",
+            "Camisa",
+            "Observaciones",
+            "Etapa Actual",
+            "Fecha"
+        ];
 
+        // Obtén los encabezados actuales de la tabla web
+        const encabezados = Array.from(tabla.rows[0].cells).map(cell => cell.innerText.trim());
+
+        // Mapea el índice de cada columna a exportar según el encabezado de la tabla web
+        const indicesExportar = columnasExportar.map(nombre =>
+            encabezados.findIndex(h => h.toLowerCase() === nombre.toLowerCase())
+        );
+
+        // Si alguna columna no se encuentra, muestra advertencia
+        if (indicesExportar.some(idx => idx === -1)) {
+            alert('Alguna columna requerida no se encontró en la tabla web.');
+            return;
+        }
+
+        // Construye las filas para exportar en el orden deseado y omitiendo "Nº Secuencia"
         const rows = Array.from(tabla.rows).map(row => {
             const cells = Array.from(row.cells).map(cell => cell.innerText);
-            // Elimina la columna "Acciones" si existe
-            if (idxAcciones !== -1) cells.splice(idxAcciones, 1);
+            // Solo toma las columnas en el orden definido
+            const fila = indicesExportar.map(idx => cells[idx]);
             // Formatea la columna "Fecha" para mostrar solo la fecha (sin hora)
-            if (idxFecha !== -1 && cells[idxFecha]) {
-                // Si la fecha está en formato ISO o contiene espacio, toma solo la parte de la fecha
-                cells[idxFecha] = cells[idxFecha].split(' ')[0].split('T')[0];
+            const idxFecha = columnasExportar.findIndex(n => n.toLowerCase() === 'fecha');
+            if (idxFecha !== -1 && fila[idxFecha]) {
+                fila[idxFecha] = fila[idxFecha].split(' ')[0].split('T')[0];
             }
-            return cells;
+            return fila;
         });
-        // --- FIN SELECCIÓN DE COLUMNAS ---
+        // --- FIN ORDEN Y SELECCIÓN DE COLUMNAS ---
 
         if (doc.autoTable) {
             doc.autoTable({

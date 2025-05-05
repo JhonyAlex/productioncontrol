@@ -83,17 +83,17 @@ export function renderList(pedidos) {
 
     const columns = [
         { key: 'secuenciaPedido', label: 'Nº Secuencia' },
-        { key: 'numeroPedido', label: 'Nº Pedido' },
-        { key: 'cliente', label: 'Cliente' },
-        { key: 'maquinaImpresion', label: 'Máquina Imp.' },
         { key: 'desarrTexto', label: 'Desarr.' },
+        { key: 'cliente', label: 'Cliente' },
+        { key: 'numeroPedido', label: 'Nº Pedido' },
         { key: 'metros', label: 'Metros' },
         { key: 'superficie', label: 'SUP' },
         { key: 'transparencia', label: 'TTE' },
         { key: 'capa', label: 'Capa' },
         { key: 'camisa', label: 'Camisa' },
-        { key: 'fecha', label: 'Fecha' },
+        { key: 'observaciones', label: 'Observaciones' },
         { key: 'etapaActual', label: 'Etapa Actual' },
+        { key: 'fecha', label: 'Fecha' },
         { key: 'acciones', label: 'Acciones' }
     ];
 
@@ -113,7 +113,7 @@ export function renderList(pedidos) {
     `;
 
     if (filteredPedidos.length === 0) {
-        tableHTML += '<tr><td colspan="13" class="text-center">No hay pedidos para mostrar.</td></tr>';
+        tableHTML += `<tr><td colspan="${columns.length}" class="text-center">No hay pedidos para mostrar.</td></tr>`;
     } else {
         filteredPedidos.forEach(pedido => {
             const etapaColor = etapaToColor(pedido.etapaActual || '');
@@ -126,16 +126,15 @@ export function renderList(pedidos) {
             tableHTML += `
                 <tr>
                     <td>${pedido.secuenciaPedido || ''}</td>
-                    <td>${pedido.numeroPedido || 'N/A'}</td>
-                    <td>${clienteBadge || '-'}</td>
-                    <td>${pedido.maquinaImpresion || 'N/A'}</td>
                     <td>${pedido.desarrTexto || ''}${pedido.desarrNumero ? ` (${pedido.desarrNumero})` : ''}</td>
+                    <td>${clienteBadge || '-'}</td>
+                    <td>${pedido.numeroPedido || 'Nº Pedido'}</td>
                     <td>${pedido.metros || '-'}</td>
                     <td>${pedido.superficie === 'true' ? 'Sí' : 'No'}</td>
                     <td>${pedido.transparencia === 'true' ? 'Sí' : 'No'}</td>
                     <td>${pedido.capa || '-'}</td>
                     <td>${pedido.camisa || '-'}</td>
-                    <td>${pedido.fecha || '-'}</td>
+                    <td>${pedido.observaciones || '-'}</td>
                     <td>
                         <span class="badge etapa-badge-lista etapa-actual-editable" 
                               style="background:${etapaColor};color:#333;font-size:0.95em;cursor:pointer;"
@@ -143,6 +142,7 @@ export function renderList(pedidos) {
                             ${pedido.etapaActual || 'N/A'}
                         </span>
                     </td>
+                    <td>${pedido.fecha ? pedido.fecha.split(' ')[0].split('T')[0] : '-'}</td>
                     <td>
                         <button class="btn btn-sm btn-outline-primary" onclick="openPedidoModal('${pedido.id}')">
                             <i class="bi bi-pencil-square"></i> Editar
