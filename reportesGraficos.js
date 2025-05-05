@@ -373,6 +373,12 @@ function exportarListaFiltradaPDF() {
     logoImg.src = 'logo.png';
     logoImg.onload = () => {
         doc.addImage(logoImg, 'PNG', 10, y, 58, 12); // 220x45 px ≈ 58x12 mm
+
+        // Fecha actual alineada a la derecha
+        const fechaActual = new Date().toLocaleDateString();
+        doc.setFontSize(12);
+        doc.text(`Fecha: ${fechaActual}`, 285, y + 8, { align: 'right' }); // 297mm ancho A4 horizontal
+
         y += 17;
         doc.setFontSize(18);
         doc.text('Listado de Producción', 150, y, { align: 'center' });
@@ -385,16 +391,20 @@ function exportarListaFiltradaPDF() {
         }
 
         // --- SELECCIÓN DE COLUMNAS A EXPORTAR ---
-        // Aquí puedes modificar las columnas que se exportan al PDF.
-        // Por ejemplo, para ocultar la columna "Acciones", filtramos por el encabezado:
         const encabezados = Array.from(tabla.rows[0].cells).map(cell => cell.innerText);
         const idxAcciones = encabezados.findIndex(h => h.trim().toLowerCase() === 'acciones');
-        // Si quieres ocultar más columnas, agrega más condiciones aquí.
+        const idxFecha = encabezados.findIndex(h => h.trim().toLowerCase() === 'fecha');
+        // ...puedes agregar más columnas a ocultar aquí...
 
         const rows = Array.from(tabla.rows).map(row => {
             const cells = Array.from(row.cells).map(cell => cell.innerText);
             // Elimina la columna "Acciones" si existe
             if (idxAcciones !== -1) cells.splice(idxAcciones, 1);
+            // Formatea la columna "Fecha" para mostrar solo la fecha (sin hora)
+            if (idxFecha !== -1 && cells[idxFecha]) {
+                // Si la fecha está en formato ISO o contiene espacio, toma solo la parte de la fecha
+                cells[idxFecha] = cells[idxFecha].split(' ')[0].split('T')[0];
+            }
             return cells;
         });
         // --- FIN SELECCIÓN DE COLUMNAS ---
