@@ -87,6 +87,8 @@ export function setupAuthListeners(auth, domRefs) {
                 registrationMode = true;
                 registerButton.textContent = 'Completar Registro';
                 confirmPasswordContainer.style.display = 'block';
+                // Añadir atributo required cuando se muestra el campo
+                confirmPasswordInput.setAttribute('required', '');
                 if (authMessage) authMessage.style.display = 'none';
                 return;
             }
@@ -129,6 +131,8 @@ export function setupAuthListeners(auth, domRefs) {
                 registerButton.textContent = 'Registrar Nuevo Usuario';
                 confirmPasswordContainer.style.display = 'none';
                 confirmPasswordInput.value = '';
+                // Quitar atributo required cuando se oculta el campo
+                confirmPasswordInput.removeAttribute('required');
                 // Opcional: Limpiar los otros campos
                 emailInput.value = '';
                 passwordInput.value = '';
@@ -148,10 +152,23 @@ export function setupAuthListeners(auth, domRefs) {
             if (registrationMode && registerButton) {
                 registrationMode = false;
                 registerButton.textContent = 'Registrar Nuevo Usuario';
-                if (confirmPasswordContainer) confirmPasswordContainer.style.display = 'none';
+                if (confirmPasswordContainer) {
+                    confirmPasswordContainer.style.display = 'none';
+                    // Quitar atributo required cuando se oculta el campo
+                    if (confirmPasswordInput) {
+                        confirmPasswordInput.removeAttribute('required');
+                    }
+                }
             }
         });
     }
+
+    // También hay que manejar la cancelación de registro cuando se cierra la página o se recarga
+    window.addEventListener('beforeunload', () => {
+        if (registrationMode && confirmPasswordInput) {
+            confirmPasswordInput.removeAttribute('required');
+        }
+    });
 }
 
 // --- NUEVO: Funciones para manejar el temporizador de inactividad ---
