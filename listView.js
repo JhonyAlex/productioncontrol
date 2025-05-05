@@ -243,126 +243,57 @@ if (typeof window !== 'undefined') {
             { id: 'btn-filtrar-laminacion', val: 'laminacion' },
             { id: 'btn-filtrar-rebobinado', val: 'rebobinado' },
             { id: 'btn-filtrar-perforado', val: 'perforado' },
-            { id: 'btn-filtrar-pendiente', val: 'pendiente' },
-            { id: 'btn-filtrar-todos', val: null },
-            { id: 'btn-filtrar-activos', val: 'activos' },     // NUEVO
-            { id: 'btn-filtrar-completados', val: 'completados' } // NUEVO
+            { id: 'btn-filtrar-pend-lam', val: 'pend-lam' },
+            { id: 'btn-filtrar-pend-reb', val: 'pend-reb' },
+            { id: 'btn-filtrar-todos', val: 'todos' },
+            { id: 'btn-filtrar-activos', val: 'activos' },
+            { id: 'btn-filtrar-completados', val: 'completados' }
         ];
         btns.forEach(({ id, val }) => {
             const btn = document.getElementById(id);
             if (btn) {
                 btn.onclick = () => {
-                    // --- NUEVO: Manejar filtros Activos/Completados ---
                     btns.forEach(({ id }) => {
                         const b = document.getElementById(id);
                         if (b) b.classList.remove('active');
                     });
-                    if (val !== null) btn.classList.add('active');
-                    else document.getElementById('btn-filtrar-todos').classList.add('active');
+                    btn.classList.add('active');
 
-                    if (val === 'activos') {
-                        showCompleted = false;
-                        quickStageFilter = null; // Resetea el filtro de etapa
+                    // Lógica de filtrado personalizada
+                    let pedidos = window.currentPedidos || [];
+                    let filtrados = [];
+
+                    if (val === 'laminacion') {
+                        filtrados = pedidos.filter(p => (p.etapaActual || '').toLowerCase().startsWith('lamin'));
+                    } else if (val === 'rebobinado') {
+                        filtrados = pedidos.filter(p => (p.etapaActual || '').toLowerCase().startsWith('rebob'));
+                    } else if (val === 'perforado') {
+                        filtrados = pedidos.filter(p => (p.etapaActual || '').toLowerCase().startsWith('perfor'));
+                    } else if (val === 'pend-lam') {
+                        filtrados = pedidos.filter(p => (p.etapaActual || '').toLowerCase() === 'pendiente laminación');
+                    } else if (val === 'pend-reb') {
+                        filtrados = pedidos.filter(p => (p.etapaActual || '').toLowerCase() === 'pendiente rebobinado');
+                    } else if (val === 'todos') {
+                        // Mostrar todos excepto completados y etapas de impresión
+                        filtrados = pedidos.filter(p => {
+                            const etapa = (p.etapaActual || '').toLowerCase();
+                            return etapa !== 'completado' && etapa !== 'impresión' && etapa !== 'impresion';
+                        });
+                    } else if (val === 'activos') {
+                        // Mostrar todos excepto completados y etapas de impresión
+                        filtrados = pedidos.filter(p => {
+                            const etapa = (p.etapaActual || '').toLowerCase();
+                            return etapa !== 'completado' && etapa !== 'impresión' && etapa !== 'impresion';
+                        });
                     } else if (val === 'completados') {
-                        showCompleted = true;
-                        quickStageFilter = null; // Resetea el filtro de etapa
+                        filtrados = pedidos.filter(p => (p.etapaActual || '').toLowerCase() === 'completado');
                     } else {
-                        // Si es un filtro de etapa, asegúrate de que no esté activo el de completados
-                        showCompleted = false;
-                        quickStageFilter = val;
+                        filtrados = pedidos;
                     }
-                    renderList(window.currentPedidos || []); // Re-renderizar con el nuevo estado
+
+                    renderList(filtrados);
                 };
             }
         });
     }, 0);
-}
-
-// Inicializar event listeners para los botones de filtro
-export function initializeFilterButtons() {
-    document.getElementById('btn-filtrar-laminacion').addEventListener('click', () => filtrarPedidosPorEtapa('Laminación'));
-    document.getElementById('btn-filtrar-rebobinado').addEventListener('click', () => filtrarPedidosPorEtapa('Rebobinado'));
-    document.getElementById('btn-filtrar-perforado').addEventListener('click', () => filtrarPedidosPorEtapa('Perforado'));
-    document.getElementById('btn-filtrar-pend-lam').addEventListener('click', () => filtrarPedidosPendientes('Laminación'));
-    document.getElementById('btn-filtrar-pend-reb').addEventListener('click', () => filtrarPedidosPendientes('Rebobinado'));
-    document.getElementById('btn-filtrar-todos').addEventListener('click', () => mostrarTodosPedidos());
-    document.getElementById('btn-filtrar-activos').addEventListener('click', () => filtrarPorEstado('activos'));
-    document.getElementById('btn-filtrar-completados').addEventListener('click', () => filtrarPorEstado('completados'));
-}
-
-// Función para filtrar pedidos por etapa específica
-function filtrarPedidosPorEtapa(etapa) {
-    resetearFiltrosActivos();
-    const buttonId = `btn-filtrar-${etapa.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')}`;
-    document.getElementById(buttonId).classList.add('active');
-    
-    const pedidosFiltrados = window.currentPedidos.filter(pedido => {
-        return pedido.etapas && pedido.etapas.some(e => 
-            e.nombre === etapa && e.estado === 'En proceso'
-        );
-    });
-    
-    actualizarVistaLista(pedidosFiltrados);
-    window.currentFilteredPedidos = pedidosFiltrados;
-}
-
-// Función para filtrar pendientes específicos (laminación o rebobinado)
-function filtrarPedidosPendientes(tipo) {
-    resetearFiltrosActivos();
-    const buttonId = `btn-filtrar-pend-${tipo.toLowerCase().substring(0, 3)}`;
-    document.getElementById(buttonId).classList.add('active');
-    
-    const pedidosFiltrados = window.currentPedidos.filter(pedido => {
-        return pedido.etapas && pedido.etapas.some(e => 
-            e.nombre === tipo && e.estado === 'Pendiente'
-        );
-    });
-    
-    actualizarVistaLista(pedidosFiltrados);
-    window.currentFilteredPedidos = pedidosFiltrados;
-}
-
-// Función para mostrar todos los pedidos, incluidos los completados
-function mostrarTodosPedidos() {
-    resetearFiltrosActivos();
-    document.getElementById('btn-filtrar-todos').classList.add('active');
-    
-    // Mostrar todos los pedidos sin filtrar
-    actualizarVistaLista(window.currentPedidos);
-    window.currentFilteredPedidos = window.currentPedidos;
-}
-
-// Función para filtrar por estado general (activos o completados)
-function filtrarPorEstado(estado) {
-    resetearFiltrosActivos();
-    
-    if (estado === 'activos') {
-        document.getElementById('btn-filtrar-activos').classList.add('active');
-        const pedidosActivos = window.currentPedidos.filter(pedido => !pedido.completado);
-        actualizarVistaLista(pedidosActivos);
-        window.currentFilteredPedidos = pedidosActivos;
-    } else if (estado === 'completados') {
-        document.getElementById('btn-filtrar-completados').classList.add('active');
-        const pedidosCompletados = window.currentPedidos.filter(pedido => pedido.completado);
-        actualizarVistaLista(pedidosCompletados);
-        window.currentFilteredPedidos = pedidosCompletados;
-    }
-}
-
-// Función para resetear filtros activos
-function resetearFiltrosActivos() {
-    const botonesFiltro = document.querySelectorAll('#list-filters button');
-    botonesFiltro.forEach(boton => boton.classList.remove('active'));
-}
-
-// Función para actualizar la vista de lista con los pedidos filtrados
-export function actualizarVistaLista(pedidos) {
-    // Implementación existente de renderización de la lista con los pedidos filtrados
-    renderList(pedidos);
-    
-    // Actualizar gráficos si están visibles
-    const reportes = document.getElementById('reportes-graficos');
-    if (reportes && window.getComputedStyle(reportes).display !== 'none' && typeof window.renderGraficosReportes === 'function') {
-        window.renderGraficosReportes(pedidos);
-    }
 }
