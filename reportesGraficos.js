@@ -371,6 +371,10 @@ if (typeof window !== 'undefined') {
         const btnExcel = document.getElementById('btn-exportar-reportes-excel');
         if (btnExcel) btnExcel.onclick = exportarReportesExcel;
     }, 500);
+
+    // Exportar funciones para los enlaces del menú
+    window.exportToPDF = exportarReportesPDF;
+    window.exportToExcel = exportarReportesExcel;
 }
 
 window.renderGraficosReportes = renderGraficosReportes;
