@@ -241,9 +241,9 @@ function exportarReportesPDF() {
     const logoImg = new Image();
     logoImg.src = 'logo.png';
     logoImg.onload = () => {
-        // Cambia dimensiones a 220x45 mm
-        doc.addImage(logoImg, 'PNG', 10, y, 220, 45);
-        y += 50; // Ajusta el espacio después del logo
+        // 220x45 px ≈ 58x12 mm
+        doc.addImage(logoImg, 'PNG', 10, y, 58, 12);
+        y += 17; // Ajusta el espacio después del logo
         doc.setFontSize(18);
         doc.text('Reportes Gráficos de Producción', 150, y, { align: 'center' });
         y += 15;
@@ -369,29 +369,36 @@ function exportarListaFiltradaPDF() {
     const doc = new jsPDF('l', 'mm', 'a4');
     let y = 10;
 
-    // Logo
     const logoImg = new Image();
     logoImg.src = 'logo.png';
     logoImg.onload = () => {
-        doc.addImage(logoImg, 'PNG', 10, y, 220, 45);
-        y += 50;
+        doc.addImage(logoImg, 'PNG', 10, y, 58, 12); // 220x45 px ≈ 58x12 mm
+        y += 17;
         doc.setFontSize(18);
         doc.text('Listado de Producción', 150, y, { align: 'center' });
-        y += 15;
+        y += 10;
 
-        // Obtén la tabla visible
         const tabla = document.querySelector('#list-view table');
         if (!tabla) {
             alert('No se encontró la tabla de la lista filtrada.');
             return;
         }
 
-        // Convierte la tabla HTML a array de arrays
-        const rows = Array.from(tabla.rows).map(row =>
-            Array.from(row.cells).map(cell => cell.innerText)
-        );
+        // --- SELECCIÓN DE COLUMNAS A EXPORTAR ---
+        // Aquí puedes modificar las columnas que se exportan al PDF.
+        // Por ejemplo, para ocultar la columna "Acciones", filtramos por el encabezado:
+        const encabezados = Array.from(tabla.rows[0].cells).map(cell => cell.innerText);
+        const idxAcciones = encabezados.findIndex(h => h.trim().toLowerCase() === 'acciones');
+        // Si quieres ocultar más columnas, agrega más condiciones aquí.
 
-        // Usa autoTable para formatear la tabla (requiere jsPDF autotable plugin)
+        const rows = Array.from(tabla.rows).map(row => {
+            const cells = Array.from(row.cells).map(cell => cell.innerText);
+            // Elimina la columna "Acciones" si existe
+            if (idxAcciones !== -1) cells.splice(idxAcciones, 1);
+            return cells;
+        });
+        // --- FIN SELECCIÓN DE COLUMNAS ---
+
         if (doc.autoTable) {
             doc.autoTable({
                 startY: y,
@@ -403,7 +410,6 @@ function exportarListaFiltradaPDF() {
         } else {
             alert('jsPDF autoTable plugin no está cargado.');
         }
-
         doc.save(`ListaFiltrada_${new Date().toISOString().slice(0,10)}.pdf`);
     };
 }
