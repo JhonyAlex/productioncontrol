@@ -51,10 +51,18 @@ document.addEventListener('DOMContentLoaded', () => {
         if (typeof unsubscribePedidos === 'function') unsubscribePedidos();
     });
 
+    // Inicializar los filtros de la vista de lista
+    import('./listView.js').then(mod => {
+        if (typeof mod.initializeFilterButtons === 'function') {
+            mod.initializeFilterButtons();
+        }
+    });
+
     // Suscribirse a los pedidos de Firestore y actualizar la UI en tiempo real
     unsubscribePedidos = listenToPedidos(pedidosCollection, (pedidos) => {
-        // --- NUEVO: Actualiza todas las vistas en tiempo real ---
+        // --- Actualiza todas las vistas en tiempo real ---
         window.currentPedidos = pedidos;
+        
         // Actualiza Kanban si la pestaña de impresión o complementarias está activa
         const tabImpresion = document.getElementById('tab-kanban-impresion');
         const tabComplementarias = document.getElementById('tab-kanban-complementarias');
@@ -64,15 +72,22 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (tabComplementarias && tabComplementarias.classList.contains('active')) {
             import('./kanban.js').then(mod => mod.renderKanban(pedidos, { only: 'complementarias' }));
         }
+        
         // Actualiza lista si la pestaña lista está activa
         if (tabLista && tabLista.classList.contains('active')) {
-            import('./listView.js').then(mod => mod.renderList(pedidos));
-            // Actualiza gráficos si están visibles
-            const reportes = document.getElementById('reportes-graficos');
-            if (reportes && reportes.style.display !== 'none' && typeof window.renderGraficosReportes === 'function') {
-                window.renderGraficosReportes(window.currentFilteredPedidos || pedidos);
-            }
+            import('./listView.js').then(mod => {
+                // Usar los pedidos filtrados si existen, si no, usar todos los pedidos
+                const pedidosToRender = window.currentFilteredPedidos || pedidos;
+                mod.renderList(pedidosToRender);
+                
+                // Actualiza gráficos si están visibles
+                const reportes = document.getElementById('reportes-graficos');
+                if (reportes && window.getComputedStyle(reportes).display !== 'none' && typeof window.renderGraficosReportes === 'function') {
+                    window.renderGraficosReportes(pedidosToRender);
+                }
+            });
         }
+        
         // También ejecuta cualquier lógica adicional previa
         if (window.onPedidosDataUpdate) {
             window.onPedidosDataUpdate(pedidos);
