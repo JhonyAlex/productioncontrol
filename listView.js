@@ -5,6 +5,7 @@ let currentSort = { key: null, asc: true };
 let currentFilters = {};
 let showCompleted = false; // NUEVO: Estado para filtro Activos/Completados
 let quickStageFilter = null; // Puede ser 'laminacion', 'rebobinado', 'perforado', 'pendiente' o null
+let modoFiltroManual = false; // NUEVO: para distinguir entre filtro manual y automático
 
 function normalizeValue(val) {
     if (typeof val === 'string') return val.toLowerCase().trim();
@@ -39,11 +40,17 @@ export function renderList(pedidos) {
     }
 
     // --- Filtros rápidos y ordenamiento (sin inputs de filtro por columna) ---
-    // --- NUEVO: Aplicar filtro Activos/Completados PRIMERO ---
-    let basePedidos = pedidos.filter(p => {
-        const esCompletado = (p.etapaActual || '').toLowerCase() === 'completado';
-        return showCompleted ? esCompletado : !esCompletado;
-    });
+    // Si estamos en modo filtro manual, NO aplicar filtro por showCompleted
+    let basePedidos;
+    if (modoFiltroManual) {
+        basePedidos = pedidos.slice();
+    } else {
+        // --- NUEVO: Aplicar filtro Activos/Completados PRIMERO ---
+        basePedidos = pedidos.filter(p => {
+            const esCompletado = (p.etapaActual || '').toLowerCase() === 'completado';
+            return showCompleted ? esCompletado : !esCompletado;
+        });
+    }
 
     // Aplicar filtro rápido de etapa (laminacion, etc.) sobre los pedidos ya filtrados por estado
     let filteredPedidos = basePedidos.slice(); // <-- CORREGIDO: Empezar desde basePedidos
@@ -261,6 +268,8 @@ if (typeof window !== 'undefined') {
 
                     let pedidos = window.currentPedidos || [];
                     let filtrados = [];
+
+                    modoFiltroManual = true; // Activar modo filtro manual
 
                     if (val === 'laminacion') {
                         filtrados = pedidos.filter(p => (p.etapaActual || '').toLowerCase().startsWith('lamin'));
