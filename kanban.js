@@ -129,9 +129,30 @@ function enableKanbanDragToScroll(container) {
 
 // Renderiza el tablero Kanban
 export function renderKanban(pedidos, options = {}) {
-    // --- NUEVO: Guardar scroll antes de limpiar ---
+    // --- NUEVO: Guardar translateX de cada grupo antes de limpiar ---
     let mainBoard = document.getElementById('kanban-board');
     let complementaryBoard = document.getElementById('kanban-board-complementarias');
+
+    // Guardar el translateX de cada .kanban-columns-container por board
+    function getGroupTransforms(board) {
+        if (!board) return [];
+        return Array.from(board.querySelectorAll('.kanban-columns-container')).map(container => {
+            const style = window.getComputedStyle(container);
+            const matrix = style.transform || style.webkitTransform || style.mozTransform;
+            let translateX = 0;
+            if (matrix && matrix !== 'none') {
+                const match = matrix.match(/matrix.*\((.+)\)/);
+                if (match && match[1]) {
+                    const values = match[1].split(', ');
+                    translateX = parseFloat(values[4]) || 0;
+                }
+            }
+            return translateX;
+        });
+    }
+    const prevTransformsMain = getGroupTransforms(mainBoard);
+    const prevTransformsComplementary = getGroupTransforms(complementaryBoard);
+
     let prevScrollMain = mainBoard ? mainBoard.scrollLeft : 0;
     let prevScrollComplementary = complementaryBoard ? complementaryBoard.scrollLeft : 0;
 
@@ -205,8 +226,21 @@ export function renderKanban(pedidos, options = {}) {
     // Configurar el scroll para ambos tableros
     setupKanbanScrolling();
 
+    // --- NUEVO: Restaurar translateX de cada grupo después de renderizar ---
+    function restoreGroupTransforms(board, prevTransforms) {
+        if (!board || !prevTransforms) return;
+        const containers = board.querySelectorAll('.kanban-columns-container');
+        containers.forEach((container, idx) => {
+            const tx = prevTransforms[idx] || 0;
+            container.style.transform = `translateX(${tx}px)`;
+        });
+    }
+    requestAnimationFrame(() => {
+        restoreGroupTransforms(mainBoard, prevTransformsMain);
+        restoreGroupTransforms(complementaryBoard, prevTransformsComplementary);
+    });
+
     // --- NUEVO: Restaurar scroll después de renderizar ---
-    // Usar requestAnimationFrame para asegurar que el DOM ya está actualizado
     if (mainBoard) {
         requestAnimationFrame(() => { mainBoard.scrollLeft = prevScrollMain; });
     }
