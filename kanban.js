@@ -129,11 +129,17 @@ function enableKanbanDragToScroll(container) {
 
 // Renderiza el tablero Kanban
 export function renderKanban(pedidos, options = {}) {
+    // --- NUEVO: Guardar scroll antes de limpiar ---
+    let mainBoard = document.getElementById('kanban-board');
+    let complementaryBoard = document.getElementById('kanban-board-complementarias');
+    let prevScrollMain = mainBoard ? mainBoard.scrollLeft : 0;
+    let prevScrollComplementary = complementaryBoard ? complementaryBoard.scrollLeft : 0;
+
     let kanbanBoard;
     if (options.only === 'complementarias') {
-        kanbanBoard = document.getElementById('kanban-board-complementarias');
+        kanbanBoard = complementaryBoard;
     } else {
-        kanbanBoard = document.getElementById('kanban-board');
+        kanbanBoard = mainBoard;
     }
     if (!kanbanBoard) {
         console.error("renderKanban: Elemento de Kanban no encontrado.");
@@ -198,6 +204,15 @@ export function renderKanban(pedidos, options = {}) {
 
     // Configurar el scroll para ambos tableros
     setupKanbanScrolling();
+
+    // --- NUEVO: Restaurar scroll después de renderizar ---
+    // Usar requestAnimationFrame para asegurar que el DOM ya está actualizado
+    if (mainBoard) {
+        requestAnimationFrame(() => { mainBoard.scrollLeft = prevScrollMain; });
+    }
+    if (complementaryBoard) {
+        requestAnimationFrame(() => { complementaryBoard.scrollLeft = prevScrollComplementary; });
+    }
 }
 
 function createKanbanGroup(groupTitle, etapasInGroup, allPedidos) {
