@@ -309,7 +309,19 @@ function createKanbanCard(pedido) {
     card.style.maxWidth = '100%';
     card.style.minWidth = '0';
 
-    const fechaDisplay = pedido.fecha ? ` (${pedido.fecha})` : '';
+    // Formatear la fecha para mostrar solo YYYY-MM-DD
+    let fechaDisplay = '';
+    if (pedido.fecha) {
+        let fechaStr = pedido.fecha;
+        // Si es un objeto Date, formatear a string
+        if (pedido.fecha instanceof Date) {
+            fechaStr = pedido.fecha.toISOString().slice(0, 10);
+        } else if (typeof pedido.fecha === 'string' && pedido.fecha.length >= 10) {
+            fechaStr = pedido.fecha.slice(0, 10);
+        }
+        fechaDisplay = ` (${fechaStr})`;
+    }
+
     let clienteBadge = '';
     if (pedido.cliente) {
         const color = stringToColor(pedido.cliente);
