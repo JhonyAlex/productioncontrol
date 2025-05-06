@@ -76,8 +76,15 @@ document.addEventListener('DOMContentLoaded', () => {
         // Actualiza lista si la pestaña lista está activa
         if (tabLista && tabLista.classList.contains('active')) {
             import('./listView.js').then(mod => {
-                // Usar los pedidos filtrados si existen, si no, usar todos los pedidos
-                const pedidosToRender = window.currentFilteredPedidos || pedidos;
+                // Si hay un filtro activo, filtra los pedidos actuales
+                let pedidosToRender = pedidos;
+                if (window.currentFilteredPedidos) {
+                    // Filtra los pedidos actuales usando los mismos criterios que el filtro anterior
+                    const idsFiltrados = new Set(window.currentFilteredPedidos.map(p => p.id));
+                    pedidosToRender = pedidos.filter(p => idsFiltrados.has(p.id));
+                    // Si el filtro está vacío o ya no hay coincidencias, muestra todos
+                    if (pedidosToRender.length === 0) pedidosToRender = pedidos;
+                }
                 mod.renderList(pedidosToRender);
                 
                 // Actualiza gráficos si están visibles

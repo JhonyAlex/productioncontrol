@@ -245,7 +245,8 @@ export function renderList(pedidos) {
             if (confirm(`¿Seguro que deseas eliminar el pedido "${pedido.secuenciaPedido || pedido.numeroPedido || pedidoId}"? Esta acción no se puede deshacer.`)) {
                 try {
                     await deletePedidoById(window.db, pedidoId);
-                    // La UI se actualizará automáticamente por el listener de Firestore
+                    window.currentFilteredPedidos = null;
+                    // No es necesario actualizar la UI manualmente.
                 } catch (err) {
                     alert('Error al eliminar el pedido.');
                 }
