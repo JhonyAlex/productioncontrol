@@ -1,5 +1,5 @@
 import { etapasImpresion, etapasComplementarias } from './firestore.js';
-import { updatePedido } from './firestore.js';
+import { updatePedido, deletePedido } from './firestore.js';
 
 let currentSort = { key: null, asc: true };
 let currentFilters = {};
@@ -143,8 +143,13 @@ export function renderList(pedidos) {
                     </td>
                     <td>${pedido.fecha ? pedido.fecha.split(' ')[0].split('T')[0] : '-'}</td>
                     <td>
-                        <button class="btn btn-sm btn-outline-primary" onclick="openPedidoModal('${pedido.id}')">
-                            <i class="bi bi-pencil-square"></i> Editar
+                        <button class="btn btn-sm btn-outline-primary me-1" onclick="openPedidoModal('${pedido.id}')"
+                            title="Editar">
+                            <i class="bi bi-pencil-square"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger btn-eliminar-pedido" 
+                            data-pedido-id="${pedido.id}" title="Eliminar">
+                            <i class="bi bi-trash"></i>
                         </button>
                     </td>
                 </tr>
@@ -230,6 +235,23 @@ export function renderList(pedidos) {
                 // Si no cambió, vuelve a mostrar el texto
                 span.textContent = select.value;
             });
+        });
+    });
+
+    // --- NUEVO: Listener para eliminar pedido ---
+    listView.querySelectorAll('.btn-eliminar-pedido').forEach(btn => {
+        btn.addEventListener('click', async function (e) {
+            const pedidoId = this.dataset.pedidoId;
+            const pedido = (window.currentPedidos || []).find(p => p.id === pedidoId);
+            if (!pedido) return;
+            if (confirm(`¿Seguro que deseas eliminar el pedido "${pedido.secuenciaPedido || pedido.numeroPedido || pedidoId}"? Esta acción no se puede deshacer.`)) {
+                try {
+                    await deletePedido(window.db, pedidoId);
+                    // La UI se actualizará automáticamente por el listener de Firestore
+                } catch (err) {
+                    alert('Error al eliminar el pedido.');
+                }
+            }
         });
     });
 
