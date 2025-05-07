@@ -129,11 +129,10 @@ function enableKanbanDragToScroll(container) {
 
 // Renderiza el tablero Kanban
 export function renderKanban(pedidos, options = {}) {
-    // --- NUEVO: Guardar translateX de cada grupo antes de limpiar ---
+    // --- Guardar translateX de cada grupo antes de limpiar ---
     let mainBoard = document.getElementById('kanban-board');
     let complementaryBoard = document.getElementById('kanban-board-complementarias');
 
-    // Guardar el translateX de cada .kanban-columns-container por board
     function getGroupTransforms(board) {
         if (!board) return [];
         return Array.from(board.querySelectorAll('.kanban-columns-container')).map(container => {
@@ -226,13 +225,18 @@ export function renderKanban(pedidos, options = {}) {
     // Configurar el scroll para ambos tableros
     setupKanbanScrolling();
 
-    // --- NUEVO: Restaurar translateX de cada grupo después de renderizar ---
+    // --- Restaurar translateX y sincronizar prevTranslate ---
     function restoreGroupTransforms(board, prevTransforms) {
         if (!board || !prevTransforms) return;
         const containers = board.querySelectorAll('.kanban-columns-container');
         containers.forEach((container, idx) => {
             const tx = prevTransforms[idx] || 0;
             container.style.transform = `translateX(${tx}px)`;
+            // Sincronizar variable interna prevTranslate si existe (usada por implementDirectScroll)
+            if (container._scrollState) {
+                container._scrollState.prevTranslate = tx;
+                container._scrollState.currentTranslate = tx;
+            }
         });
     }
     requestAnimationFrame(() => {
@@ -712,6 +716,10 @@ function implementDirectScroll(board, container) {
         // Aplicar transformación con velocidad más suave
         container.style.transform = `translateX(${currentTranslate}px)`;
         
+        // Actualizar el estado expuesto
+        container._scrollState.currentTranslate = currentTranslate;
+        container._scrollState.prevTranslate = prevTranslate;
+
         // Sincronizar con scroll nativo (para coordinar ambos mecanismos)
         if (board.scrollLeft !== -currentTranslate) {
             const temp = board.onscroll;
@@ -721,6 +729,9 @@ function implementDirectScroll(board, container) {
         }
     };
     
+    // Guardar el estado en el container para restauración externa
+    container._scrollState = { currentTranslate, prevTranslate };
+
     // Eventos para el mouse con detección mejorada de elementos interactivos
     const handleMouseDown = (e) => {
         // Lista de elementos interactivos a ignorar
