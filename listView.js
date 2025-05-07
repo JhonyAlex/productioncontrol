@@ -82,6 +82,7 @@ export function renderList(pedidos) {
     }
 
     const columns = [
+        // Asegúrate de que estos nombres coincidan con los requeridos por exportToPDF()
         { key: 'secuenciaPedido', label: 'Nº Secuencia' },
         { key: 'desarrTexto', label: 'Desarr.' },
         { key: 'cliente', label: 'Cliente' },
@@ -103,8 +104,8 @@ export function renderList(pedidos) {
                 <tr>
                     ${columns.map(col => `
                         <th style="cursor:pointer;" data-key="${col.key}">
-                            ${col.label}
-                            ${currentSort.key === col.key ? (currentSort.asc ? '▲' : '▼') : ''}
+                            <span>${col.label}</span>
+                            <span>${currentSort.key === col.key ? (currentSort.asc ? '▲' : '▼') : ''}</span>
                         </th>
                     `).join('')}
                 </tr>
@@ -256,6 +257,7 @@ export function renderList(pedidos) {
 
     // Guardar la referencia a los pedidos filtrados para las exportaciones
     window.currentFilteredPedidos = filteredPedidos;
+    // Si exportToPDF() espera window.currentFilteredPedidos, asegúrate de que esté actualizado aquí
 
     // --- NUEVO: Actualizar gráficos si estamos en vista lista ---
     if (typeof window.renderGraficosReportes === 'function' && document.getElementById('reportes-graficos')?.style.display !== 'none') {
