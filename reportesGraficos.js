@@ -405,7 +405,7 @@ function exportarListaFiltradaPDF() {
         // Deben coincidir exactamente con los encabezados de la tabla generada en listView.js
         const columnasExportar = [
             "Desarr.",
-            "Cliente",         // <--- debe ser "Cliente" (sin "A") según listView.js
+            "Cliente ▲", // <-- Cambia aquí: debe coincidir exactamente con el encabezado visible en la tabla (incluyendo ▲ si está ordenado)
             "Nº Pedido",
             "Metros",
             "SUP",
@@ -429,8 +429,14 @@ function exportarListaFiltradaPDF() {
         // Obtén los encabezados actuales de la tabla web
         const encabezados = Array.from(tabla.rows[0].cells).map(cell => cell.innerText.trim());
 
+        // --- CORRECCIÓN: Normaliza los encabezados para quitar flechas de ordenamiento (▲/▼) ---
+        function limpiarOrdenamiento(texto) {
+            return texto.replace(/[▲▼]/g, '').trim();
+        }
+        const encabezadosLimpios = encabezados.map(limpiarOrdenamiento);
+
         // Mapea el índice de cada columna a exportar según el encabezado de la tabla web (normalizado)
-        const encabezadosNorm = encabezados.map(normalizarTexto);
+        const encabezadosNorm = encabezadosLimpios.map(normalizarTexto);
         const columnasExportarNorm = columnasExportar.map(normalizarTexto);
         const indicesExportar = columnasExportarNorm.map(nombreNorm =>
             encabezadosNorm.findIndex(hNorm => hNorm === nombreNorm)
