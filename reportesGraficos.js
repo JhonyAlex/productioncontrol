@@ -55,6 +55,16 @@ function formatNumber(value) {
     return value;
 }
 
+// --- COPIA de etapaToColor desde listView.js ---
+function etapaToColor(etapa) {
+    let hash = 0;
+    for (let i = 0; i < etapa.length; i++) {
+        hash = etapa.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const h = Math.abs(hash) % 360;
+    return `hsl(${h}, 40%, 85%)`;
+}
+
 // --- NUEVO: Renderiza tabla HTML para cada gráfico ---
 function renderTable(containerId, headers, rows) {
     const container = document.getElementById(containerId);
@@ -435,12 +445,52 @@ function exportarListaFiltradaPDF() {
         // --- FIN ORDEN Y SELECCIÓN DE COLUMNAS ---
 
         if (doc.autoTable) {
+            // Busca el índice de la columna "Etapa Actual"
+            const idxEtapa = columnasExportar.findIndex(n => n.toLowerCase().includes('etapa'));
             doc.autoTable({
                 startY: y,
                 head: [rows[0]],
                 body: rows.slice(1),
                 styles: { fontSize: 9 },
-                margin: { left: 10, right: 10 }
+                margin: { left: 10, right: 10 },
+                didParseCell: function (data) {
+                    if (data.section === 'body' && idxEtapa !== -1) {
+                        const etapa = data.row.raw[idxEtapa] || '';
+                        // Convierte HSL a RGB para jsPDF autoTable
+                        const hsl = etapaToColor(etapa);
+                        // hsl(210, 40%, 85%) -> [h,s,l]
+                        const match = hsl.match(/hsl\((\d+),\s*(\d+)%?,\s*(\d+)%?\)/);
+                        if (match) {
+                            const h = parseInt(match[1], 10);
+                            const s = parseInt(match[2], 10) / 100;
+                            const l = parseInt(match[3], 10) / 100;
+                            // Conversión HSL a RGB
+                            function hslToRgb(h, s, l) {
+                                let r, g, b;
+                                if (s === 0) {
+                                    r = g = b = l;
+                                } else {
+                                    const hue2rgb = function(p, q, t) {
+                                        if (t < 0) t += 1;
+                                        if (t > 1) t -= 1;
+                                        if (t < 1/6) return p + (q - p) * 6 * t;
+                                        if (t < 1/2) return q;
+                                        if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+                                        return p;
+                                    };
+                                    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                                    const p = 2 * l - q;
+                                    r = hue2rgb(p, q, h / 360 + 1/3);
+                                    g = hue2rgb(p, q, h / 360);
+                                    b = hue2rgb(p, q, h / 360 - 1/3);
+                                }
+                                return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+                            }
+                            const rgb = hslToRgb(h, s, l);
+                            data.cell.styles.fillColor = rgb;
+                        }
+                    }
+                }
             });
         } else {
             alert('jsPDF autoTable plugin no está cargado.');
