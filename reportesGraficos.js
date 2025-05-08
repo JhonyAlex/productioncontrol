@@ -416,17 +416,28 @@ function exportarListaFiltradaPDF() {
             "Fecha"
         ];
 
+        // Función para normalizar texto (elimina tildes, minúsculas, quita espacios)
+        function normalizarTexto(txt) {
+            return (txt || "")
+                .toLowerCase()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .replace(/\s+/g, "");
+        }
+
         // Obtén los encabezados actuales de la tabla web
         const encabezados = Array.from(tabla.rows[0].cells).map(cell => cell.innerText.trim());
 
-        // Mapea el índice de cada columna a exportar según el encabezado de la tabla web
-        const indicesExportar = columnasExportar.map(nombre =>
-            encabezados.findIndex(h => h.toLowerCase() === nombre.toLowerCase())
+        // Mapea el índice de cada columna a exportar según el encabezado de la tabla web (normalizado)
+        const encabezadosNorm = encabezados.map(normalizarTexto);
+        const columnasExportarNorm = columnasExportar.map(normalizarTexto);
+        const indicesExportar = columnasExportarNorm.map(nombreNorm =>
+            encabezadosNorm.findIndex(hNorm => hNorm === nombreNorm)
         );
 
         // Si alguna columna no se encuentra, muestra advertencia
         if (indicesExportar.some(idx => idx === -1)) {
-            alert('Alguna columna requerida no se encontró en la tabla web.');
+            alert('Alguna columna requerida no se encontró en la tabla web.\n\nColumnas requeridas:\n' + columnasExportar.join(', ') + '\n\nEncabezados encontrados:\n' + encabezados.join(', '));
             return;
         }
 
@@ -436,7 +447,7 @@ function exportarListaFiltradaPDF() {
             // Solo toma las columnas en el orden definido
             const fila = indicesExportar.map(idx => cells[idx]);
             // Formatea la columna "Fecha" para mostrar solo la fecha (sin hora)
-            const idxFecha = columnasExportar.findIndex(n => n.toLowerCase() === 'fecha');
+            const idxFecha = columnasExportarNorm.findIndex(n => n === normalizarTexto('Fecha'));
             if (idxFecha !== -1 && fila[idxFecha]) {
                 fila[idxFecha] = fila[idxFecha].split(' ')[0].split('T')[0];
             }
@@ -446,7 +457,7 @@ function exportarListaFiltradaPDF() {
 
         if (doc.autoTable) {
             // Busca el índice de la columna "Etapa Actual"
-            const idxEtapa = columnasExportar.findIndex(n => n.toLowerCase().includes('etapa'));
+            const idxEtapa = columnasExportarNorm.findIndex(n => n.includes(normalizarTexto('Etapa Actual')));
             doc.autoTable({
                 startY: y,
                 head: [rows[0]],
