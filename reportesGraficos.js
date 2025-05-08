@@ -402,9 +402,10 @@ function exportarListaFiltradaPDF() {
 
         // --- ORDEN Y SELECCIÓN DE COLUMNAS PARA EXPORTAR ---
         // Define el orden y los nombres de las columnas a exportar (sin Nº Secuencia)
+        // Deben coincidir exactamente con los encabezados de la tabla generada en listView.js
         const columnasExportar = [
             "Desarr.",
-            "Cliente",
+            "Cliente",         // <--- debe ser "Cliente" (sin "A") según listView.js
             "Nº Pedido",
             "Metros",
             "SUP",
