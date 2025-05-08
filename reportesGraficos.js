@@ -405,7 +405,7 @@ function exportarListaFiltradaPDF() {
         // Deben coincidir exactamente con los encabezados de la tabla generada en listView.js
         const columnasExportar = [
             "Desarr.",
-            "Cliente ▲", // <-- Cambia aquí: debe coincidir exactamente con el encabezado visible en la tabla (incluyendo ▲ si está ordenado)
+            "Cliente", // Usa el nombre base, sin flechas
             "Nº Pedido",
             "Metros",
             "SUP",
@@ -417,7 +417,14 @@ function exportarListaFiltradaPDF() {
             "Fecha"
         ];
 
-        // Función para normalizar texto (elimina tildes, minúsculas, quita espacios)
+        // Limpia flechas de ordenamiento y espacios extra de los encabezados
+        function limpiarOrdenamiento(texto) {
+            return texto.replace(/[▲▼]/g, '').trim();
+        }
+        const encabezados = Array.from(tabla.rows[0].cells).map(cell => cell.innerText.trim());
+        const encabezadosLimpios = encabezados.map(limpiarOrdenamiento);
+
+        // Normaliza para comparación robusta
         function normalizarTexto(txt) {
             return (txt || "")
                 .toLowerCase()
@@ -426,16 +433,6 @@ function exportarListaFiltradaPDF() {
                 .replace(/\s+/g, "");
         }
 
-        // Obtén los encabezados actuales de la tabla web
-        const encabezados = Array.from(tabla.rows[0].cells).map(cell => cell.innerText.trim());
-
-        // --- CORRECCIÓN: Normaliza los encabezados para quitar flechas de ordenamiento (▲/▼) ---
-        function limpiarOrdenamiento(texto) {
-            return texto.replace(/[▲▼]/g, '').trim();
-        }
-        const encabezadosLimpios = encabezados.map(limpiarOrdenamiento);
-
-        // Mapea el índice de cada columna a exportar según el encabezado de la tabla web (normalizado)
         const encabezadosNorm = encabezadosLimpios.map(normalizarTexto);
         const columnasExportarNorm = columnasExportar.map(normalizarTexto);
         const indicesExportar = columnasExportarNorm.map(nombreNorm =>
