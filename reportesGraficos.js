@@ -462,6 +462,8 @@ function exportarListaFiltradaPDF() {
         if (doc.autoTable) {
             // Busca el índice de la columna "Etapa Actual"
             const idxEtapa = columnasExportarNorm.findIndex(n => n.includes(normalizarTexto('Etapa Actual')));
+            // --- NUEVO: Busca el índice de la columna "Cliente" ---
+            const idxCliente = columnasExportarNorm.findIndex(n => n === normalizarTexto('Cliente'));
             doc.autoTable({
                 startY: y,
                 head: [rows[0]],
@@ -469,18 +471,50 @@ function exportarListaFiltradaPDF() {
                 styles: { fontSize: 9 },
                 margin: { left: 10, right: 10 },
                 didParseCell: function (data) {
-                    if (data.section === 'body' && idxEtapa !== -1) {
+                    // --- Color para columna Cliente ---
+                    if (data.section === 'body' && idxCliente !== -1 && data.column.index === idxCliente) {
+                        const cliente = data.row.raw[idxCliente] || '';
+                        // Usa la misma función stringToColor que en listView.js
+                        function stringToColor(str, s = 60, l = 80) {
+                            let hash = 0;
+                            for (let i = 0; i < str.length; i++) {
+                                hash = str.charCodeAt(i) + ((hash << 5) - hash);
+                            }
+                            const h = Math.abs(hash) % 360;
+                            return [h, s, l];
+                        }
+                        // Convierte HSL a RGB
+                        function hslToRgb(h, s, l) {
+                            s /= 100; l /= 100;
+                            let c = (1 - Math.abs(2 * l - 1)) * s;
+                            let x = c * (1 - Math.abs((h / 60) % 2 - 1));
+                            let m = l - c/2;
+                            let r=0, g=0, b=0;
+                            if (h < 60) { r = c; g = x; }
+                            else if (h < 120) { r = x; g = c; }
+                            else if (h < 180) { g = c; b = x; }
+                            else if (h < 240) { g = x; b = c; }
+                            else if (h < 300) { r = x; b = c; }
+                            else { r = c; b = x; }
+                            return [
+                                Math.round((r + m) * 255),
+                                Math.round((g + m) * 255),
+                                Math.round((b + m) * 255)
+                            ];
+                        }
+                        const [h, s, l] = stringToColor(cliente, 60, 80);
+                        data.cell.styles.fillColor = hslToRgb(h, s, l);
+                    }
+                    // --- Color para columna Etapa Actual ---
+                    if (data.section === 'body' && idxEtapa !== -1 && data.column.index === idxEtapa) {
                         const etapa = data.row.raw[idxEtapa] || '';
-                        // Convierte HSL a RGB para jsPDF autoTable
                         const hsl = etapaToColor(etapa);
-                        // hsl(210, 40%, 85%) -> [h,s,l]
                         const match = hsl.match(/hsl\((\d+),\s*(\d+)%?,\s*(\d+)%?\)/);
                         if (match) {
                             const h = parseInt(match[1], 10);
                             const s = parseInt(match[2], 10) / 100;
                             const l = parseInt(match[3], 10) / 100;
-                            // Conversión HSL a RGB
-                            function hslToRgb(h, s, l) {
+                            function hslToRgb2(h, s, l) {
                                 let r, g, b;
                                 if (s === 0) {
                                     r = g = b = l;
@@ -501,8 +535,7 @@ function exportarListaFiltradaPDF() {
                                 }
                                 return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
                             }
-                            const rgb = hslToRgb(h, s, l);
-                            data.cell.styles.fillColor = rgb;
+                            data.cell.styles.fillColor = hslToRgb2(h, s, l);
                         }
                     }
                 }
