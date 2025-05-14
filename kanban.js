@@ -395,7 +395,7 @@ function createKanbanGroup(groupTitle, etapasInGroup, allPedidos) {
     
     // MODIFICADO: Cálculo de ancho inicial más preciso, se refinará en setupGroupContainer
     const columnWidth = 300; // ancho fijo por columna
-    const columnContentWidth = columnWidth - 23; 
+    const columnContentWidth = columnWidth - 19; 
     let totalWidth = 0;
     
     // Calculamos el ancho total considerando el gap entre columnas
@@ -797,7 +797,7 @@ function setupGroupContainer(group) {
     let totalWidth = 0;
     
     columns.forEach((column, index) => {
-        const width = columnWidth - 25; // 277px por columna (300 - 23)
+        const width = columnWidth - 19; // 277px por columna (300 - 23)
         column.style.flex = `0 0 ${width}px`;
         column.style.width = `${width}px`;
         column.style.minWidth = `${width}px`;
