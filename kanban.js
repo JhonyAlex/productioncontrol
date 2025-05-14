@@ -8,7 +8,7 @@ let kanbanSortKey = 'secuenciaPedido'; // 'secuenciaPedido' o 'cliente'
 let kanbanSortAsc = true;
 
 // NUEVO: Límite máximo absoluto para desplazamiento
-const GLOBAL_MAX_TRANSLATE = -2150.5;
+const GLOBAL_MAX_TRANSLATE = -2180.5;
 
 // Aplicar corrección global cuando la ventana cargue
 window.addEventListener('DOMContentLoaded', () => {
@@ -854,7 +854,8 @@ function implementDirectScroll(board, container) {
     // currentTranslate y prevTranslate ahora se inicializan después de leer el estado actual del DOM
     let currentTranslate;
     let prevTranslate;
-    let animationSpeed = 0.8;
+    // AUMENTADO para mayor sensibilidad
+    let animationSpeed = 1.5; 
     let lastTouchTime = 0;
     
     const ABSOLUTE_MAX_TRANSLATE = GLOBAL_MAX_TRANSLATE;
@@ -912,8 +913,11 @@ function implementDirectScroll(board, container) {
         const diff = currentDOMPosition - startPos;
         let factor = animationSpeed;
         const absDiff = Math.abs(diff);
-        if (absDiff > 100) factor = 0.4;
-        else if (absDiff > 50) factor = 0.6;
+
+        // Ajuste para movimientos rápidos, menos agresivo para mayor sensibilidad
+        if (absDiff > 100) factor *= 0.8; // Antes era 0.4 (equivalente a 0.5 * vieja animationSpeed de 0.8)
+        else if (absDiff > 50) factor *= 0.9; // Antes era 0.6 (equivalente a 0.75 * vieja animationSpeed de 0.8)
+        
         const newTargetTranslate = prevTranslate + (diff * factor);
         updatePositionAndUpdateState(newTargetTranslate); // Esto actualiza currentTranslate
     };
@@ -946,8 +950,11 @@ function implementDirectScroll(board, container) {
         lastTouchTime = now;
         const currentDOMPosition = e.touches[0].pageX;
         const diff = currentDOMPosition - startPos;
-        let factor = animationSpeed;
-        if (elapsed < 16) factor *= 0.5;
+        let factor = animationSpeed; // animationSpeed ya está aumentada
+        
+        // Amortiguación para toques muy rápidos, ligeramente reducida para mayor sensibilidad
+        if (elapsed < 16) factor *= 0.7; // Antes era 0.5
+        
         const newTargetTranslate = prevTranslate + (diff * factor);
         updatePositionAndUpdateState(newTargetTranslate);
     };
