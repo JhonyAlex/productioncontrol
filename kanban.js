@@ -8,7 +8,7 @@ let kanbanSortKey = 'secuenciaPedido'; // 'secuenciaPedido' o 'cliente'
 let kanbanSortAsc = true;
 
 // NUEVO: Límite máximo absoluto para desplazamiento
-const GLOBAL_MAX_TRANSLATE = -2180.5;
+const GLOBAL_MAX_TRANSLATE = -2130.0;
 
 // Aplicar corrección global cuando la ventana cargue
 window.addEventListener('DOMContentLoaded', () => {
@@ -797,7 +797,7 @@ function setupGroupContainer(group) {
     let totalWidth = 0;
     
     columns.forEach((column, index) => {
-        const width = columnWidth - 23; 
+        const width = columnWidth - 25; // 277px por columna (300 - 23)
         column.style.flex = `0 0 ${width}px`;
         column.style.width = `${width}px`;
         column.style.minWidth = `${width}px`;
@@ -812,10 +812,6 @@ function setupGroupContainer(group) {
         }
     });
     
-    // ELIMINADO: Ajuste de totalWidth que podría conflictuar.
-    // El ancho del contenedor debe ser su ancho natural basado en las columnas.
-    // Los límites de scroll son manejados por setContainerPosition a través de translateX.
-
     columnsContainer.style.position = 'relative';
     columnsContainer.style.display = 'flex';
     columnsContainer.style.flexDirection = 'row';
@@ -823,13 +819,10 @@ function setupGroupContainer(group) {
     columnsContainer.style.gap = '10px';
     columnsContainer.style.width = `${totalWidth}px`;
     columnsContainer.style.minWidth = `${totalWidth}px`;
-    columnsContainer.style.maxWidth = `${totalWidth}px`; 
-    // La transformación inicial se establecerá mediante setContainerPosition en setupKanbanScrolling
-    // o implementDirectScroll, en lugar de 'translateX(0px)' directamente aquí.
-    // columnsContainer.style.transform = 'translateX(0px)'; // Eliminado para que lo maneje setContainerPosition
+    columnsContainer.style.maxWidth = '2860px'; 
     columnsContainer.style.transition = 'transform 0.1s ease-out';
     
-    console.log(`Board ${group.closest('[id]')?.id || 'unknown'}: exactWidth=${totalWidth}px, columns=${columns.length}`);
+    console.log(`Board ${group.closest('[id]')?.id || 'unknown'}: calculatedWidth=${totalWidth}px, maxWidthApplied=2860px, columns=${columns.length}`);
     
     if (board) { // Asegurar que 'board' es válido antes de pasarlo
         implementDirectScroll(board, columnsContainer);
