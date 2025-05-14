@@ -262,23 +262,34 @@ function createKanbanGroup(groupTitle, etapasInGroup, allPedidos) {
     const columnsContainer = document.createElement('div');
     columnsContainer.className = 'kanban-columns-container';
     
-    // Forzar ancho total basado en número de columnas
+    // MODIFICADO: Cálculo de ancho inicial más preciso, se refinará en setupGroupContainer
     const columnWidth = 300; // ancho fijo por columna
-    const totalWidth = Math.max(etapasInGroup.length * columnWidth, 1200);
+    const columnContentWidth = columnWidth - 20; // Restamos el padding que se aplicará después
+    let totalWidth = 0;
+    
+    // Calculamos el ancho total considerando el gap entre columnas
+    for (let i = 0; i < etapasInGroup.length; i++) {
+        totalWidth += columnContentWidth;
+        if (i < etapasInGroup.length - 1) {
+            totalWidth += 10; // gap entre columnas
+        }
+    }
+    
     columnsContainer.style.width = `${totalWidth}px`;
     columnsContainer.style.minWidth = `${totalWidth}px`;
     columnsContainer.style.display = 'flex';
     columnsContainer.style.flexDirection = 'row';
     columnsContainer.style.flexWrap = 'nowrap';
+    columnsContainer.style.gap = '10px'; // Usar gap para espaciado uniforme
 
     etapasInGroup.forEach(etapa => {
         const columnDiv = document.createElement('div');
         columnDiv.className = 'kanban-column';
         columnDiv.dataset.etapa = etapa;
         
-        // Forzar ancho fijo a cada columna
-        columnDiv.style.width = `${columnWidth - 20}px`;
-        columnDiv.style.minWidth = `${columnWidth - 20}px`;
+        // MODIFICADO: Usar el mismo valor para ancho que usamos en el cálculo del total
+        columnDiv.style.width = `${columnContentWidth}px`;
+        columnDiv.style.minWidth = `${columnContentWidth}px`;
         columnDiv.style.flexShrink = '0';
 
         // Filtrar pedidos para la etapa actual
@@ -564,6 +575,23 @@ export function setupKanbanScrolling() {
         const groups = board.querySelectorAll('.kanban-group');
         groups.forEach(group => {
             setupGroupContainer(group);
+            
+            // NUEVO: Centrar contenedor si es más pequeño que el board
+            const container = group.querySelector('.kanban-columns-container');
+            if (container) {
+                const boardWidth = board.clientWidth;
+                const containerWidth = container.scrollWidth;
+                
+                if (containerWidth < boardWidth) {
+                    // Calculamos el espacio libre y lo distribuimos a los lados
+                    const freeSpace = boardWidth - containerWidth;
+                    container.style.transform = `translateX(${freeSpace / 2}px)`;
+                    if (container._scrollState) {
+                        container._scrollState.currentTranslate = freeSpace / 2;
+                        container._scrollState.prevTranslate = freeSpace / 2;
+                    }
+                }
+            }
         });
     });
 }
@@ -706,8 +734,12 @@ function implementDirectScroll(board, container) {
         // Calcular límites de desplazamiento de forma precisa
         const minTranslate = Math.min(-(containerWidth - boardWidth), 0);
         
+        // MEJORADO: Si el contenedor es más pequeño que el board, centrar
+        if (containerWidth <= boardWidth) {
+            currentTranslate = (boardWidth - containerWidth) / 2;
+        }
         // Aplicar límites sin espacio extra al final
-        if (currentTranslate > 0) { 
+        else if (currentTranslate > 0) { 
             currentTranslate = 0;
         } else if (currentTranslate < minTranslate) { 
             currentTranslate = minTranslate;
@@ -822,6 +854,15 @@ function addScrollButtons(boardId, container) {
     
     const oldButtons = board.querySelectorAll('.scroll-button, .scroll-buttons-container');
     oldButtons.forEach(btn => btn.remove());
+    
+    // NUEVO: Verificar si realmente necesitamos botones de scroll
+    const containerWidth = container.scrollWidth;
+    const boardWidth = board.clientWidth;
+    
+    // Si el contenedor es más pequeño o igual que el board, no necesitamos botones
+    if (containerWidth <= boardWidth) {
+        return;
+    }
     
     const buttonContainer = document.createElement('div');
     buttonContainer.className = 'scroll-buttons-container';
