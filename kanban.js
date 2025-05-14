@@ -8,7 +8,7 @@ let kanbanSortKey = 'secuenciaPedido'; // 'secuenciaPedido' o 'cliente'
 let kanbanSortAsc = true;
 
 // NUEVO: Límite máximo absoluto para desplazamiento
-const GLOBAL_MAX_TRANSLATE = -2130.0;
+const GLOBAL_MAX_TRANSLATE = -2160.0;
 
 // Aplicar corrección global cuando la ventana cargue
 window.addEventListener('DOMContentLoaded', () => {
