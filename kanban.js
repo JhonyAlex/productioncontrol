@@ -7,6 +7,77 @@ import { updatePedido } from './firestore.js';
 let kanbanSortKey = 'secuenciaPedido'; // 'secuenciaPedido' o 'cliente'
 let kanbanSortAsc = true;
 
+// NUEVO: Límite máximo absoluto para desplazamiento
+const GLOBAL_MAX_TRANSLATE = -1120.5;
+
+// Aplicar corrección global cuando la ventana cargue
+window.addEventListener('DOMContentLoaded', () => {
+    // Aplicar límite a todos los contenedores existentes
+    setTimeout(() => {
+        fixAllContainerTranslates();
+        
+        // Establecer un observador para corregir cualquier posición inválida
+        setInterval(fixAllContainerTranslates, 1000);
+    }, 500); // Retrasar para asegurarse de que todo esté renderizado
+});
+
+// Monitorear cambios en CSS que podrían afectar la posición
+const observer = new MutationObserver((mutations) => {
+    mutations.forEach(mutation => {
+        if (mutation.type === 'attributes' && 
+            mutation.attributeName === 'style' && 
+            mutation.target.classList.contains('kanban-columns-container')) {
+            
+            const style = window.getComputedStyle(mutation.target);
+            const matrix = style.transform || style.webkitTransform;
+            if (matrix && matrix !== 'none') {
+                const match = matrix.match(/matrix.*\((.+)\)/);
+                if (match && match[1]) {
+                    const values = match[1].split(', ');
+                    const tx = parseFloat(values[4]) || 0;
+                    if (tx < GLOBAL_MAX_TRANSLATE) {
+                        console.log(`[Observer] Corrigiendo desplazamiento inválido: ${tx} → ${GLOBAL_MAX_TRANSLATE}`);
+                        mutation.target.style.transform = `translateX(${GLOBAL_MAX_TRANSLATE}px)`;
+                    }
+                }
+            }
+        }
+    });
+});
+
+// Comenzar a observar cuando se cargue la página
+window.addEventListener('load', () => {
+    document.querySelectorAll('.kanban-columns-container').forEach(container => {
+        observer.observe(container, { attributes: true });
+    });
+});
+
+// Función global para corregir todos los contenedores
+function fixAllContainerTranslates() {
+    document.querySelectorAll('.kanban-columns-container').forEach(container => {
+        const board = container.closest('#kanban-board, #kanban-board-complementarias');
+        if (board) {
+            const style = window.getComputedStyle(container);
+            const matrix = style.transform || style.webkitTransform;
+            if (matrix && matrix !== 'none') {
+                const match = matrix.match(/matrix.*\((.+)\)/);
+                if (match && match[1]) {
+                    const values = match[1].split(', ');
+                    const tx = parseFloat(values[4]) || 0;
+                    if (tx < GLOBAL_MAX_TRANSLATE) {
+                        console.log(`Corrigiendo contenedor con tx=${tx} a ${GLOBAL_MAX_TRANSLATE}`);
+                        container.style.transform = `translateX(${GLOBAL_MAX_TRANSLATE}px)`;
+                        if (container._scrollState) {
+                            container._scrollState.currentTranslate = GLOBAL_MAX_TRANSLATE;
+                            container._scrollState.prevTranslate = GLOBAL_MAX_TRANSLATE;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
 // MOVER ESTA FUNCIÓN ANTES DE setupKanbanScrolling
 function enableKanbanDragToScroll(container) {
     if (!container) {
@@ -133,6 +204,35 @@ export function renderKanban(pedidos, options = {}) {
     let mainBoard = document.getElementById('kanban-board');
     let complementaryBoard = document.getElementById('kanban-board-complementarias');
 
+    // NUEVO: Ajustar cualquier transformación existente que esté fuera de límites
+    function fixExcessiveTranslates() {
+        const containers = document.querySelectorAll('.kanban-columns-container');
+        containers.forEach(container => {
+            const board = container.closest('.kanban-board, #kanban-board, #kanban-board-complementarias');
+            if (board) {
+                const style = window.getComputedStyle(container);
+                const matrix = style.transform || style.webkitTransform;
+                if (matrix && matrix !== 'none') {
+                    const match = matrix.match(/matrix.*\((.+)\)/);
+                    if (match && match[1]) {
+                        const values = match[1].split(', ');
+                        const tx = parseFloat(values[4]) || 0;
+                        if (tx < -1120.5) {
+                            container.style.transform = `translateX(-1120.5px)`;
+                            if (container._scrollState) {
+                                container._scrollState.currentTranslate = -1120.5;
+                                container._scrollState.prevTranslate = -1120.5;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // NUEVO: Ejecutar primero para corregir cualquier posición existente
+    fixExcessiveTranslates();
+
     function getGroupTransforms(board) {
         if (!board) return [];
         return Array.from(board.querySelectorAll('.kanban-columns-container')).map(container => {
@@ -144,6 +244,10 @@ export function renderKanban(pedidos, options = {}) {
                 if (match && match[1]) {
                     const values = match[1].split(', ');
                     translateX = parseFloat(values[4]) || 0;
+                    // NUEVO: No permitir valores más bajos que el límite absoluto
+                    if (translateX < -1120.5) {
+                        translateX = -1120.5;
+                    }
                 }
             }
             return translateX;
@@ -224,8 +328,11 @@ export function renderKanban(pedidos, options = {}) {
 
     // Configurar el scroll para ambos tableros
     setupKanbanScrolling();
+    
+    // Forzar corrección inmediata después de renderizar
+    fixAllContainerTranslates();
 
-    // --- MEJORADO: Función para validar y ajustar límites al restaurar translateX ---
+    // MEJORADO: Función para validar y ajustar límites al restaurar translateX
     function validateAndRestoreTranslates(board, prevTransforms) {
         if (!board || !prevTransforms || !prevTransforms.length) return;
         
@@ -243,6 +350,9 @@ export function renderKanban(pedidos, options = {}) {
     requestAnimationFrame(() => {
         validateAndRestoreTranslates(mainBoard, prevTransformsMain);
         validateAndRestoreTranslates(complementaryBoard, prevTransformsComplementary);
+        
+        // Forzar nuevamente después de la animación
+        setTimeout(fixAllContainerTranslates, 100);
     });
 
     // Restaurar scroll nativo - solo necesario para compatibilidad
@@ -252,6 +362,13 @@ export function renderKanban(pedidos, options = {}) {
     if (complementaryBoard) {
         requestAnimationFrame(() => { complementaryBoard.scrollLeft = prevScrollComplementary; });
     }
+    
+    // Observar nuevos contenedores
+    setTimeout(() => {
+        document.querySelectorAll('.kanban-columns-container').forEach(container => {
+            observer.observe(container, { attributes: true });
+        });
+    }, 200);
 }
 
 function createKanbanGroup(groupTitle, etapasInGroup, allPedidos) {
@@ -634,7 +751,7 @@ function setupBoardStyles(board) {
     board.style.overflow = 'hidden';
 }
 
-// Configurar el grupo y sus columnas
+// Función para configurar el grupo y sus columnas
 function setupGroupContainer(group) {
     group.style.width = '100%';
     group.style.position = 'relative';
@@ -642,6 +759,23 @@ function setupGroupContainer(group) {
     
     const columnsContainer = group.querySelector('.kanban-columns-container');
     if (!columnsContainer) return;
+    
+    // NUEVO: Corregir cualquier desplazamiento excesivo existente
+    const board = group.closest('#kanban-board, #kanban-board-complementarias');
+    if (board) {
+        const style = window.getComputedStyle(columnsContainer);
+        const matrix = style.transform || style.webkitTransform;
+        if (matrix && matrix !== 'none') {
+            const match = matrix.match(/matrix.*\((.+)\)/);
+            if (match && match[1]) {
+                const values = match[1].split(', ');
+                const tx = parseFloat(values[4]) || 0;
+                if (tx < -1120.5) {
+                    columnsContainer.style.transform = `translateX(-1120.5px)`;
+                }
+            }
+        }
+    }
     
     // Calcular el ancho basado en columnas
     const columns = columnsContainer.querySelectorAll('.kanban-column');
@@ -674,6 +808,15 @@ function setupGroupContainer(group) {
         }
     });
     
+    // NUEVO: Comprobar si el ancho total calculado excede el valor que correspondería a -1120.5px
+    if (board) {
+        const boardWidth = board.clientWidth;
+        // Si desplazando completamente sería inferior a -1120.5px, ajustamos el ancho total
+        if (totalWidth - boardWidth > 1120.5) {
+            totalWidth = boardWidth + 1120.5;
+        }
+    }
+    
     // Estilos para el contenedor de columnas - optimizado
     columnsContainer.style.position = 'relative';
     columnsContainer.style.display = 'flex';
@@ -690,7 +833,7 @@ function setupGroupContainer(group) {
     console.log(`Board ${group.closest('[id]')?.id || 'unknown'}: exactWidth=${totalWidth}px, columns=${columns.length}`);
     
     // Implementar el scroll con transformación
-    implementDirectScroll(group, columnsContainer);
+    implementDirectScroll(board, columnsContainer);
     
     // Añadir controles de navegación
     addScrollButtons(group.closest('[id]'), columnsContainer);
@@ -702,7 +845,7 @@ function setupGroupContainer(group) {
     }
 }
 
-// Función optimizada para el scroll - AJUSTADA
+// Sobrescribir completo el método para manejar eventos wheel
 function implementDirectScroll(board, container) {
     if (!board || !container) return;
     
@@ -713,18 +856,44 @@ function implementDirectScroll(board, container) {
     let animationSpeed = 0.8; // REDUCIDO para mayor control
     let lastTouchTime = 0;
     
+    // Usar el límite global para consistencia
+    const ABSOLUTE_MAX_TRANSLATE = GLOBAL_MAX_TRANSLATE;
+    
+    // NUEVO: Verificación inicial para corregir posiciones existentes
+    const style = window.getComputedStyle(container);
+    const matrix = style.transform || style.webkitTransform;
+    if (matrix && matrix !== 'none') {
+        const match = matrix.match(/matrix.*\((.+)\)/);
+        if (match && match[1]) {
+            const values = match[1].split(', ');
+            let tx = parseFloat(values[4]) || 0;
+            if (tx < ABSOLUTE_MAX_TRANSLATE) {
+                container.style.transform = `translateX(${ABSOLUTE_MAX_TRANSLATE}px)`;
+                currentTranslate = ABSOLUTE_MAX_TRANSLATE;
+                prevTranslate = ABSOLUTE_MAX_TRANSLATE;
+            } else {
+                currentTranslate = tx;
+                prevTranslate = tx;
+            }
+        }
+    }
+    
     const getPositionX = (event) => {
         return event.type.includes('mouse') ? event.pageX : event.touches[0].pageX;
     };
     
     // REEMPLAZADO por la función global
     const updatePosition = (newTranslate) => {
+        // NUEVO: Comprobación directa aquí también
+        if (newTranslate < ABSOLUTE_MAX_TRANSLATE) {
+            newTranslate = ABSOLUTE_MAX_TRANSLATE;
+        }
         currentTranslate = setContainerPosition(board, container, newTranslate);
         return currentTranslate;
     };
     
     // Inicializar estado
-    container._scrollState = { currentTranslate: 0, prevTranslate: 0 };
+    container._scrollState = { currentTranslate, prevTranslate };
  
     // Eventos para el mouse con detección mejorada de elementos interactivos
     const handleMouseDown = (e) => {
@@ -1036,8 +1205,17 @@ function setContainerPosition(board, container, newTranslate) {
     const boardWidth = board.clientWidth;
     const containerWidth = container.scrollWidth;
     
+    // Usar límite global constante
+    const ABSOLUTE_MAX_TRANSLATE = GLOBAL_MAX_TRANSLATE;
+    
     // Calcular el límite estrictamente - no permitir espacio en blanco al final
-    const minTranslate = -(containerWidth - boardWidth);
+    let minTranslate = -(containerWidth - boardWidth);
+    
+    // NUEVO: Aplicar el límite absoluto - NUNCA permitir ir más allá de este valor
+    if (minTranslate < ABSOLUTE_MAX_TRANSLATE) {
+        minTranslate = ABSOLUTE_MAX_TRANSLATE;
+        console.log(`Límite ajustado a ${ABSOLUTE_MAX_TRANSLATE} (minTranslate calculado: ${-(containerWidth - boardWidth)})`);
+    }
     
     // Ajustar el valor dentro de los límites
     if (containerWidth <= boardWidth) {
@@ -1049,6 +1227,12 @@ function setContainerPosition(board, container, newTranslate) {
     } else if (newTranslate < minTranslate) {
         // No permitir desplazarse más allá del final
         newTranslate = minTranslate;
+    }
+    
+    // NUEVO: Verificación final de seguridad
+    if (newTranslate < ABSOLUTE_MAX_TRANSLATE) {
+        newTranslate = ABSOLUTE_MAX_TRANSLATE;
+        console.log(`Aplicado límite final: ${ABSOLUTE_MAX_TRANSLATE}`);
     }
     
     // Aplicar la transformación con límites
