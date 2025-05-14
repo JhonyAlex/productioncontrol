@@ -1166,23 +1166,31 @@ function setContainerPosition(board, container, newTranslate) {
     const containerWidth = container.scrollWidth;
 
     // Usar límite global constante
-    const ABSOLUTE_MAX_TRANSLATE = GLOBAL_MAX_TRANSLATE; // -1120.5px
+    const ABSOLUTE_MAX_TRANSLATE = GLOBAL_MAX_TRANSLATE; // Debería ser -2160.0px
 
     let clampedTranslate;
 
     if (containerWidth <= boardWidth) {
         // Contenido cabe o es más pequeño que el tablero: centrarlo
         clampedTranslate = (boardWidth - containerWidth) / 2;
+        // console.log(`[setContainerPosition] Centrando. Board: ${boardWidth}, Cont: ${containerWidth}, Translate: ${clampedTranslate}`);
     } else {
         // Contenido es más ancho, aplicar lógica de scroll
-
-        // Límite natural de scroll (el punto más negativo basado en el ancho del contenido)
         const naturalMinTranslate = -(containerWidth - boardWidth);
 
-        // Determinar el mínimo translateX permitido:
-        // Es el MÁS GRANDE (menos negativo) entre el límite natural y el límite global absoluto.
-        // Esto asegura que no nos desplacemos más allá del contenido, Y no más allá del límite global.
-        const effectiveMinTranslate = Math.max(naturalMinTranslate, ABSOLUTE_MAX_TRANSLATE);
+        // MODIFICADO: Asegurar que ABSOLUTE_MAX_TRANSLATE sea el límite más negativo si se alcanza.
+        // Si el scroll natural permitiría ir MÁS ALLÁ (más negativo) de ABSOLUTE_MAX_TRANSLATE,
+        // entonces el límite efectivo es ABSOLUTE_MAX_TRANSLATE.
+        // Si el scroll natural es MENOS NEGATIVO que ABSOLUTE_MAX_TRANSLATE (es decir, el contenido termina antes),
+        // entonces el límite es el naturalMinTranslate.
+        let effectiveMinTranslate;
+        if (naturalMinTranslate < ABSOLUTE_MAX_TRANSLATE) {
+            effectiveMinTranslate = ABSOLUTE_MAX_TRANSLATE;
+            // console.log(`[setContainerPosition] Límite forzado por GLOBAL_MAX_TRANSLATE. Natural: ${naturalMinTranslate}, Global: ${ABSOLUTE_MAX_TRANSLATE}`);
+        } else {
+            effectiveMinTranslate = naturalMinTranslate;
+            // console.log(`[setContainerPosition] Límite natural aplicado. Natural: ${naturalMinTranslate}, Global: ${ABSOLUTE_MAX_TRANSLATE}`);
+        }
 
         if (newTranslate > 0) {
             clampedTranslate = 0; // No desplazarse más allá del inicio
@@ -1191,37 +1199,28 @@ function setContainerPosition(board, container, newTranslate) {
         } else {
             clampedTranslate = newTranslate; // El valor está dentro del rango permitido
         }
+        // console.log(`[setContainerPosition] Scroll activo. NewT: ${newTranslate}, EffMin: ${effectiveMinTranslate}, Clamped: ${clampedTranslate}`);
     }
 
-    // Última verificación de seguridad: asegurarse de que NUNCA se exceda GLOBAL_MAX_TRANSLATE si el scroll está activo
-    // Esta condición es importante: solo aplicar si el contenido realmente excede el ancho del tablero.
-    if (containerWidth > boardWidth && clampedTranslate < GLOBAL_MAX_TRANSLATE) {
-        console.warn(`[setContainerPosition] CLAMP DE SEGURIDAD FINAL: ${clampedTranslate} forzado a ${GLOBAL_MAX_TRANSLATE}. BoardW: ${boardWidth}, ContW: ${containerWidth}`);
-        clampedTranslate = GLOBAL_MAX_TRANSLATE;
-    }
+    // NO es necesaria una verificación de seguridad final aquí si la lógica anterior es correcta,
+    // ya que effectiveMinTranslate ya considera ABSOLUTE_MAX_TRANSLATE.
+    // if (containerWidth > boardWidth && clampedTranslate < ABSOLUTE_MAX_TRANSLATE) { ... }
     
-    // Verificar si clampedTranslate es un número válido
     if (isNaN(clampedTranslate) || typeof clampedTranslate === 'undefined') {
         console.error(`[setContainerPosition] clampedTranslate inválido (${clampedTranslate}), usando 0 por defecto.`);
         clampedTranslate = 0;
     }
 
-    // Aplicar la transformación solo si el valor ha cambiado para evitar reflows innecesarios
     const currentTransform = container.style.transform;
     const newTransform = `translateX(${clampedTranslate}px)`;
 
     if (currentTransform !== newTransform) {
-        // console.log(`[setContainerPosition] Aplicando: ${newTransform}. Original: ${newTranslate}, BoardW: ${boardWidth}, ContW: ${containerWidth}, NatMin: ${-(containerWidth - boardWidth)}, EffMin: ${Math.max(-(containerWidth - boardWidth), ABSOLUTE_MAX_TRANSLATE)}`);
+        // console.log(`[setContainerPosition] Aplicando: ${newTransform}. NatMin: ${-(containerWidth - boardWidth)}, EffMin: ${effectiveMinTranslate_debug_val}, Global: ${ABSOLUTE_MAX_TRANSLATE}`);
         container.style.transform = newTransform;
     }
 
-    // Actualizar el estado interno
     if (!container._scrollState) container._scrollState = {};
     container._scrollState.currentTranslate = clampedTranslate;
-    // prevTranslate es manejado por implementDirectScroll después de que esta función retorna
-
-    // Sincronizar con scroll nativo si es necesario (puede ser opcional)
-    // if (board.scrollLeft !== -clampedTranslate) { ... }
 
     return clampedTranslate;
 }
