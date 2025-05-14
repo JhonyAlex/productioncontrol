@@ -225,26 +225,49 @@ export function renderKanban(pedidos, options = {}) {
     // Configurar el scroll para ambos tableros
     setupKanbanScrolling();
 
-    // --- Restaurar translateX y sincronizar prevTranslate ---
-    function restoreGroupTransforms(board, prevTransforms) {
-        if (!board || !prevTransforms) return;
+    // --- MEJORADO: Función para validar y ajustar límites al restaurar translateX ---
+    function validateAndRestoreTranslates(board, prevTransforms) {
+        if (!board || !prevTransforms || !prevTransforms.length) return;
+        
         const containers = board.querySelectorAll('.kanban-columns-container');
         containers.forEach((container, idx) => {
-            const tx = prevTransforms[idx] || 0;
+            if (idx >= prevTransforms.length) return;
+            
+            const boardWidth = board.clientWidth;
+            const containerWidth = container.scrollWidth;
+            
+            // Calcular límites estrictos
+            let tx = prevTransforms[idx] || 0;
+            
+            // Si el contenedor es más pequeño que el board, centrar
+            if (containerWidth <= boardWidth) {
+                tx = (boardWidth - containerWidth) / 2;
+            } 
+            // Si estamos fuera de los límites, corregir
+            else {
+                const minTranslate = Math.min(-(containerWidth - boardWidth), 0);
+                if (tx > 0) tx = 0;
+                if (tx < minTranslate) tx = minTranslate;
+            }
+            
+            // Aplicar transformación validada
             container.style.transform = `translateX(${tx}px)`;
-            // Sincronizar variable interna prevTranslate si existe (usada por implementDirectScroll)
+            
+            // Sincronizar con estado interno
             if (container._scrollState) {
                 container._scrollState.prevTranslate = tx;
                 container._scrollState.currentTranslate = tx;
             }
         });
     }
+
+    // Aplicar restauración validada
     requestAnimationFrame(() => {
-        restoreGroupTransforms(mainBoard, prevTransformsMain);
-        restoreGroupTransforms(complementaryBoard, prevTransformsComplementary);
+        validateAndRestoreTranslates(mainBoard, prevTransformsMain);
+        validateAndRestoreTranslates(complementaryBoard, prevTransformsComplementary);
     });
 
-    // --- NUEVO: Restaurar scroll después de renderizar ---
+    // Restaurar scroll nativo - solo necesario para compatibilidad
     if (mainBoard) {
         requestAnimationFrame(() => { mainBoard.scrollLeft = prevScrollMain; });
     }
@@ -465,7 +488,6 @@ export function addDragAndDropListeners() {
         column.removeEventListener('dragover', dragOver);
         column.removeEventListener('dragenter', dragEnter);
         column.removeEventListener('dragleave', dragLeave);
-        column.removeEventListener('drop', drop);
         column.addEventListener('dragover', dragOver);
         column.addEventListener('dragenter', dragEnter);
         column.addEventListener('dragleave', dragLeave);
@@ -721,6 +743,7 @@ function implementDirectScroll(board, container) {
     let currentTranslate = 0;
     let prevTranslate = 0;
     let animationSpeed = 1.0; // AJUSTADO: Reducir la velocidad para un control más preciso
+    let lastTouchTime = 0;
     
     const getPositionX = (event) => {
         return event.type.includes('mouse') ? event.pageX : event.touches[0].pageX;
@@ -731,7 +754,8 @@ function implementDirectScroll(board, container) {
         const boardWidth = board.clientWidth;
         const containerWidth = container.scrollWidth;
         
-        // Calcular límites de desplazamiento de forma precisa
+        // MEJORADO: Cálculo más preciso del límite de desplazamiento
+        // Aseguramos que nunca se pase del final de las columnas
         const minTranslate = Math.min(-(containerWidth - boardWidth), 0);
         
         // MEJORADO: Si el contenedor es más pequeño que el board, centrar
@@ -742,6 +766,7 @@ function implementDirectScroll(board, container) {
         else if (currentTranslate > 0) { 
             currentTranslate = 0;
         } else if (currentTranslate < minTranslate) { 
+            // Asegurarnos que se detiene exactamente en el límite
             currentTranslate = minTranslate;
         }
         
@@ -749,6 +774,7 @@ function implementDirectScroll(board, container) {
         container.style.transform = `translateX(${currentTranslate}px)`;
         
         // Actualizar el estado expuesto
+        container._scrollState = container._scrollState || {};
         container._scrollState.currentTranslate = currentTranslate;
         container._scrollState.prevTranslate = prevTranslate;
 
@@ -763,6 +789,23 @@ function implementDirectScroll(board, container) {
     
     // Guardar el estado en el container para restauración externa
     container._scrollState = { currentTranslate, prevTranslate };
+ 
+    // MEJORADO: Función para verificar límites y aplicar fuerza de retorno
+    const applyElasticLimit = () => {
+        const boardWidth = board.clientWidth;
+        const containerWidth = container.scrollWidth;
+        const minTranslate = Math.min(-(containerWidth - boardWidth), 0);
+        
+        if (currentTranslate > 0) {
+            // Si se pasó del principio, vuelve suavemente
+            currentTranslate = 0;
+            setContainerPosition();
+        } else if (currentTranslate < minTranslate) {
+            // Si se pasó del final, vuelve suavemente
+            currentTranslate = minTranslate;
+            setContainerPosition();
+        }
+    };
 
     // Eventos para el mouse con detección mejorada de elementos interactivos
     const handleMouseDown = (e) => {
@@ -795,6 +838,16 @@ function implementDirectScroll(board, container) {
         else if (absDiff > 50) factor = 0.7;
         
         currentTranslate = prevTranslate + (diff * factor);
+        
+        // MEJORADO: Aplicar límites estrictos durante el movimiento
+        const boardWidth = board.clientWidth;
+        const containerWidth = container.scrollWidth;
+        const minTranslate = Math.min(-(containerWidth - boardWidth), 0);
+        
+        // Aplicar límites estrictos para evitar overscroll
+        if (currentTranslate > 0) currentTranslate = 0;
+        if (currentTranslate < minTranslate) currentTranslate = minTranslate;
+        
         setContainerPosition();
         e.preventDefault();
     };
@@ -806,13 +859,64 @@ function implementDirectScroll(board, container) {
         prevTranslate = currentTranslate;
         board.style.cursor = 'grab';
         
-        // Asegurar que llegamos al final con un pequeño impulso
+        // Verificar límites antes de detenerse
+        applyElasticLimit();
+    };
+    
+    // MEJORADO: Manejo específico para eventos touch
+    const handleTouchStart = (e) => {
+        // Evento táctil común en dispositivos móviles
+        if (e.target.closest('.kanban-card, button, .debug-overlay, .scroll-button, a, input, select, textarea, [onclick], #add-pedido-btn, [data-toggle], [data-target], [role="button"]')) {
+            return; // No iniciar scroll en elementos interactivos
+        }
+        
+        lastTouchTime = Date.now();
+        isDragging = true;
+        startPos = e.touches[0].pageX;
+        prevTranslate = currentTranslate;
+        e.preventDefault();
+    };
+    
+    const handleTouchMove = (e) => {
+        if (!isDragging) return;
+        
+        // Medir el tiempo desde el último touch para evitar inercial excesiva
+        const now = Date.now();
+        const elapsed = now - lastTouchTime;
+        lastTouchTime = now;
+        
+        const currentPosition = e.touches[0].pageX;
+        const diff = currentPosition - startPos;
+        
+        // Aplicar factor de suavizado basado en el tiempo transcurrido
+        // Movimientos rápidos tienen menos impacto
+        let factor = animationSpeed;
+        if (elapsed < 16) { // Menos de 60 FPS
+            factor *= 0.5; // Reducir el impacto de movimientos muy rápidos
+        }
+        
+        currentTranslate = prevTranslate + (diff * factor);
+        
+        // Aplicar límites estrictos
         const boardWidth = board.clientWidth;
         const containerWidth = container.scrollWidth;
-        if (currentTranslate < -(containerWidth - boardWidth) + 50) {
-            currentTranslate = -(containerWidth - boardWidth);
-            setContainerPosition();
-        }
+        const minTranslate = Math.min(-(containerWidth - boardWidth), 0);
+        
+        if (currentTranslate > 0) currentTranslate = 0;
+        if (currentTranslate < minTranslate) currentTranslate = minTranslate;
+        
+        setContainerPosition();
+        e.preventDefault();
+    };
+    
+    const handleTouchEnd = (e) => {
+        if (!isDragging) return;
+        
+        isDragging = false;
+        prevTranslate = currentTranslate;
+        
+        // Aplicar límites al final
+        applyElasticLimit();
     };
     
     // Añadir los eventos
@@ -820,13 +924,24 @@ function implementDirectScroll(board, container) {
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
     
-    board.addEventListener('touchstart', handleMouseDown);
-    document.addEventListener('touchmove', handleMouseMove, { passive: false });
-    document.addEventListener('touchend', handleMouseUp);
+    // Eventos touch separados para mejor control
+    board.addEventListener('touchstart', handleTouchStart, { passive: false });
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+    document.addEventListener('touchend', handleTouchEnd);
     
     board.addEventListener('wheel', (e) => {
         if (e.deltaX !== 0) { // Solo responder a scroll horizontal con la rueda
             currentTranslate -= e.deltaX;
+            
+            // MEJORADO: Aplicar límites estrictos para wheel también
+            const boardWidth = board.clientWidth;
+            const containerWidth = container.scrollWidth;
+            const minTranslate = Math.min(-(containerWidth - boardWidth), 0);
+            
+            // No permitir sobrepasar los límites
+            if (currentTranslate > 0) currentTranslate = 0;
+            if (currentTranslate < minTranslate) currentTranslate = minTranslate;
+            
             prevTranslate = currentTranslate;
             setContainerPosition();
             e.preventDefault();
@@ -838,13 +953,15 @@ function implementDirectScroll(board, container) {
         { element: board, type: 'mousedown', callback: handleMouseDown },
         { element: document, type: 'mousemove', callback: handleMouseMove },
         { element: document, type: 'mouseup', callback: handleMouseUp },
-        { element: board, type: 'touchstart', callback: handleMouseDown },
-        { element: document, type: 'touchmove', callback: handleMouseMove },
-        { element: document, type: 'touchend', callback: handleMouseUp },
-        { element: board, type: 'wheel', callback: handleMouseUp }
+        { element: board, type: 'touchstart', callback: handleTouchStart },
+        { element: document, type: 'touchmove', callback: handleTouchMove },
+        { element: document, type: 'touchend', callback: handleTouchEnd },
+        { element: board, type: 'wheel', callback: board.onwheel }
     );
     
+    // Aplicar posición inicial y verificar límites
     setContainerPosition();
+    applyElasticLimit();
 }
 
 // Función para añadir botones de navegación mejorados
@@ -950,13 +1067,32 @@ function addScrollButtons(boardId, container) {
     
     const scrollAmount = 300; // REDUCIR la cantidad de scroll para más precisión
     
+    // MEJORADA: Función para verificar límites después de cada scroll
+    const checkLimitedScroll = (newValue) => {
+        const boardWidth = board.clientWidth;
+        const containerWidth = container.scrollWidth;
+        const minTranslate = Math.min(-(containerWidth - boardWidth), 0);
+        
+        // Limitar estrictamente
+        if (newValue > 0) newValue = 0;
+        if (newValue < minTranslate) newValue = minTranslate;
+        
+        container.style.transform = `translateX(${newValue}px)`;
+        // Actualizar el estado interno si existe
+        if (container._scrollState) {
+            container._scrollState.currentTranslate = newValue;
+            container._scrollState.prevTranslate = newValue;
+        }
+        return newValue;
+    };
+    
     leftBtn.onclick = (e) => {
         e.preventDefault();
         e.stopPropagation();
         
         const currentX = getTranslateX();
-        const newX = Math.min(0, currentX + scrollAmount);
-        container.style.transform = `translateX(${newX}px)`;
+        const newX = currentX + scrollAmount;
+        checkLimitedScroll(newX);
     };
     
     rightBtn.onclick = (e) => {
@@ -964,9 +1100,8 @@ function addScrollButtons(boardId, container) {
         e.stopPropagation();
         
         const currentX = getTranslateX();
-        const minTranslate = board.clientWidth - container.scrollWidth;
-        const newX = Math.max(minTranslate, currentX - scrollAmount);
-        container.style.transform = `translateX(${newX}px)`;
+        const newX = currentX - scrollAmount;
+        checkLimitedScroll(newX);
     };
     
     buttonContainer.appendChild(leftBtn);
