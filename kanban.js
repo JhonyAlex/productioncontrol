@@ -394,7 +394,7 @@ function createKanbanGroup(groupTitle, etapasInGroup, allPedidos) {
     columnsContainer.className = 'kanban-columns-container';
     
     const columnWidth = 300; // ancho fijo por columna
-    const columnContentWidth = columnWidth - 24; 
+    const columnContentWidth = columnWidth - 27; 
     let totalWidth = 0;
     
     // Calculamos el ancho total considerando el gap entre columnas
@@ -796,7 +796,7 @@ function setupGroupContainer(group) {
     let totalWidth = 0;
     
     columns.forEach((column, index) => {
-        const width = columnWidth - 24; 
+        const width = columnWidth - 27; 
         column.style.flex = `0 0 ${width}px`;
         column.style.width = `${width}px`;
         column.style.minWidth = `${width}px`;
@@ -818,10 +818,10 @@ function setupGroupContainer(group) {
     columnsContainer.style.gap = '10px';
     columnsContainer.style.width = `${totalWidth}px`;
     columnsContainer.style.minWidth = `${totalWidth}px`;
-    columnsContainer.style.maxWidth = '2860px'; 
+    columnsContainer.style.maxWidth = `${totalWidth}px`; 
     columnsContainer.style.transition = 'transform 0.1s ease-out';
     
-    console.log(`Board ${group.closest('[id]')?.id || 'unknown'}: calculatedWidth=${totalWidth}px, maxWidthApplied=2860px, columns=${columns.length}`);
+    console.log(`Board ${group.closest('[id]')?.id || 'unknown'}: calculatedWidth=${totalWidth}px, columns=${columns.length}`);
     
     if (board) { // Asegurar que 'board' es válido antes de pasarlo
         implementDirectScroll(board, columnsContainer);
