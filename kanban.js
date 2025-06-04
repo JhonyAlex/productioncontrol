@@ -3,6 +3,17 @@ import { etapasImpresion, etapasComplementarias, currentPedidos } from './firest
 import { openPedidoModal, completeStage } from './pedidoModal.js';
 import { updatePedido } from './firestore.js';
 
+// Mantiene la posición de scroll por tablero
+const boardScrollPositions = {};
+
+function trackBoardScroll(element) {
+    if (!element || element._trackScrollAttached) return;
+    element.addEventListener('scroll', () => {
+        boardScrollPositions[element.id] = element.scrollLeft;
+    });
+    element._trackScrollAttached = true;
+}
+
 // New: simple Kanban rendering using the jKanban library
 export function renderJKanban(pedidos, options = {}) {
     const boardId = options.only === 'complementarias' ? '#kanban-board-complementarias' : '#kanban-board';
@@ -39,7 +50,10 @@ export function renderJKanban(pedidos, options = {}) {
         }
     });
 
-    const prevScroll = boardElement.scrollLeft;
+
+    boardElement.classList.add('jkanban-active');
+    const prevScroll = boardScrollPositions[boardElement.id] ?? boardElement.scrollLeft;
+    boardScrollPositions[boardElement.id] = prevScroll;
     boardElement.innerHTML = '';
     const kanban = new window.jKanban({
         element: boardId,
@@ -51,7 +65,12 @@ export function renderJKanban(pedidos, options = {}) {
         dropEl: (el, target) => {
             const id = el.getAttribute('data-eid');
             const stage = target.parentElement.getAttribute('data-id');
+            const scrollBefore = boardElement.scrollLeft;
+            boardScrollPositions[boardElement.id] = scrollBefore;
             if (id && stage) updatePedido(window.db, id, { etapaActual: stage });
+            requestAnimationFrame(() => {
+                boardElement.scrollLeft = scrollBefore;
+            });
         }
     });
 
@@ -59,7 +78,7 @@ export function renderJKanban(pedidos, options = {}) {
     requestAnimationFrame(() => {
         boardElement.scrollLeft = prevScroll;
     });
-
+    trackBoardScroll(boardElement);
     // Allow horizontal drag scrolling on the board container
     enableKanbanDragToScroll(boardElement);
 
@@ -306,6 +325,9 @@ export function renderKanban(pedidos, options = {}) {
     // --- Guardar translateX de cada grupo antes de limpiar ---
     let mainBoard = document.getElementById('kanban-board');
     let complementaryBoard = document.getElementById('kanban-board-complementarias');
+
+    if (mainBoard) mainBoard.classList.remove('jkanban-active');
+    if (complementaryBoard) complementaryBoard.classList.remove('jkanban-active');
 
     // NUEVO: Ajustar cualquier transformación existente que esté fuera de límites
     function fixExcessiveTranslates() {
