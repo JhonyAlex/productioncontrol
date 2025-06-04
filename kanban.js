@@ -39,6 +39,7 @@ export function renderJKanban(pedidos, options = {}) {
         }
     });
 
+    const prevScroll = boardElement.scrollLeft;
     boardElement.innerHTML = '';
     const kanban = new window.jKanban({
         element: boardId,
@@ -52,6 +53,11 @@ export function renderJKanban(pedidos, options = {}) {
             const stage = target.parentElement.getAttribute('data-id');
             if (id && stage) updatePedido(window.db, id, { etapaActual: stage });
         }
+    });
+
+    // Restaurar la posición del scroll después de renderizar
+    requestAnimationFrame(() => {
+        boardElement.scrollLeft = prevScroll;
     });
 
     // Allow horizontal drag scrolling on the board container
