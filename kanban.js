@@ -230,11 +230,15 @@ export function renderKanban(pedidos, options = {}) {
                     if (match && match[1]) {
                         const values = match[1].split(', ');
                         const tx = parseFloat(values[4]) || 0;
-                        if (tx < -1120.5) {
-                            container.style.transform = `translateX(-1120.5px)`;
+                        const boardWidth = board.clientWidth;
+                        const containerWidth = container.scrollWidth;
+                        const minTranslate = Math.min(0, boardWidth - containerWidth);
+
+                        if (tx < minTranslate) {
+                            container.style.transform = `translateX(${minTranslate}px)`;
                             if (container._scrollState) {
-                                container._scrollState.currentTranslate = -1120.5;
-                                container._scrollState.prevTranslate = -1120.5;
+                                container._scrollState.currentTranslate = minTranslate;
+                                container._scrollState.prevTranslate = minTranslate;
                             }
                         }
                     }
@@ -257,9 +261,13 @@ export function renderKanban(pedidos, options = {}) {
                 if (match && match[1]) {
                     const values = match[1].split(', ');
                     translateX = parseFloat(values[4]) || 0;
-                    // NUEVO: No permitir valores más bajos que el límite absoluto
-                    if (translateX < -1120.5) {
-                        translateX = -1120.5;
+
+                    const boardWidth = board.clientWidth;
+                    const containerWidth = container.scrollWidth;
+                    const minTranslate = Math.min(0, boardWidth - containerWidth);
+
+                    if (translateX < minTranslate) {
+                        translateX = minTranslate;
                     }
                 }
             }
