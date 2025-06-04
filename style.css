@@ -464,11 +464,14 @@ body {
     align-items: flex-start;
     gap: 1rem;
     overflow-x: auto;
+
     padding: 1rem 0.5rem;
+
 }
 
 #kanban-board .kanban-board,
 #kanban-board-complementarias .kanban-board {
+
     float: none;
     flex: 0 0 300px;
     width: 300px;
@@ -478,13 +481,3 @@ body {
     margin-right: 1rem;
 }
 
-#kanban-board .kanban-title-board,
-#kanban-board-complementarias .kanban-title-board {
-    display: block;
-    text-align: center;
-    background: white;
-    border-radius: 0.5rem;
-    padding: 0.7rem;
-    margin-bottom: 1rem;
-    font-weight: 500;
-}
