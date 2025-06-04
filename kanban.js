@@ -10,6 +10,14 @@ let kanbanSortAsc = true;
 // NUEVO: Límite máximo absoluto para desplazamiento
 let GLOBAL_MAX_TRANSLATE = -Infinity;
 
+// Helper para calcular el desplazamiento mínimo permitido
+function calculateMinTranslate(board, container) {
+    if (!board || !container) return 0;
+    const boardWidth = board.clientWidth;
+    const containerWidth = container.scrollWidth;
+    return Math.min(0, boardWidth - containerWidth);
+}
+
 // Aplicar corrección global cuando la ventana cargue
 window.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
@@ -230,9 +238,7 @@ export function renderKanban(pedidos, options = {}) {
                     if (match && match[1]) {
                         const values = match[1].split(', ');
                         const tx = parseFloat(values[4]) || 0;
-                        const boardWidth = board.clientWidth;
-                        const containerWidth = container.scrollWidth;
-                        const minTranslate = Math.min(0, boardWidth - containerWidth);
+                        const minTranslate = calculateMinTranslate(board, container);
 
                         if (tx < minTranslate) {
                             container.style.transform = `translateX(${minTranslate}px)`;
@@ -262,9 +268,7 @@ export function renderKanban(pedidos, options = {}) {
                     const values = match[1].split(', ');
                     translateX = parseFloat(values[4]) || 0;
 
-                    const boardWidth = board.clientWidth;
-                    const containerWidth = container.scrollWidth;
-                    const minTranslate = Math.min(0, boardWidth - containerWidth);
+                    const minTranslate = calculateMinTranslate(board, container);
 
                     if (translateX < minTranslate) {
                         translateX = minTranslate;
