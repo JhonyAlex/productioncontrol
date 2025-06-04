@@ -8,23 +8,26 @@ let kanbanSortKey = 'secuenciaPedido'; // 'secuenciaPedido' o 'cliente'
 let kanbanSortAsc = true;
 
 
+// Devuelve el ancho utilizable del tablero (sin padding)
+function getBoardBaseWidth(board) {
+    if (!board) return 0;
+
+    const root = board.parentElement || board;
+    const style = window.getComputedStyle(root);
+    const paddingLeft = parseFloat(style.paddingLeft) || 0;
+    const paddingRight = parseFloat(style.paddingRight) || 0;
+
+    return root.clientWidth - paddingLeft - paddingRight;
+}
+
 // Helper para calcular el desplazamiento mínimo permitido
 function computeMinTranslate(board, container) {
     if (!board || !container) return 0;
 
-    const parent = container.parentElement;
-    let baseWidth = board.getBoundingClientRect().width;
-
-    if (parent) {
-        const parentStyle = window.getComputedStyle(parent);
-        const paddingLeft = parseFloat(parentStyle.paddingLeft) || 0;
-        const paddingRight = parseFloat(parentStyle.paddingRight) || 0;
-        baseWidth = parent.getBoundingClientRect().width - paddingLeft - paddingRight;
-    }
-
+    const boardWidth = getBoardBaseWidth(board);
     const containerWidth = container.scrollWidth;
 
-    return Math.min(0, baseWidth - containerWidth);
+    return Math.min(0, boardWidth - containerWidth);
 }
 
 // Aplicar corrección global cuando la ventana cargue
@@ -1188,7 +1191,7 @@ function setContainerPosition(board, container, newTranslate) {
         return 0; // Devuelve un valor seguro
     }
 
-    const boardWidth = board.clientWidth;
+    const boardWidth = getBoardBaseWidth(board);
     const containerWidth = container.scrollWidth;
 
     // El límite se calculará dinámicamente
@@ -1201,23 +1204,20 @@ function setContainerPosition(board, container, newTranslate) {
         // console.log(`[setContainerPosition] Centrando. Board: ${boardWidth}, Cont: ${containerWidth}, Translate: ${clampedTranslate}`);
     } else {
         // Contenido es más ancho, aplicar lógica de scroll
-        const naturalMinTranslate = -(containerWidth - boardWidth);
-
-        // Calcular el límite mínimo de forma dinámica
-        let effectiveMinTranslate = naturalMinTranslate;
+        const minTranslate = computeMinTranslate(board, container);
 
         if (newTranslate > 0) {
             clampedTranslate = 0; // No desplazarse más allá del inicio
-        } else if (newTranslate < effectiveMinTranslate) {
-            clampedTranslate = effectiveMinTranslate; // No desplazarse más allá del fin permitido
+        } else if (newTranslate < minTranslate) {
+            clampedTranslate = minTranslate; // No desplazarse más allá del fin permitido
         } else {
             clampedTranslate = newTranslate; // El valor está dentro del rango permitido
         }
-        // console.log(`[setContainerPosition] Scroll activo. NewT: ${newTranslate}, EffMin: ${effectiveMinTranslate}, Clamped: ${clampedTranslate}`);
+        // console.log(`[setContainerPosition] Scroll activo. NewT: ${newTranslate}, Min: ${minTranslate}, Clamped: ${clampedTranslate}`);
     }
 
     // NO es necesaria una verificación de seguridad final aquí si la lógica anterior es correcta,
-    // ya que effectiveMinTranslate aplica el límite dinámico calculado.
+    // ya que minTranslate aplica el límite dinámico calculado.
     
     if (isNaN(clampedTranslate) || typeof clampedTranslate === 'undefined') {
         console.error(`[setContainerPosition] clampedTranslate inválido (${clampedTranslate}), usando 0 por defecto.`);
@@ -1228,7 +1228,7 @@ function setContainerPosition(board, container, newTranslate) {
     const newTransform = `translateX(${clampedTranslate}px)`;
 
     if (currentTransform !== newTransform) {
-        // console.log(`[setContainerPosition] Aplicando: ${newTransform}. NatMin: ${-(containerWidth - boardWidth)}, EffMin: ${effectiveMinTranslate}`);
+        // console.log(`[setContainerPosition] Aplicando: ${newTransform}. Min: ${minTranslate}`);
         container.style.transform = newTransform;
     }
 
