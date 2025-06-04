@@ -7,29 +7,23 @@ import { updatePedido } from './firestore.js';
 let kanbanSortKey = 'secuenciaPedido'; // 'secuenciaPedido' o 'cliente'
 let kanbanSortAsc = true;
 
+function calculateMinTranslate(board) {
+    const container = board.querySelector('.kanban-columns-container');
+    if (!container) return 0;
 
-// Helper para calcular el desplazamiento mínimo permitido
-function calculateMinTranslate(board, container) {
-    if (!board || !container) return 0;
+    const columns = container.children;
+    const totalColumns = columns.length;
+    const columnWidth = columns[0]?.offsetWidth || 273; // default
+    const gap = 10;
+    const visibleWidth = board.offsetWidth;
+    const totalWidth = totalColumns * (columnWidth + gap) - gap;
 
-    const parent = container.parentElement;
-    const parentStyle = parent ? window.getComputedStyle(parent) : null;
-    const paddingLeft = parentStyle ? parseFloat(parentStyle.paddingLeft) || 0 : 0;
-    const paddingRight = parentStyle ? parseFloat(parentStyle.paddingRight) || 0 : 0;
+    const maxTranslate = 0;
+    const minTranslate = visibleWidth - totalWidth;
 
-    const effectiveWidth = board.clientWidth - paddingLeft - paddingRight;
-    const containerWidth = container.scrollWidth;
-
-    return Math.min(0, effectiveWidth - containerWidth);
+    return minTranslate < 0 ? minTranslate : 0;
 }
 
-// Helper para calcular el desplazamiento mínimo permitido
-function calculateMinTranslate(board, container) {
-    if (!board || !container) return 0;
-    const boardWidth = board.clientWidth;
-    const containerWidth = container.scrollWidth;
-    return Math.min(0, boardWidth - containerWidth);
-}
 
 // Aplicar corrección global cuando la ventana cargue
 window.addEventListener('DOMContentLoaded', () => {
