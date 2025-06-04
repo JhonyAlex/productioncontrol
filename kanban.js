@@ -3,6 +3,50 @@ import { etapasImpresion, etapasComplementarias, currentPedidos } from './firest
 import { openPedidoModal, completeStage } from './pedidoModal.js';
 import { updatePedido } from './firestore.js';
 
+// New: simple Kanban rendering using the jKanban library
+export function renderJKanban(pedidos, options = {}) {
+    const boardId = options.only === 'complementarias' ? '#kanban-board-complementarias' : '#kanban-board';
+    const boardElement = document.querySelector(boardId);
+    if (!boardElement || !window.jKanban) {
+        console.warn('jKanban library not loaded or board element missing');
+        return;
+    }
+
+    // Combine stages
+    const etapas = options.only === 'impresion'
+        ? etapasImpresion
+        : options.only === 'complementarias'
+            ? etapasComplementarias
+            : [...etapasImpresion, ...etapasComplementarias];
+
+    const boards = etapas.map(etapa => ({ id: etapa, title: etapa, item: [] }));
+
+    pedidos.forEach(p => {
+        const b = boards.find(b => b.id === p.etapaActual);
+        if (b) {
+            b.item.push({
+                id: p.id,
+                title: `${p.numeroPedido || 'N/A'}${p.cliente ? ' - ' + p.cliente : ''}`
+            });
+        }
+    });
+
+    boardElement.innerHTML = '';
+    new window.jKanban({
+        element: boardId,
+        boards,
+        click: (el) => {
+            const id = el.getAttribute('data-eid');
+            if (id) openPedidoModal(id);
+        },
+        dropEl: (el, target) => {
+            const id = el.getAttribute('data-eid');
+            const stage = target.parentElement.getAttribute('data-id');
+            if (id && stage) updatePedido(window.db, id, { etapaActual: stage });
+        }
+    });
+}
+
 // Variables para ordenación
 let kanbanSortKey = 'secuenciaPedido'; // 'secuenciaPedido' o 'cliente'
 let kanbanSortAsc = true;

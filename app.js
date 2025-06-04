@@ -23,6 +23,8 @@ const pedidosCollection = collection(db, "pedidos");
 window.auth = auth;
 window.db = db;
 window.pedidosCollection = pedidosCollection;
+// Flag to switch between the custom Kanban and jKanban implementation
+window.useJKanban = true;
 
 console.log("Firebase inicializado.");
 
@@ -68,9 +70,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const tabComplementarias = document.getElementById('tab-kanban-complementarias');
         const tabLista = document.getElementById('tab-lista');
         if (tabImpresion && tabImpresion.classList.contains('active')) {
-            import('./kanban.js').then(mod => mod.renderKanban(pedidos, { only: 'impresion' }));
+            import('./kanban.js').then(mod => {
+                if (window.useJKanban && mod.renderJKanban) {
+                    mod.renderJKanban(pedidos, { only: 'impresion' });
+                } else {
+                    mod.renderKanban(pedidos, { only: 'impresion' });
+                }
+            });
         } else if (tabComplementarias && tabComplementarias.classList.contains('active')) {
-            import('./kanban.js').then(mod => mod.renderKanban(pedidos, { only: 'complementarias' }));
+            import('./kanban.js').then(mod => {
+                if (window.useJKanban && mod.renderJKanban) {
+                    mod.renderJKanban(pedidos, { only: 'complementarias' });
+                } else {
+                    mod.renderKanban(pedidos, { only: 'complementarias' });
+                }
+            });
         }
         
         // Actualiza lista si la pestaña lista está activa
