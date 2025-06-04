@@ -8,7 +8,7 @@ let kanbanSortKey = 'secuenciaPedido'; // 'secuenciaPedido' o 'cliente'
 let kanbanSortAsc = true;
 
 // NUEVO: Límite máximo absoluto para desplazamiento
-const GLOBAL_MAX_TRANSLATE = -2160.0;
+let GLOBAL_MAX_TRANSLATE = -Infinity;
 
 // Aplicar corrección global cuando la ventana cargue
 window.addEventListener('DOMContentLoaded', () => {
@@ -1164,8 +1164,7 @@ function setContainerPosition(board, container, newTranslate) {
     const boardWidth = board.clientWidth;
     const containerWidth = container.scrollWidth;
 
-    // Usar límite global constante
-    const ABSOLUTE_MAX_TRANSLATE = GLOBAL_MAX_TRANSLATE; // Debería ser -2160.0px
+    // El límite se calculará dinámicamente
 
     let clampedTranslate;
 
@@ -1177,19 +1176,9 @@ function setContainerPosition(board, container, newTranslate) {
         // Contenido es más ancho, aplicar lógica de scroll
         const naturalMinTranslate = -(containerWidth - boardWidth);
 
-        // MODIFICADO: Asegurar que ABSOLUTE_MAX_TRANSLATE sea el límite más negativo si se alcanza.
-        // Si el scroll natural permitiría ir MÁS ALLÁ (más negativo) de ABSOLUTE_MAX_TRANSLATE,
-        // entonces el límite efectivo es ABSOLUTE_MAX_TRANSLATE.
-        // Si el scroll natural es MENOS NEGATIVO que ABSOLUTE_MAX_TRANSLATE (es decir, el contenido termina antes),
-        // entonces el límite es el naturalMinTranslate.
-        let effectiveMinTranslate;
-        if (naturalMinTranslate < ABSOLUTE_MAX_TRANSLATE) {
-            effectiveMinTranslate = ABSOLUTE_MAX_TRANSLATE;
-            // console.log(`[setContainerPosition] Límite forzado por GLOBAL_MAX_TRANSLATE. Natural: ${naturalMinTranslate}, Global: ${ABSOLUTE_MAX_TRANSLATE}`);
-        } else {
-            effectiveMinTranslate = naturalMinTranslate;
-            // console.log(`[setContainerPosition] Límite natural aplicado. Natural: ${naturalMinTranslate}, Global: ${ABSOLUTE_MAX_TRANSLATE}`);
-        }
+        // Calcular el límite mínimo de forma dinámica
+        GLOBAL_MAX_TRANSLATE = Math.min(GLOBAL_MAX_TRANSLATE, naturalMinTranslate);
+        let effectiveMinTranslate = naturalMinTranslate;
 
         if (newTranslate > 0) {
             clampedTranslate = 0; // No desplazarse más allá del inicio
@@ -1202,8 +1191,7 @@ function setContainerPosition(board, container, newTranslate) {
     }
 
     // NO es necesaria una verificación de seguridad final aquí si la lógica anterior es correcta,
-    // ya que effectiveMinTranslate ya considera ABSOLUTE_MAX_TRANSLATE.
-    // if (containerWidth > boardWidth && clampedTranslate < ABSOLUTE_MAX_TRANSLATE) { ... }
+    // ya que effectiveMinTranslate aplica el límite dinámico calculado.
     
     if (isNaN(clampedTranslate) || typeof clampedTranslate === 'undefined') {
         console.error(`[setContainerPosition] clampedTranslate inválido (${clampedTranslate}), usando 0 por defecto.`);
@@ -1214,7 +1202,7 @@ function setContainerPosition(board, container, newTranslate) {
     const newTransform = `translateX(${clampedTranslate}px)`;
 
     if (currentTransform !== newTransform) {
-        // console.log(`[setContainerPosition] Aplicando: ${newTransform}. NatMin: ${-(containerWidth - boardWidth)}, EffMin: ${effectiveMinTranslate_debug_val}, Global: ${ABSOLUTE_MAX_TRANSLATE}`);
+        // console.log(`[setContainerPosition] Aplicando: ${newTransform}. NatMin: ${-(containerWidth - boardWidth)}, EffMin: ${effectiveMinTranslate}`);
         container.style.transform = newTransform;
     }
 
