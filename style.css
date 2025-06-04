@@ -48,6 +48,19 @@ body {
     touch-action: pan-y; /* Permitir scroll táctil horizontal */
 }
 
+/* Ajustes cuando se usa jKanban */
+#kanban-board.jkanban-active,
+#kanban-board-complementarias.jkanban-active {
+    display: block;
+    gap: 0;
+    padding-bottom: 1rem;
+}
+
+#kanban-board.jkanban-active > .kanban-container,
+#kanban-board-complementarias.jkanban-active > .kanban-container {
+    display: block;
+}
+
 #kanban-board.drag-scroll-active,
 #kanban-board-complementarias.drag-scroll-active {
     cursor: grabbing !important;
@@ -458,12 +471,10 @@ body {
 /* jKanban integration styles */
 #kanban-board > .kanban-container,
 #kanban-board-complementarias > .kanban-container {
-    display: flex;
-    flex-direction: row;
-    align-items: flex-start;
-    gap: 1rem;
+    display: block;
     overflow-x: auto;
-    width: 100% !important;
+    /* Ajustar el ancho al contenido para habilitar el scroll horizontal */
+    width: max-content;
     padding: 1rem 0.5rem;
 }
 
