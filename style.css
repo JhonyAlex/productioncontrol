@@ -471,22 +471,24 @@ body {
 /* jKanban integration styles */
 #kanban-board > .kanban-container,
 #kanban-board-complementarias > .kanban-container {
-    display: block;
+    display: flex;
     overflow-x: auto;
-    /* Ajustar el ancho al contenido para habilitar el scroll horizontal */
-    width: max-content;
+    width: max-content; /* permite que el contenedor sea tan ancho como sus columnas */
     padding: 1rem 0.5rem;
+    gap: 1rem;
 }
 
 #kanban-board .kanban-board,
 #kanban-board-complementarias .kanban-board {
-    float: none;
+    float: none; /* utilizamos flexbox, por lo que el float no es necesario */
     flex: 0 0 300px;
+    display: flex;
+    flex-direction: column;
     width: 300px;
     min-width: 280px;
     border-radius: 0.7rem;
     padding: 0.7rem;
-    margin-right: 1rem;
+    margin-right: 0;
     margin-bottom: 0;
 }
 
