@@ -12,7 +12,7 @@ export function renderJKanban(pedidos, options = {}) {
         return;
     }
 
-    // Combine stages
+    // Combine stages according to view
     const etapas = options.only === 'impresion'
         ? etapasImpresion
         : options.only === 'complementarias'
@@ -21,18 +21,26 @@ export function renderJKanban(pedidos, options = {}) {
 
     const boards = etapas.map(etapa => ({ id: etapa, title: etapa, item: [] }));
 
+    // Helper to accumulate pedidos per etapa for color logic
+    const pedidosPorEtapa = {};
+    etapas.forEach(e => pedidosPorEtapa[e] = []);
+
+    // Build items for each board using existing card markup
     pedidos.forEach(p => {
-        const b = boards.find(b => b.id === p.etapaActual);
-        if (b) {
-            b.item.push({
+        const board = boards.find(b => b.id === p.etapaActual);
+        if (board) {
+            const card = createKanbanCard(p);
+            board.item.push({
                 id: p.id,
-                title: `${p.numeroPedido || 'N/A'}${p.cliente ? ' - ' + p.cliente : ''}`
+                class: 'kanban-card',
+                title: card.innerHTML
             });
+            pedidosPorEtapa[board.id].push(p);
         }
     });
 
     boardElement.innerHTML = '';
-    new window.jKanban({
+    const kanban = new window.jKanban({
         element: boardId,
         boards,
         click: (el) => {
@@ -43,6 +51,15 @@ export function renderJKanban(pedidos, options = {}) {
             const id = el.getAttribute('data-eid');
             const stage = target.parentElement.getAttribute('data-id');
             if (id && stage) updatePedido(window.db, id, { etapaActual: stage });
+        }
+    });
+
+    // Apply background color logic per column after render
+    Object.entries(pedidosPorEtapa).forEach(([etapa, pedidosEtapa]) => {
+        const color = getColumnColorByClientes(pedidosEtapa);
+        const boardEl = kanban.findBoard(etapa);
+        if (boardEl) {
+            boardEl.style.background = color;
         }
     });
 }

@@ -454,3 +454,36 @@ body {
         height: 250px;
     }
 }
+
+/* jKanban integration styles */
+#kanban-board.kanban-container,
+#kanban-board-complementarias.kanban-container {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    gap: 1rem;
+    overflow-x: auto;
+    padding-bottom: 1rem;
+}
+
+#kanban-board .kanban-board,
+#kanban-board-complementarias .kanban-board {
+    float: left;
+    width: 300px;
+    min-width: 280px;
+    border-radius: 0.7rem;
+    padding: 0.7rem;
+    margin-right: 1rem;
+}
+
+#kanban-board .kanban-title-board,
+#kanban-board-complementarias .kanban-title-board {
+    display: block;
+    text-align: center;
+    background: white;
+    border-radius: 0.5rem;
+    padding: 0.7rem;
+    margin-bottom: 1rem;
+    font-weight: 500;
+}
