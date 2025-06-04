@@ -469,13 +469,14 @@ body {
 
 #kanban-board .kanban-board,
 #kanban-board-complementarias .kanban-board {
-    float: left;
+    float: left; /* o cámbialo a 'none' si estás usando flexbox completamente */
     width: 300px;
     min-width: 280px;
     border-radius: 0.7rem;
     padding: 0.7rem;
     margin-right: 1rem;
 }
+
 
 #kanban-board .kanban-title-board,
 #kanban-board-complementarias .kanban-title-board {
