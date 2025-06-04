@@ -10,6 +10,14 @@ let kanbanSortAsc = true;
 // NUEVO: Límite máximo absoluto para desplazamiento
 let GLOBAL_MAX_TRANSLATE = -Infinity;
 
+// Helper para calcular el desplazamiento mínimo permitido
+function calculateMinTranslate(board, container) {
+    if (!board || !container) return 0;
+    const boardWidth = board.clientWidth;
+    const containerWidth = container.scrollWidth;
+    return Math.min(0, boardWidth - containerWidth);
+}
+
 // Aplicar corrección global cuando la ventana cargue
 window.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
@@ -230,11 +238,13 @@ export function renderKanban(pedidos, options = {}) {
                     if (match && match[1]) {
                         const values = match[1].split(', ');
                         const tx = parseFloat(values[4]) || 0;
-                        if (tx < -1120.5) {
-                            container.style.transform = `translateX(-1120.5px)`;
+                        const minTranslate = calculateMinTranslate(board, container);
+
+                        if (tx < minTranslate) {
+                            container.style.transform = `translateX(${minTranslate}px)`;
                             if (container._scrollState) {
-                                container._scrollState.currentTranslate = -1120.5;
-                                container._scrollState.prevTranslate = -1120.5;
+                                container._scrollState.currentTranslate = minTranslate;
+                                container._scrollState.prevTranslate = minTranslate;
                             }
                         }
                     }
@@ -257,9 +267,11 @@ export function renderKanban(pedidos, options = {}) {
                 if (match && match[1]) {
                     const values = match[1].split(', ');
                     translateX = parseFloat(values[4]) || 0;
-                    // NUEVO: No permitir valores más bajos que el límite absoluto
-                    if (translateX < -1120.5) {
-                        translateX = -1120.5;
+
+                    const minTranslate = calculateMinTranslate(board, container);
+
+                    if (translateX < minTranslate) {
+                        translateX = minTranslate;
                     }
                 }
             }
