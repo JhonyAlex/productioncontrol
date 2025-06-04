@@ -50,6 +50,7 @@ export function renderJKanban(pedidos, options = {}) {
         }
     });
 
+
     boardElement.classList.add('jkanban-active');
     const prevScroll = boardScrollPositions[boardElement.id] ?? boardElement.scrollLeft;
     boardScrollPositions[boardElement.id] = prevScroll;
@@ -77,9 +78,7 @@ export function renderJKanban(pedidos, options = {}) {
     requestAnimationFrame(() => {
         boardElement.scrollLeft = prevScroll;
     });
-
     trackBoardScroll(boardElement);
-
     // Allow horizontal drag scrolling on the board container
     enableKanbanDragToScroll(boardElement);
 
