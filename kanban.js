@@ -1194,7 +1194,8 @@ function setContainerPosition(board, container, newTranslate) {
     const boardWidth = getBoardBaseWidth(board);
     const containerWidth = container.scrollWidth;
 
-    // El límite se calculará dinámicamente
+    // Calcular el límite mínimo una sola vez para evitar referencia
+    const minTranslate = computeMinTranslate(board, container);
 
     let clampedTranslate;
 
@@ -1204,8 +1205,6 @@ function setContainerPosition(board, container, newTranslate) {
         // console.log(`[setContainerPosition] Centrando. Board: ${boardWidth}, Cont: ${containerWidth}, Translate: ${clampedTranslate}`);
     } else {
         // Contenido es más ancho, aplicar lógica de scroll
-        const minTranslate = computeMinTranslate(board, container);
-
         if (newTranslate > 0) {
             clampedTranslate = 0; // No desplazarse más allá del inicio
         } else if (newTranslate < minTranslate) {
