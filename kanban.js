@@ -1300,6 +1300,8 @@ function setContainerPosition(board, container, newTranslate) {
     return clampedTranslate;
 }
 // Exportar funciones necesarias para testing
-module.exports = {
-  getColumnColorByClientes
-};
+if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
+    module.exports = {
+        getColumnColorByClientes
+    };
+}
