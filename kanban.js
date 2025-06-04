@@ -54,6 +54,9 @@ export function renderJKanban(pedidos, options = {}) {
         }
     });
 
+    // Allow horizontal drag scrolling on the board container
+    enableKanbanDragToScroll(boardElement);
+
     // Apply background color logic per column after render
     Object.entries(pedidosPorEtapa).forEach(([etapa, pedidosEtapa]) => {
         const color = getColumnColorByClientes(pedidosEtapa);
