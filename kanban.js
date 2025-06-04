@@ -7,8 +7,21 @@ import { updatePedido } from './firestore.js';
 let kanbanSortKey = 'secuenciaPedido'; // 'secuenciaPedido' o 'cliente'
 let kanbanSortAsc = true;
 
-// NUEVO: Límite máximo absoluto para desplazamiento
-let GLOBAL_MAX_TRANSLATE = -Infinity;
+
+// Helper para calcular el desplazamiento mínimo permitido
+function calculateMinTranslate(board, container) {
+    if (!board || !container) return 0;
+
+    const parent = container.parentElement;
+    const parentStyle = parent ? window.getComputedStyle(parent) : null;
+    const paddingLeft = parentStyle ? parseFloat(parentStyle.paddingLeft) || 0 : 0;
+    const paddingRight = parentStyle ? parseFloat(parentStyle.paddingRight) || 0 : 0;
+
+    const effectiveWidth = board.clientWidth - paddingLeft - paddingRight;
+    const containerWidth = container.scrollWidth;
+
+    return Math.min(0, effectiveWidth - containerWidth);
+}
 
 // Aplicar corrección global cuando la ventana cargue
 window.addEventListener('DOMContentLoaded', () => {
@@ -33,18 +46,21 @@ const observer = new MutationObserver((mutations) => {
                 if (match && match[1]) {
                     const values = match[1].split(', ');
                     const tx = parseFloat(values[4]) || 0;
-                    if (tx < GLOBAL_MAX_TRANSLATE) {
-                        console.warn(`[Observer] Corrigiendo ${container.id || 'container'}: ${tx} -> ${GLOBAL_MAX_TRANSLATE}`);
+                    const board = container.closest('#kanban-board, #kanban-board-complementarias');
+                    const minTranslate = calculateMinTranslate(board, container);
+
+                    if (tx < minTranslate) {
+                        console.warn(`[Observer] Corrigiendo ${container.id || 'container'}: ${tx} -> ${minTranslate}`);
                         const originalTransition = container.style.transition;
                         container.style.transition = 'none'; // Desactivar transición
-                        container.style.transform = `translateX(${GLOBAL_MAX_TRANSLATE}px)`;
+                        container.style.transform = `translateX(${minTranslate}px)`;
                         container.offsetHeight; // Forzar reflow
                         container.style.transition = originalTransition; // Restaurar transición
-                        
+
                         if (container._scrollState) {
-                            container._scrollState.currentTranslate = GLOBAL_MAX_TRANSLATE;
+                            container._scrollState.currentTranslate = minTranslate;
                             // prevTranslate también debería reflejar esto si el estado se corrompió
-                            container._scrollState.prevTranslate = GLOBAL_MAX_TRANSLATE; 
+                            container._scrollState.prevTranslate = minTranslate;
                         }
                     }
                 }
@@ -72,17 +88,19 @@ function fixAllContainerTranslates() {
                 if (match && match[1]) {
                     const values = match[1].split(', ');
                     const tx = parseFloat(values[4]) || 0;
-                    if (tx < GLOBAL_MAX_TRANSLATE) {
-                        console.warn(`[fixAllInterval] Corrigiendo ${container.id || 'container'}: ${tx} -> ${GLOBAL_MAX_TRANSLATE}`);
+                    const minTranslate = calculateMinTranslate(board, container);
+
+                    if (tx < minTranslate) {
+                        console.warn(`[fixAllInterval] Corrigiendo ${container.id || 'container'}: ${tx} -> ${minTranslate}`);
                         const originalTransition = container.style.transition;
                         container.style.transition = 'none';
-                        container.style.transform = `translateX(${GLOBAL_MAX_TRANSLATE}px)`;
+                        container.style.transform = `translateX(${minTranslate}px)`;
                         container.offsetHeight; // Forzar reflow
                         container.style.transition = originalTransition;
-                        
+
                         if (container._scrollState) {
-                            container._scrollState.currentTranslate = GLOBAL_MAX_TRANSLATE;
-                            container._scrollState.prevTranslate = GLOBAL_MAX_TRANSLATE;
+                            container._scrollState.currentTranslate = minTranslate;
+                            container._scrollState.prevTranslate = minTranslate;
                         }
                     }
                 }
@@ -230,11 +248,13 @@ export function renderKanban(pedidos, options = {}) {
                     if (match && match[1]) {
                         const values = match[1].split(', ');
                         const tx = parseFloat(values[4]) || 0;
-                        if (tx < -1120.5) {
-                            container.style.transform = `translateX(-1120.5px)`;
+                        const minTranslate = calculateMinTranslate(board, container);
+
+                        if (tx < minTranslate) {
+                            container.style.transform = `translateX(${minTranslate}px)`;
                             if (container._scrollState) {
-                                container._scrollState.currentTranslate = -1120.5;
-                                container._scrollState.prevTranslate = -1120.5;
+                                container._scrollState.currentTranslate = minTranslate;
+                                container._scrollState.prevTranslate = minTranslate;
                             }
                         }
                     }
@@ -257,9 +277,11 @@ export function renderKanban(pedidos, options = {}) {
                 if (match && match[1]) {
                     const values = match[1].split(', ');
                     translateX = parseFloat(values[4]) || 0;
-                    // NUEVO: No permitir valores más bajos que el límite absoluto
-                    if (translateX < -1120.5) {
-                        translateX = -1120.5;
+
+                    const minTranslate = calculateMinTranslate(board, container);
+
+                    if (translateX < minTranslate) {
+                        translateX = minTranslate;
                     }
                 }
             }
@@ -781,9 +803,11 @@ function setupGroupContainer(group) {
             if (match && match[1]) {
                 const values = match[1].split(', ');
                 const tx = parseFloat(values[4]) || 0;
-                if (tx < GLOBAL_MAX_TRANSLATE) { // Usar constante global
+                const minTranslate = calculateMinTranslate(board, columnsContainer);
+
+                if (tx < minTranslate) {
                     // Corregir directamente si ya está mal al configurar
-                    setContainerPosition(board, columnsContainer, tx); 
+                    setContainerPosition(board, columnsContainer, tx);
                 }
             }
         }
@@ -850,7 +874,6 @@ function implementDirectScroll(board, container) {
     let animationSpeed = 1.5; 
     let lastTouchTime = 0;
     
-    const ABSOLUTE_MAX_TRANSLATE = GLOBAL_MAX_TRANSLATE;
     
     // Leer la posición actual del transform del DOM para inicializar currentTranslate y prevTranslate
     const initialStyle = window.getComputedStyle(container);
@@ -1177,7 +1200,6 @@ function setContainerPosition(board, container, newTranslate) {
         const naturalMinTranslate = -(containerWidth - boardWidth);
 
         // Calcular el límite mínimo de forma dinámica
-        GLOBAL_MAX_TRANSLATE = Math.min(GLOBAL_MAX_TRANSLATE, naturalMinTranslate);
         let effectiveMinTranslate = naturalMinTranslate;
 
         if (newTranslate > 0) {
