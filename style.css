@@ -463,7 +463,8 @@ body {
     align-items: flex-start;
     gap: 1rem;
     overflow-x: auto;
-    width: 100% !important;
+    /* Ajustar el ancho al contenido para habilitar el scroll horizontal */
+    width: max-content;
     padding: 1rem 0.5rem;
 }
 
