@@ -17,7 +17,11 @@ function getBoardBaseWidth(board) {
     const paddingLeft = parseFloat(style.paddingLeft) || 0;
     const paddingRight = parseFloat(style.paddingRight) || 0;
 
-    return root.clientWidth - paddingLeft - paddingRight;
+    // getBoundingClientRect da un ancho más consistente que clientWidth en
+    // casos con desplazamiento o barras de scroll
+    const rectWidth = root.getBoundingClientRect().width;
+
+    return rectWidth - paddingLeft - paddingRight;
 }
 
 // Helper para calcular el desplazamiento mínimo permitido
@@ -25,7 +29,7 @@ function computeMinTranslate(board, container) {
     if (!board || !container) return 0;
 
     const boardWidth = getBoardBaseWidth(board);
-    const containerWidth = container.scrollWidth;
+    const containerWidth = Math.max(container.scrollWidth, container.getBoundingClientRect().width);
 
     return Math.min(0, boardWidth - containerWidth);
 }
