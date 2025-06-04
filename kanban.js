@@ -1232,6 +1232,7 @@ function setContainerPosition(board, container, newTranslate) {
 
     if (currentTransform !== newTransform) {
         // console.log(`[setContainerPosition] Aplicando: ${newTransform}. Min: ${minTranslate}`);
+        // minTranslate is defined above; uncommenting is safe
         container.style.transform = newTransform;
     }
 
