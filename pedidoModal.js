@@ -526,3 +526,4 @@ export async function completeStage(pedidoId) {
     }
 }
 window.completeStage = completeStage;
+if (typeof module !== 'undefined' && module.exports) { module.exports = { savePedido }; }
