@@ -7,17 +7,19 @@
     "start": "http-server -o",
     "build": "echo 'No build step defined'",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest"
+
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "module",
-  "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
-  },
+  "type": "commonjs",
   "devDependencies": {
-    "jest": "^29.6.1",
-    "http-server": "^14.1.1"
+    "@babel/core": "^7.28.0",
+    "@babel/preset-env": "^7.28.0",
+    "babel-jest": "^30.0.4"
+  },
+  "dependencies": {
+    "jest": "^30.0.4",
+    "jest-environment-jsdom": "^30.0.4"
   }
 }
