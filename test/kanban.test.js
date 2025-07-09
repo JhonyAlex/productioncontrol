@@ -1,4 +1,3 @@
-
 const { getColumnColorByClientes } = require('../kanban.js');
 
 describe('getColumnColorByClientes', () => {
