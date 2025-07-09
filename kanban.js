@@ -2,6 +2,7 @@
 import { etapasImpresion, etapasComplementarias, currentPedidos } from './firestore.js'; // O ajusta según donde declares estas variables
 import { openPedidoModal, completeStage } from './pedidoModal.js';
 import { updatePedido } from './firestore.js';
+import { getColumnColorByClientes, stringToColor } from './kanbanUtils.js';
 
 // Mantiene la posición de scroll por tablero
 const boardScrollPositions = {};
@@ -559,44 +560,6 @@ function createKanbanGroup(groupTitle, etapasInGroup, allPedidos) {
 }
 
 // NUEVO: color de columna por cliente más frecuente o primero
-function getColumnColorByClientes(pedidosInEtapa) {
-    if (!pedidosInEtapa || pedidosInEtapa.length === 0) {
-        // Color neutro si no hay pedidos
-        return 'hsl(210, 20%, 97%)';
-    }
-    // Cuenta ocurrencias de cada cliente
-    const counts = {};
-    pedidosInEtapa.forEach(p => {
-        const cliente = p.cliente || '';
-        counts[cliente] = (counts[cliente] || 0) + 1;
-    });
-    // Encuentra el cliente más frecuente
-    let maxCliente = '';
-    let maxCount = 0;
-    Object.entries(counts).forEach(([cliente, count]) => {
-        if (count > maxCount) {
-            maxCount = count;
-            maxCliente = cliente;
-        }
-    });
-    // Si todos son diferentes (maxCount === 1), usa el primero
-    const clienteColor = maxCount === 1
-        ? pedidosInEtapa[0].cliente || ''
-        : maxCliente;
-    // Si no hay cliente, color neutro
-    if (!clienteColor) return 'hsl(210, 20%, 97%)';
-    return stringToColor(clienteColor, 90, 96); // pastel más suave
-}
-
-// Modifica stringToColor para aceptar saturación/luz
-function stringToColor(str, s = 60, l = 80) {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        hash = str.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    const h = Math.abs(hash) % 360;
-    return `hsl(${h}, ${s}%, ${l}%)`;
-}
 
 function etapaColumnColor(etapa) {
     // Genera un color pastel único por etapa
@@ -1328,8 +1291,3 @@ function setContainerPosition(board, container, newTranslate) {
     return clampedTranslate;
 }
 // Exportar funciones necesarias para testing
-if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
-    module.exports = {
-        getColumnColorByClientes
-    };
-}
