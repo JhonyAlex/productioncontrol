@@ -4,13 +4,24 @@
   "description": "",
   "main": "app.js",
   "scripts": {
-    "test": "node --experimental-vm-modules node_modules/.bin/jest"
+    "start": "http-server -o",
+    "build": "echo 'No build step defined'",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest"
+
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "module",
+
+  "type": "commonjs",
+  "devDependencies": {
+    "@babel/core": "^7.28.0",
+    "@babel/preset-env": "^7.28.0",
+    "babel-jest": "^30.0.4"
+  },
   "dependencies": {
-    "jest": "^30.0.4"
+    "jest": "^30.0.4",
+    "jest-environment-jsdom": "^30.0.4"
+
   }
 }

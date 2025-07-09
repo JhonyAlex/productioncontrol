@@ -32,28 +32,19 @@ function stringToColor(str) {
     return `hsl(${h}, 60%, 80%)`;
 }
 
-export function renderList(pedidos) {
-    const listView = document.getElementById('list-view');
-    if (!listView) {
-        console.error("renderList: Elemento #list-view no encontrado.");
-        return;
-    }
-
-    // --- Filtros rápidos y ordenamiento (sin inputs de filtro por columna) ---
-    // Si estamos en modo filtro manual, NO aplicar filtro por showCompleted
+// Función reutilizable para filtrar pedidos (usada en tests)
+export function filterPedidosBase(pedidos, { showCompleted = false, quickStageFilter = null, modoFiltroManual = false } = {}) {
     let basePedidos;
     if (modoFiltroManual) {
         basePedidos = pedidos.slice();
     } else {
-        // --- NUEVO: Aplicar filtro Activos/Completados PRIMERO ---
         basePedidos = pedidos.filter(p => {
             const esCompletado = (p.etapaActual || '').toLowerCase() === 'completado';
             return showCompleted ? esCompletado : !esCompletado;
         });
     }
 
-    // Aplicar filtro rápido de etapa (laminacion, etc.) sobre los pedidos ya filtrados por estado
-    let filteredPedidos = basePedidos.slice(); // <-- CORREGIDO: Empezar desde basePedidos
+    let filteredPedidos = basePedidos.slice();
     if (quickStageFilter) {
         const startsWith = {
             laminacion: 'lamin',
@@ -61,10 +52,20 @@ export function renderList(pedidos) {
             perforado: 'perfor',
             pendiente: 'pendiente'
         };
-        filteredPedidos = basePedidos.filter(p => // Filtrar sobre basePedidos
-            (p.etapaActual || '').toLowerCase().startsWith(startsWith[quickStageFilter])
-        );
+        filteredPedidos = basePedidos.filter(p => (p.etapaActual || '').toLowerCase().startsWith(startsWith[quickStageFilter]));
     }
+
+    return filteredPedidos;
+}
+
+export function renderList(pedidos) {
+    const listView = document.getElementById('list-view');
+    if (!listView) {
+        console.error("renderList: Elemento #list-view no encontrado.");
+        return;
+    }
+
+    const filteredPedidos = filterPedidosBase(pedidos, { showCompleted, quickStageFilter, modoFiltroManual });
 
     // Aplica ordenamiento
     if (currentSort.key) {
@@ -324,3 +325,4 @@ if (typeof window !== 'undefined') {
         });
     }, 0);
 }
+if (typeof module !== 'undefined' && module.exports) { module.exports = { filterPedidosBase }; }
