@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const tabComplementarias = document.getElementById('tab-kanban-complementarias');
         const tabLista = document.getElementById('tab-lista');
         if (tabImpresion && tabImpresion.classList.contains('active')) {
-            import('./kanban.js').then(mod => {
+            import('./kanban/index.js').then(mod => {
                 if (window.useJKanban && mod.renderJKanban) {
                     mod.renderJKanban(pedidos, { only: 'impresion' });
                 } else {
@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         } else if (tabComplementarias && tabComplementarias.classList.contains('active')) {
-            import('./kanban.js').then(mod => {
+            import('./kanban/index.js').then(mod => {
                 if (window.useJKanban && mod.renderJKanban) {
                     mod.renderJKanban(pedidos, { only: 'complementarias' });
                 } else {
