@@ -72,11 +72,11 @@ export function handleSearch(e) {
     const tabLista = document.getElementById('tab-lista');
 
     if (tabImpresion && tabImpresion.classList.contains('active')) {
-        import('./kanban.js').then(mod => {
+        import('./kanban/index.js').then(mod => {
             mod.renderKanban(filteredPedidos, { only: 'impresion' });
         });
     } else if (tabComplementarias && tabComplementarias.classList.contains('active')) {
-        import('./kanban.js').then(mod => {
+        import('./kanban/index.js').then(mod => {
             mod.renderKanban(filteredPedidos, { only: 'complementarias' });
         });
     } else if (tabLista && tabLista.classList.contains('active')) {
@@ -279,5 +279,5 @@ export function safeCloseModal(modalElement) {
     }
 }
 
-import { renderKanban } from './kanban.js';
+import { renderKanban } from './kanban/index.js';
 import { renderList } from './listView.js';

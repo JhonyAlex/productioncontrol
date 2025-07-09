@@ -1,6 +1,6 @@
 import { openPedidoModal, savePedido, deletePedido, returnToPrintStage } from './pedidoModal.js';
 import { handleSearch, setupSearchAutocomplete } from './utils.js';
-import { renderKanban, renderJKanban } from './kanban.js';
+import { renderKanban, renderJKanban } from './kanban/index.js';
 import { renderList } from './listView.js';
 import { currentPedidos } from './firestore.js';
 import { renderGraficosReportes } from './reportesGraficos.js'; // NUEVO
