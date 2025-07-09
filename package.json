@@ -4,7 +4,10 @@
   "description": "",
   "main": "app.js",
   "scripts": {
-    "test": "jest"
+    "start": "http-server -o",
+    "build": "echo 'No build step defined'",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest"
+
   },
   "keywords": [],
   "author": "",
