@@ -1,7 +1,8 @@
-const { getColumnColorByClientes } = require('../kanban');
+
 
 describe('getColumnColorByClientes', () => {
-  test('debe retornar verde si todos los pedidos son del mismo cliente', () => {
+  test('debe retornar verde si todos los pedidos son del mismo cliente', async () => {
+    const { getColumnColorByClientes } = await import('../kanban.js');
     const pedidos = [
       { cliente: 'Cliente A' },
       { cliente: 'Cliente A' }
@@ -9,7 +10,8 @@ describe('getColumnColorByClientes', () => {
     expect(getColumnColorByClientes(pedidos)).toBe('lightgreen');
   });
 
-  test('debe retornar gris si hay múltiples clientes', () => {
+  test('debe retornar gris si hay múltiples clientes', async () => {
+    const { getColumnColorByClientes } = await import('../kanban.js');
     const pedidos = [
       { cliente: 'Cliente A' },
       { cliente: 'Cliente B' }
