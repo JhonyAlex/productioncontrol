@@ -12,6 +12,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+
   "type": "commonjs",
   "devDependencies": {
     "@babel/core": "^7.28.0",
@@ -21,5 +22,6 @@
   "dependencies": {
     "jest": "^30.0.4",
     "jest-environment-jsdom": "^30.0.4"
+
   }
 }

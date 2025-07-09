@@ -1,7 +1,9 @@
+
 const { getColumnColorByClientes } = require('../kanban.js');
 
 describe('getColumnColorByClientes', () => {
   test('retorna un color hsl cuando hay pedidos', () => {
+
     const pedidos = [
       { cliente: 'Cliente A' },
       { cliente: 'Cliente A' }
@@ -10,8 +12,12 @@ describe('getColumnColorByClientes', () => {
     expect(color.startsWith('hsl(')).toBe(true);
   });
 
-  test('retorna color neutro cuando no hay pedidos', () => {
-    const color = getColumnColorByClientes([]);
-    expect(color).toBe('hsl(210, 20%, 97%)');
+  test('debe retornar gris si hay múltiples clientes', async () => {
+    const { getColumnColorByClientes } = await import('../kanban.js');
+    const pedidos = [
+      { cliente: 'Cliente A' },
+      { cliente: 'Cliente B' }
+    ];
+    expect(getColumnColorByClientes(pedidos)).toBe('lightgray');
   });
 });
