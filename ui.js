@@ -1,6 +1,6 @@
 import { openPedidoModal, savePedido, deletePedido, returnToPrintStage } from './pedidoModal.js';
 import { handleSearch, setupSearchAutocomplete } from './utils.js';
-import { renderKanban, renderJKanban } from './kanban.js';
+import { renderKanban } from './kanban.js';
 import { renderList } from './listView.js';
 import { currentPedidos } from './firestore.js';
 import { renderGraficosReportes } from './reportesGraficos.js'; // NUEVO
@@ -70,12 +70,10 @@ export function initializeAppEventListeners() {
         tabBtn.addEventListener('shown.bs.tab', (event) => {
             const targetId = event.target.getAttribute('data-bs-target');
             if (targetId === '#tab-pane-kanban-impresion') {
-                const render = window.useJKanban && renderJKanban ? renderJKanban : renderKanban;
-                render(currentPedidos || [], { only: 'impresion' });
+                renderKanban(currentPedidos || [], { only: 'impresion' });
                 document.getElementById('reportes-graficos').style.display = 'none';
             } else if (targetId === '#tab-pane-kanban-complementarias') {
-                const render = window.useJKanban && renderJKanban ? renderJKanban : renderKanban;
-                render(currentPedidos || [], { only: 'complementarias' });
+                renderKanban(currentPedidos || [], { only: 'complementarias' });
                 document.getElementById('reportes-graficos').style.display = 'none';
             } else if (targetId === '#tab-pane-lista') {
                 renderList(currentPedidos || []);
@@ -116,8 +114,7 @@ export function loadMainAppData() {
     listView.innerHTML = '';
 
     // Renderiza el Kanban de impresión por defecto al cargar datos
-    const defaultRender = window.useJKanban && renderJKanban ? renderJKanban : renderKanban;
-    defaultRender(currentPedidos || [], { only: 'impresion' });
+    renderKanban(currentPedidos || [], { only: 'impresion' });
 
     // Oculta los reportes al inicio
     const reportes = document.getElementById('reportes-graficos');
@@ -135,8 +132,7 @@ window.onPedidosDataUpdate = function(pedidos) {
                 kanbanBoard.innerHTML = '<div class="text-center text-muted py-5">No hay pedidos para mostrar.</div>';
             }
         } else {
-            const render = window.useJKanban && renderJKanban ? renderJKanban : renderKanban;
-            render(pedidos, { only: 'impresion' });
+            renderKanban(pedidos, { only: 'impresion' });
         }
     }
 };

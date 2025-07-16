@@ -3,116 +3,12 @@ import { etapasImpresion, etapasComplementarias, currentPedidos } from './firest
 import { openPedidoModal, completeStage } from './pedidoModal.js';
 import { updatePedido } from './firestore.js';
 
-// Mantiene la posición de scroll por tablero
-const boardScrollPositions = {};
-
-function trackBoardScroll(element) {
-    if (!element || element._trackScrollAttached) return;
-    element.addEventListener('scroll', () => {
-        boardScrollPositions[element.id] = element.scrollLeft;
-    });
-    element._trackScrollAttached = true;
-}
-
-// New: simple Kanban rendering using the jKanban library
-export function renderJKanban(pedidos, options = {}) {
-    const boardId = options.only === 'complementarias' ? '#kanban-board-complementarias' : '#kanban-board';
-    const boardElement = document.querySelector(boardId);
-    if (!boardElement || !window.jKanban) {
-        console.warn('jKanban library not loaded or board element missing');
-        return;
-    }
-
-    // Combine stages according to view
-    const etapas = options.only === 'impresion'
-        ? etapasImpresion
-        : options.only === 'complementarias'
-            ? etapasComplementarias
-            : [...etapasImpresion, ...etapasComplementarias];
-
-    const boards = etapas.map(etapa => ({ id: etapa, title: etapa, item: [] }));
-
-    // Helper to accumulate pedidos per etapa for color logic
-    const pedidosPorEtapa = {};
-    etapas.forEach(e => pedidosPorEtapa[e] = []);
-
-    // Build items for each board using existing card markup
-    pedidos.forEach(p => {
-        const board = boards.find(b => b.id === p.etapaActual);
-        if (board) {
-            const card = createKanbanCard(p);
-            board.item.push({
-                id: p.id,
-                class: 'kanban-card',
-                title: card.innerHTML
-            });
-            pedidosPorEtapa[board.id].push(p);
-        }
-    });
-
-
-    boardElement.classList.add('jkanban-active');
-    const prevScroll = boardScrollPositions[boardElement.id] ?? boardElement.scrollLeft;
-    boardScrollPositions[boardElement.id] = prevScroll;
-    boardElement.innerHTML = '';
-    const kanban = new window.jKanban({
-        element: boardId,
-        boards,
-        click: (el) => {
-            const id = el.getAttribute('data-eid');
-            if (id) openPedidoModal(id);
-        },
-        dropEl: (el, target) => {
-            const id = el.getAttribute('data-eid');
-            const stage = target.parentElement.getAttribute('data-id');
-            const scrollBefore = boardElement.scrollLeft;
-            boardScrollPositions[boardElement.id] = scrollBefore;
-            if (id && stage) updatePedido(window.db, id, { etapaActual: stage });
-            requestAnimationFrame(() => {
-                boardElement.scrollLeft = scrollBefore;
-            });
-        }
-    });
-
-    // Restaurar la posición del scroll después de renderizar
-    requestAnimationFrame(() => {
-        boardElement.scrollLeft = prevScroll;
-    });
-    trackBoardScroll(boardElement);
-    // Allow horizontal drag scrolling on the board container
-    enableKanbanDragToScroll(boardElement);
-
-    // Apply background color logic per column after render
-    Object.entries(pedidosPorEtapa).forEach(([etapa, pedidosEtapa]) => {
-        const color = getColumnColorByClientes(pedidosEtapa);
-        const boardEl = kanban.findBoard(etapa);
-        if (boardEl) {
-            boardEl.style.background = color;
-        }
-    });
-}
-
 // Variables para ordenación
 let kanbanSortKey = 'secuenciaPedido'; // 'secuenciaPedido' o 'cliente'
 let kanbanSortAsc = true;
 
-function calculateMinTranslate(board) {
-    const container = board.querySelector('.kanban-columns-container');
-    if (!container) return 0;
-
-    const columns = container.children;
-    const totalColumns = columns.length;
-    const columnWidth = columns[0]?.offsetWidth || 273; // default
-    const gap = 10;
-    const visibleWidth = board.offsetWidth;
-    const totalWidth = totalColumns * (columnWidth + gap) - gap;
-
-    const maxTranslate = 0;
-    const minTranslate = visibleWidth - totalWidth;
-
-    return minTranslate < 0 ? minTranslate : 0;
-}
-
+// NUEVO: Límite máximo absoluto para desplazamiento
+const GLOBAL_MAX_TRANSLATE = -2160.0;
 
 // Aplicar corrección global cuando la ventana cargue
 window.addEventListener('DOMContentLoaded', () => {
@@ -137,21 +33,18 @@ const observer = new MutationObserver((mutations) => {
                 if (match && match[1]) {
                     const values = match[1].split(', ');
                     const tx = parseFloat(values[4]) || 0;
-                    const board = container.closest('#kanban-board, #kanban-board-complementarias');
-                    const minTranslate = calculateMinTranslate(board, container);
-
-                    if (tx < minTranslate) {
-                        console.warn(`[Observer] Corrigiendo ${container.id || 'container'}: ${tx} -> ${minTranslate}`);
+                    if (tx < GLOBAL_MAX_TRANSLATE) {
+                        console.warn(`[Observer] Corrigiendo ${container.id || 'container'}: ${tx} -> ${GLOBAL_MAX_TRANSLATE}`);
                         const originalTransition = container.style.transition;
                         container.style.transition = 'none'; // Desactivar transición
-                        container.style.transform = `translateX(${minTranslate}px)`;
+                        container.style.transform = `translateX(${GLOBAL_MAX_TRANSLATE}px)`;
                         container.offsetHeight; // Forzar reflow
                         container.style.transition = originalTransition; // Restaurar transición
-
+                        
                         if (container._scrollState) {
-                            container._scrollState.currentTranslate = minTranslate;
+                            container._scrollState.currentTranslate = GLOBAL_MAX_TRANSLATE;
                             // prevTranslate también debería reflejar esto si el estado se corrompió
-                            container._scrollState.prevTranslate = minTranslate;
+                            container._scrollState.prevTranslate = GLOBAL_MAX_TRANSLATE; 
                         }
                     }
                 }
@@ -179,19 +72,17 @@ function fixAllContainerTranslates() {
                 if (match && match[1]) {
                     const values = match[1].split(', ');
                     const tx = parseFloat(values[4]) || 0;
-                    const minTranslate = calculateMinTranslate(board, container);
-
-                    if (tx < minTranslate) {
-                        console.warn(`[fixAllInterval] Corrigiendo ${container.id || 'container'}: ${tx} -> ${minTranslate}`);
+                    if (tx < GLOBAL_MAX_TRANSLATE) {
+                        console.warn(`[fixAllInterval] Corrigiendo ${container.id || 'container'}: ${tx} -> ${GLOBAL_MAX_TRANSLATE}`);
                         const originalTransition = container.style.transition;
                         container.style.transition = 'none';
-                        container.style.transform = `translateX(${minTranslate}px)`;
+                        container.style.transform = `translateX(${GLOBAL_MAX_TRANSLATE}px)`;
                         container.offsetHeight; // Forzar reflow
                         container.style.transition = originalTransition;
-
+                        
                         if (container._scrollState) {
-                            container._scrollState.currentTranslate = minTranslate;
-                            container._scrollState.prevTranslate = minTranslate;
+                            container._scrollState.currentTranslate = GLOBAL_MAX_TRANSLATE;
+                            container._scrollState.prevTranslate = GLOBAL_MAX_TRANSLATE;
                         }
                     }
                 }
@@ -326,9 +217,6 @@ export function renderKanban(pedidos, options = {}) {
     let mainBoard = document.getElementById('kanban-board');
     let complementaryBoard = document.getElementById('kanban-board-complementarias');
 
-    if (mainBoard) mainBoard.classList.remove('jkanban-active');
-    if (complementaryBoard) complementaryBoard.classList.remove('jkanban-active');
-
     // NUEVO: Ajustar cualquier transformación existente que esté fuera de límites
     function fixExcessiveTranslates() {
         const containers = document.querySelectorAll('.kanban-columns-container');
@@ -342,13 +230,11 @@ export function renderKanban(pedidos, options = {}) {
                     if (match && match[1]) {
                         const values = match[1].split(', ');
                         const tx = parseFloat(values[4]) || 0;
-                        const minTranslate = calculateMinTranslate(board, container);
-
-                        if (tx < minTranslate) {
-                            container.style.transform = `translateX(${minTranslate}px)`;
+                        if (tx < -1120.5) {
+                            container.style.transform = `translateX(-1120.5px)`;
                             if (container._scrollState) {
-                                container._scrollState.currentTranslate = minTranslate;
-                                container._scrollState.prevTranslate = minTranslate;
+                                container._scrollState.currentTranslate = -1120.5;
+                                container._scrollState.prevTranslate = -1120.5;
                             }
                         }
                     }
@@ -371,11 +257,9 @@ export function renderKanban(pedidos, options = {}) {
                 if (match && match[1]) {
                     const values = match[1].split(', ');
                     translateX = parseFloat(values[4]) || 0;
-
-                    const minTranslate = calculateMinTranslate(board, container);
-
-                    if (translateX < minTranslate) {
-                        translateX = minTranslate;
+                    // NUEVO: No permitir valores más bajos que el límite absoluto
+                    if (translateX < -1120.5) {
+                        translateX = -1120.5;
                     }
                 }
             }
@@ -897,11 +781,9 @@ function setupGroupContainer(group) {
             if (match && match[1]) {
                 const values = match[1].split(', ');
                 const tx = parseFloat(values[4]) || 0;
-                const minTranslate = calculateMinTranslate(board, columnsContainer);
-
-                if (tx < minTranslate) {
+                if (tx < GLOBAL_MAX_TRANSLATE) { // Usar constante global
                     // Corregir directamente si ya está mal al configurar
-                    setContainerPosition(board, columnsContainer, tx);
+                    setContainerPosition(board, columnsContainer, tx); 
                 }
             }
         }
@@ -968,6 +850,7 @@ function implementDirectScroll(board, container) {
     let animationSpeed = 1.5; 
     let lastTouchTime = 0;
     
+    const ABSOLUTE_MAX_TRANSLATE = GLOBAL_MAX_TRANSLATE;
     
     // Leer la posición actual del transform del DOM para inicializar currentTranslate y prevTranslate
     const initialStyle = window.getComputedStyle(container);
@@ -1281,7 +1164,8 @@ function setContainerPosition(board, container, newTranslate) {
     const boardWidth = board.clientWidth;
     const containerWidth = container.scrollWidth;
 
-    // El límite se calculará dinámicamente
+    // Usar límite global constante
+    const ABSOLUTE_MAX_TRANSLATE = GLOBAL_MAX_TRANSLATE; // Debería ser -2160.0px
 
     let clampedTranslate;
 
@@ -1293,8 +1177,19 @@ function setContainerPosition(board, container, newTranslate) {
         // Contenido es más ancho, aplicar lógica de scroll
         const naturalMinTranslate = -(containerWidth - boardWidth);
 
-        // Calcular el límite mínimo de forma dinámica
-        let effectiveMinTranslate = naturalMinTranslate;
+        // MODIFICADO: Asegurar que ABSOLUTE_MAX_TRANSLATE sea el límite más negativo si se alcanza.
+        // Si el scroll natural permitiría ir MÁS ALLÁ (más negativo) de ABSOLUTE_MAX_TRANSLATE,
+        // entonces el límite efectivo es ABSOLUTE_MAX_TRANSLATE.
+        // Si el scroll natural es MENOS NEGATIVO que ABSOLUTE_MAX_TRANSLATE (es decir, el contenido termina antes),
+        // entonces el límite es el naturalMinTranslate.
+        let effectiveMinTranslate;
+        if (naturalMinTranslate < ABSOLUTE_MAX_TRANSLATE) {
+            effectiveMinTranslate = ABSOLUTE_MAX_TRANSLATE;
+            // console.log(`[setContainerPosition] Límite forzado por GLOBAL_MAX_TRANSLATE. Natural: ${naturalMinTranslate}, Global: ${ABSOLUTE_MAX_TRANSLATE}`);
+        } else {
+            effectiveMinTranslate = naturalMinTranslate;
+            // console.log(`[setContainerPosition] Límite natural aplicado. Natural: ${naturalMinTranslate}, Global: ${ABSOLUTE_MAX_TRANSLATE}`);
+        }
 
         if (newTranslate > 0) {
             clampedTranslate = 0; // No desplazarse más allá del inicio
@@ -1307,7 +1202,8 @@ function setContainerPosition(board, container, newTranslate) {
     }
 
     // NO es necesaria una verificación de seguridad final aquí si la lógica anterior es correcta,
-    // ya que effectiveMinTranslate aplica el límite dinámico calculado.
+    // ya que effectiveMinTranslate ya considera ABSOLUTE_MAX_TRANSLATE.
+    // if (containerWidth > boardWidth && clampedTranslate < ABSOLUTE_MAX_TRANSLATE) { ... }
     
     if (isNaN(clampedTranslate) || typeof clampedTranslate === 'undefined') {
         console.error(`[setContainerPosition] clampedTranslate inválido (${clampedTranslate}), usando 0 por defecto.`);
@@ -1318,7 +1214,7 @@ function setContainerPosition(board, container, newTranslate) {
     const newTransform = `translateX(${clampedTranslate}px)`;
 
     if (currentTransform !== newTransform) {
-        // console.log(`[setContainerPosition] Aplicando: ${newTransform}. NatMin: ${-(containerWidth - boardWidth)}, EffMin: ${effectiveMinTranslate}`);
+        // console.log(`[setContainerPosition] Aplicando: ${newTransform}. NatMin: ${-(containerWidth - boardWidth)}, EffMin: ${effectiveMinTranslate_debug_val}, Global: ${ABSOLUTE_MAX_TRANSLATE}`);
         container.style.transform = newTransform;
     }
 
@@ -1326,10 +1222,4 @@ function setContainerPosition(board, container, newTranslate) {
     container._scrollState.currentTranslate = clampedTranslate;
 
     return clampedTranslate;
-}
-// Exportar funciones necesarias para testing
-if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
-    module.exports = {
-        getColumnColorByClientes
-    };
 }
