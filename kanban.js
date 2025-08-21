@@ -8,9 +8,21 @@ let kanbanSortKey = 'secuenciaPedido'; // 'secuenciaPedido' o 'cliente'
 let kanbanSortAsc = true;
 
 // Configuración del sistema de scroll
-const ANCHO_COLUMNA = 280; // Ancho estándar de cada columna
-const GAP_COLUMNAS = 20; // Espacio entre columnas
+const ANCHO_COLUMNA = 280; // Ancho estándar de cada columna (solo referencia)
 const PADDING_CONTENEDOR = 24; // Padding del contenedor
+
+// Función para obtener el gap real del CSS
+function obtenerGapReal(container) {
+    const estilos = window.getComputedStyle(container);
+    const gap = estilos.gap || estilos.columnGap || '1.2rem';
+    // Convertir rem a px (asumiendo 1rem = 16px)
+    if (gap.includes('rem')) {
+        return parseFloat(gap) * 16;
+    } else if (gap.includes('px')) {
+        return parseFloat(gap);
+    }
+    return 19.2; // Fallback: 1.2rem = 19.2px
+}
 
 // Mapa global para mantener el estado de scroll de cada contenedor
 const estadosScroll = new Map();
@@ -24,10 +36,41 @@ function calcularLimitesScroll(board, container) {
     
     const anchoBoard = board.clientWidth;
     const columnas = container.querySelectorAll('.kanban-column');
-    const numeroColumnas = columnas.length;
     
-    // Calcular ancho total del contenido
-    const anchoContenido = (numeroColumnas * ANCHO_COLUMNA) + ((numeroColumnas - 1) * GAP_COLUMNAS) + (PADDING_CONTENEDOR * 2);
+    if (columnas.length === 0) {
+        return { minTranslate: 0, maxTranslate: 0 };
+    }
+    
+    // Obtener el gap real del CSS
+    const gapReal = obtenerGapReal(container);
+    
+    // Calcular ancho real del contenido basado en las columnas actuales
+    let anchoContenido = 0;
+    
+    // Sumar el ancho real de cada columna
+    columnas.forEach((columna, index) => {
+        const estilosColumna = window.getComputedStyle(columna);
+        const anchoColumna = columna.offsetWidth + 
+                           parseFloat(estilosColumna.marginLeft) + 
+                           parseFloat(estilosColumna.marginRight);
+        anchoContenido += anchoColumna;
+        
+        // Añadir gap entre columnas (excepto la última)
+        if (index < columnas.length - 1) {
+            anchoContenido += gapReal;
+        }
+    });
+    
+    // Obtener padding real del contenedor padre (kanban-group)
+    const grupoKanban = container.closest('.kanban-group');
+    let paddingReal = PADDING_CONTENEDOR;
+    if (grupoKanban) {
+        const estilosGrupo = window.getComputedStyle(grupoKanban);
+        paddingReal = parseFloat(estilosGrupo.paddingLeft) + parseFloat(estilosGrupo.paddingRight);
+    }
+    
+    // Añadir padding del contenedor
+    anchoContenido += paddingReal;
     
     let minTranslate = 0; // Posición inicial (más a la derecha)
     let maxTranslate = 0; // Posición final (más a la izquierda)
@@ -35,10 +78,12 @@ function calcularLimitesScroll(board, container) {
     if (anchoContenido > anchoBoard) {
         // El contenido es más ancho que el board, permitir scroll
         maxTranslate = -(anchoContenido - anchoBoard);
+        console.log(`[calcularLimitesScroll] Contenido: ${anchoContenido}px, Board: ${anchoBoard}px, MaxTranslate: ${maxTranslate}px`);
     } else {
         // El contenido cabe en el board, centrarlo
         const centrado = (anchoBoard - anchoContenido) / 2;
         minTranslate = maxTranslate = centrado;
+        console.log(`[calcularLimitesScroll] Contenido cabe en board, centrado: ${centrado}px`);
     }
     
     return { minTranslate, maxTranslate };
