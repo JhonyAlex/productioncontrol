@@ -455,31 +455,29 @@ function createKanbanGroup(groupTitle, etapasInGroup, allPedidos) {
     columnsContainer.className = 'kanban-columns-container';
     
     // Mover propiedades del .kanban-group eliminado al contenedor principal
-    columnsContainer.style.width = '100%';
     columnsContainer.style.overflowX = 'hidden'; // Mantener hidden para evitar barras de desplazamiento nativas
     columnsContainer.style.padding = '1.2rem';
     columnsContainer.style.flexShrink = '0';
     columnsContainer.style.maxWidth = '100%';
     columnsContainer.style.overflow = 'hidden';
     
-    const columnWidth = 300; // ancho fijo por columna
-    const columnContentWidth = columnWidth - 27; 
-    let totalWidth = 0;
+    // Usar valores consistentes con el CSS
+    const columnWidth = 300; // Ancho promedio de las columnas (min-width: 280px, max-width: 320px)
+    const gapWidth = 19.2; // 1.2rem = 19.2px (gap real del CSS)
+    const paddingTotal = 38.4; // 1.2rem * 2 = 38.4px (padding izquierdo + derecho)
     
-    // Calculamos el ancho total considerando el gap entre columnas
-    for (let i = 0; i < etapasInGroup.length; i++) {
-        totalWidth += columnContentWidth;
-        if (i < etapasInGroup.length - 1) {
-            totalWidth += 10; // gap entre columnas
-        }
-    }
+    // Calcular ancho total real considerando todas las columnas, gaps y padding
+    const totalColumnsWidth = etapasInGroup.length * columnWidth;
+    const totalGapsWidth = (etapasInGroup.length - 1) * gapWidth;
+    const totalWidth = totalColumnsWidth + totalGapsWidth + paddingTotal + 50; // Margen adicional para asegurar visibilidad completa
+    
+    console.log(`[createKanbanGroup] Columnas: ${etapasInGroup.length}, Ancho total calculado: ${totalWidth}px`);
     
     columnsContainer.style.width = `${totalWidth}px`;
     columnsContainer.style.minWidth = `${totalWidth}px`;
     columnsContainer.style.display = 'flex';
-    columnsContainer.style.flexDirection = 'row';
-    columnsContainer.style.flexWrap = 'nowrap';
-    columnsContainer.style.gap = '10px'; // Usar gap para espaciado uniforme
+    columnsContainer.style.flexFlow = 'row';
+    columnsContainer.style.gap = '1.2rem'; // Usar el mismo valor que en CSS
 
     etapasInGroup.forEach(etapa => {
         const columnDiv = document.createElement('div');
@@ -487,8 +485,8 @@ function createKanbanGroup(groupTitle, etapasInGroup, allPedidos) {
         columnDiv.dataset.etapa = etapa;
         
         // MODIFICADO: Usar el mismo valor para ancho que usamos en el cálculo del total
-        columnDiv.style.width = `${columnContentWidth}px`;
-        columnDiv.style.minWidth = `${columnContentWidth}px`;
+        columnDiv.style.width = `${columnWidth}px`;
+        columnDiv.style.minWidth = `${columnWidth}px`;
         columnDiv.style.flexShrink = '0';
 
         // Filtrar pedidos para la etapa actual
