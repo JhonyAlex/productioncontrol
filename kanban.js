@@ -1,5 +1,5 @@
-// Dependencias necesarias (ajusta los imports según tu estructura real)
-import { etapasImpresion, etapasComplementarias, currentPedidos } from './firestore.js'; // O ajusta según donde declares estas variables
+// Dependencias necesarias
+import { etapasImpresion, etapasComplementarias, currentPedidos } from './firestore.js';
 import { openPedidoModal, completeStage } from './pedidoModal.js';
 import { updatePedido } from './firestore.js';
 
@@ -7,270 +7,317 @@ import { updatePedido } from './firestore.js';
 let kanbanSortKey = 'secuenciaPedido'; // 'secuenciaPedido' o 'cliente'
 let kanbanSortAsc = true;
 
-// NUEVO: Límite máximo absoluto para desplazamiento
-const GLOBAL_MAX_TRANSLATE = -2160.0;
+// Configuración del sistema de scroll
+const ANCHO_COLUMNA = 280; // Ancho estándar de cada columna
+const GAP_COLUMNAS = 20; // Espacio entre columnas
+const PADDING_CONTENEDOR = 24; // Padding del contenedor
 
-// Aplicar corrección global cuando la ventana cargue
-window.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => {
-        fixAllContainerTranslates();
-        setInterval(fixAllContainerTranslates, 750); // Intervalo un poco más frecuente
-    }, 500);
-});
+// Mapa global para mantener el estado de scroll de cada contenedor
+const estadosScroll = new Map();
 
-// Monitorear cambios en CSS que podrían afectar la posición
-const observer = new MutationObserver((mutations) => {
-    mutations.forEach(mutation => {
-        if (mutation.type === 'attributes' && 
-            mutation.attributeName === 'style' && 
-            mutation.target.classList.contains('kanban-columns-container')) {
-            
-            const container = mutation.target;
-            const style = window.getComputedStyle(container);
-            const matrix = style.transform || style.webkitTransform;
-            if (matrix && matrix !== 'none') {
-                const match = matrix.match(/matrix.*\((.+)\)/);
-                if (match && match[1]) {
-                    const values = match[1].split(', ');
-                    const tx = parseFloat(values[4]) || 0;
-                    if (tx < GLOBAL_MAX_TRANSLATE) {
-                        console.warn(`[Observer] Corrigiendo ${container.id || 'container'}: ${tx} -> ${GLOBAL_MAX_TRANSLATE}`);
-                        const originalTransition = container.style.transition;
-                        container.style.transition = 'none'; // Desactivar transición
-                        container.style.transform = `translateX(${GLOBAL_MAX_TRANSLATE}px)`;
-                        container.offsetHeight; // Forzar reflow
-                        container.style.transition = originalTransition; // Restaurar transición
-                        
-                        if (container._scrollState) {
-                            container._scrollState.currentTranslate = GLOBAL_MAX_TRANSLATE;
-                            // prevTranslate también debería reflejar esto si el estado se corrompió
-                            container._scrollState.prevTranslate = GLOBAL_MAX_TRANSLATE; 
-                        }
-                    }
-                }
-            }
-        }
-    });
-});
-
-// Comenzar a observar cuando se cargue la página
-window.addEventListener('load', () => {
-    document.querySelectorAll('.kanban-columns-container').forEach(container => {
-        observer.observe(container, { attributes: true });
-    });
-});
-
-// Función global para corregir todos los contenedores
-function fixAllContainerTranslates() {
-    document.querySelectorAll('.kanban-columns-container').forEach(container => {
-        const board = container.closest('#kanban-board, #kanban-board-complementarias');
-        if (board) {
-            const style = window.getComputedStyle(container);
-            const matrix = style.transform || style.webkitTransform;
-            if (matrix && matrix !== 'none') {
-                const match = matrix.match(/matrix.*\((.+)\)/);
-                if (match && match[1]) {
-                    const values = match[1].split(', ');
-                    const tx = parseFloat(values[4]) || 0;
-                    if (tx < GLOBAL_MAX_TRANSLATE) {
-                        console.warn(`[fixAllInterval] Corrigiendo ${container.id || 'container'}: ${tx} -> ${GLOBAL_MAX_TRANSLATE}`);
-                        const originalTransition = container.style.transition;
-                        container.style.transition = 'none';
-                        container.style.transform = `translateX(${GLOBAL_MAX_TRANSLATE}px)`;
-                        container.offsetHeight; // Forzar reflow
-                        container.style.transition = originalTransition;
-                        
-                        if (container._scrollState) {
-                            container._scrollState.currentTranslate = GLOBAL_MAX_TRANSLATE;
-                            container._scrollState.prevTranslate = GLOBAL_MAX_TRANSLATE;
-                        }
-                    }
-                }
-            }
-        }
-    });
+// Función para calcular límites dinámicos basados en contenido real
+function calcularLimitesScroll(board, container) {
+    if (!board || !container) {
+        console.error('[calcularLimitesScroll] Board o container inválido');
+        return { minTranslate: 0, maxTranslate: 0 };
+    }
+    
+    const anchoBoard = board.clientWidth;
+    const columnas = container.querySelectorAll('.kanban-column');
+    const numeroColumnas = columnas.length;
+    
+    // Calcular ancho total del contenido
+    const anchoContenido = (numeroColumnas * ANCHO_COLUMNA) + ((numeroColumnas - 1) * GAP_COLUMNAS) + (PADDING_CONTENEDOR * 2);
+    
+    let minTranslate = 0; // Posición inicial (más a la derecha)
+    let maxTranslate = 0; // Posición final (más a la izquierda)
+    
+    if (anchoContenido > anchoBoard) {
+        // El contenido es más ancho que el board, permitir scroll
+        maxTranslate = -(anchoContenido - anchoBoard);
+    } else {
+        // El contenido cabe en el board, centrarlo
+        const centrado = (anchoBoard - anchoContenido) / 2;
+        minTranslate = maxTranslate = centrado;
+    }
+    
+    return { minTranslate, maxTranslate };
 }
 
-// MOVER ESTA FUNCIÓN ANTES DE setupKanbanScrolling
-function enableKanbanDragToScroll(container) {
-    if (!container) {
-        console.error("Container para drag-to-scroll no encontrado");
+// Función para obtener el estado de scroll de un contenedor
+function obtenerEstadoScroll(containerId) {
+    if (!estadosScroll.has(containerId)) {
+        estadosScroll.set(containerId, {
+            translateX: 0,
+            isDragging: false,
+            startPos: 0,
+            startTranslate: 0
+        });
+    }
+    return estadosScroll.get(containerId);
+}
+
+// Función para establecer posición del contenedor con límites dinámicos
+function establecerPosicionContenedor(board, container, nuevoTranslate) {
+    if (!board || !container) {
+        console.error('[establecerPosicionContenedor] Board o container inválido');
+        return 0;
+    }
+    
+    const { minTranslate, maxTranslate } = calcularLimitesScroll(board, container);
+    
+    // Aplicar límites
+    let translateLimitado = Math.max(maxTranslate, Math.min(minTranslate, nuevoTranslate));
+    
+    // Aplicar transformación
+    container.style.transform = `translateX(${translateLimitado}px)`;
+    
+    // Actualizar estado
+    const containerId = container.dataset.containerId || `container-${Date.now()}`;
+    if (!container.dataset.containerId) {
+        container.dataset.containerId = containerId;
+    }
+    
+    const estado = obtenerEstadoScroll(containerId);
+    estado.translateX = translateLimitado;
+    
+    return translateLimitado;
+}
+
+// Función principal para habilitar scroll por arrastre
+function habilitarScrollArrastre(board, container) {
+    if (!board || !container) {
+        console.error('[habilitarScrollArrastre] Board o container inválido');
         return;
     }
     
-    console.log(`Configurando drag-to-scroll para ${container.id}`);
+    const containerId = container.dataset.containerId || `container-${Date.now()}`;
+    if (!container.dataset.containerId) {
+        container.dataset.containerId = containerId;
+    }
     
-    // Verificar si el contenedor realmente tiene overflow
-    const contentWidth = container.scrollWidth;
-    const containerWidth = container.clientWidth;
-    console.log(`Container ${container.id}: scrollWidth=${contentWidth}, clientWidth=${containerWidth}, puede desplazarse: ${contentWidth > containerWidth}`);
+    const estado = obtenerEstadoScroll(containerId);
+    
+    // Función para obtener posición X del evento
+    const obtenerPosicionX = (event) => {
+        return event.type.includes('mouse') ? event.pageX : event.touches[0].pageX;
+    };
+    
+    // Manejadores de eventos
+    const manejarInicioArrastre = (e) => {
+        // Evitar arrastre en elementos interactivos
+        if (e.target.closest('.kanban-card, button, a, input, select, textarea, [onclick]')) {
+            return;
+        }
+        
+        estado.isDragging = true;
+        estado.startPos = obtenerPosicionX(e);
+        estado.startTranslate = estado.translateX;
+        
+        board.style.cursor = 'grabbing';
+        board.classList.add('drag-scroll-active');
+        
+        e.preventDefault();
+    };
+    
+    const manejarMovimientoArrastre = (e) => {
+        if (!estado.isDragging) return;
+        
+        const posicionActual = obtenerPosicionX(e);
+        const diferencia = posicionActual - estado.startPos;
+        const nuevoTranslate = estado.startTranslate + diferencia;
+        
+        establecerPosicionContenedor(board, container, nuevoTranslate);
+        
+        e.preventDefault();
+    };
+    
+    const manejarFinArrastre = (e) => {
+        if (!estado.isDragging) return;
+        
+        estado.isDragging = false;
+        board.style.cursor = 'grab';
+        board.classList.remove('drag-scroll-active');
+    };
+    
+    const manejarRuedaRaton = (e) => {
+        if (e.deltaX !== 0) {
+            const nuevoTranslate = estado.translateX - e.deltaX;
+            establecerPosicionContenedor(board, container, nuevoTranslate);
+            e.preventDefault();
+        }
+    };
+    
+    // Limpiar eventos anteriores
+    limpiarEventosContenedor(board);
+    
+    // Agregar nuevos eventos
+    board.addEventListener('mousedown', manejarInicioArrastre);
+    document.addEventListener('mousemove', manejarMovimientoArrastre);
+    document.addEventListener('mouseup', manejarFinArrastre);
+    
+    board.addEventListener('touchstart', manejarInicioArrastre, { passive: false });
+    document.addEventListener('touchmove', manejarMovimientoArrastre, { passive: false });
+    document.addEventListener('touchend', manejarFinArrastre);
+    
+    board.addEventListener('wheel', manejarRuedaRaton, { passive: false });
+    
+    // Guardar referencias para limpieza posterior
+    if (!board._scrollEventListeners) {
+        board._scrollEventListeners = [];
+    }
+    
+    board._scrollEventListeners.push(
+        { element: board, type: 'mousedown', callback: manejarInicioArrastre },
+        { element: document, type: 'mousemove', callback: manejarMovimientoArrastre },
+        { element: document, type: 'mouseup', callback: manejarFinArrastre },
+        { element: board, type: 'touchstart', callback: manejarInicioArrastre },
+        { element: document, type: 'touchmove', callback: manejarMovimientoArrastre },
+        { element: document, type: 'touchend', callback: manejarFinArrastre },
+        { element: board, type: 'wheel', callback: manejarRuedaRaton }
+    );
+}
+
+// Función para limpiar eventos de un contenedor - OPTIMIZADA
+function limpiarEventosContenedor(board) {
+    // Limpiar event listeners de scroll si existen
+    if (board._scrollEventListeners) {
+        board._scrollEventListeners.forEach(({ element, type, callback }) => {
+            if (element && typeof element.removeEventListener === 'function') {
+                element.removeEventListener(type, callback);
+            }
+        });
+        board._scrollEventListeners = [];
+    }
+    
+    // Limpiar otros listeners almacenados
+    if (board._scrollListeners) {
+        board._scrollListeners.forEach(listener => {
+            if (listener.element && listener.type && listener.callback) {
+                listener.element.removeEventListener(listener.type, listener.callback);
+            }
+        });
+        board._scrollListeners = [];
+    }
+    
+    // Resetear propiedades de arrastre
+    board.style.cursor = 'grab';
+    board.classList.remove('drag-scroll-active', 'no-user-select');
+    
+    console.log(`Configurando drag-to-scroll para ${board.id}`);
+    
+    // Verificar si el contenedor realmente necesita scroll
+    const container = board.querySelector('.kanban-columns-container');
+    if (!container) return;
+    
+    const limites = calcularLimitesScroll(board, container);
+    if (limites.minTranslate >= 0) {
+        console.log(`Container ${container.id}: no necesita scroll`);
+        return;
+    }
     
     let isDown = false;
     let startX;
-    let scrollLeft;
+    let initialTranslate;
     let isDraggingCard = false;
-    let lastX = 0;
 
     function isOnCard(e) {
-        // Simplificar esta función para reducir falsos positivos
-        return !!e.target.closest('.kanban-card, button');
+        return !!e.target.closest('.kanban-card, button, .scroll-button');
     }
 
-    // Función para restablecer el estado
     function resetDragState() {
         isDown = false;
         isDraggingCard = false;
-        container.classList.remove('drag-scroll-active', 'no-user-select');
-        container.style.cursor = 'grab';
+        board.style.cursor = 'grab';
     }
 
-    // Asegurarnos de que los eventos de mouse se registren correctamente
-    container.addEventListener('mousedown', (e) => {
-        const onCard = isOnCard(e);
-        console.log(`${container.id} mousedown - onCard: ${onCard}`);
-        
-        if (onCard) {
+    // Eventos de mouse
+    board.addEventListener('mousedown', (e) => {
+        if (isOnCard(e)) {
             isDraggingCard = true;
             return;
         }
         
         isDown = true;
-        container.classList.add('drag-scroll-active', 'no-user-select');
         startX = e.pageX;
-        lastX = e.pageX;
-        scrollLeft = container.scrollLeft;
-        container.style.cursor = 'grabbing';
+        const estado = obtenerEstadoScroll(container.dataset.containerId);
+        initialTranslate = estado.translateX;
+        board.style.cursor = 'grabbing';
+        e.preventDefault();
     });
 
-    // Necesitamos capturar mouseup en todo el documento, no solo en el container
     document.addEventListener('mouseup', () => {
         if (isDown) {
-            console.log(`${container.id} mouseup - Reseteando estados`);
             resetDragState();
         }
     });
     
-    // El evento mouseleave debe funcionar igual
-    container.addEventListener('mouseleave', () => {
+    board.addEventListener('mouseleave', () => {
         if (isDown) {
-            console.log(`${container.id} mouseleave - Reseteando estados`);
             resetDragState();
         }
     });
 
-    container.addEventListener('mousemove', (e) => {
-        if (!isDown) return;
+    board.addEventListener('mousemove', (e) => {
+        if (!isDown || isDraggingCard) return;
         
-        // Modificación clave: usar un enfoque directo para el desplazamiento 
         e.preventDefault();
+        const currentX = e.pageX;
+        const diff = currentX - startX;
+        const nuevoTranslate = initialTranslate + diff;
         
-        const x = e.pageX;
-        const diff = x - lastX;
-        
-        // Usar directamente el valor negativo para que la dirección sea natural
-        container.scrollLeft -= diff * 2;
-        
-        console.log(`Moviendo: diff=${diff}, scrollLeft=${container.scrollLeft}, maxScroll=${container.scrollWidth - container.clientWidth}`);
-        
-        lastX = x;
+        establecerPosicionContenedor(board, container, nuevoTranslate);
     });
 
-    // Touch events - Aplicar la misma lógica que para mouse
-    container.addEventListener('touchstart', (e) => {
-        const onCard = isOnCard(e);
-        console.log(`${container.id} touchstart - onCard: ${onCard}`);
-        
-        if (onCard) {
+    // Eventos táctiles
+    board.addEventListener('touchstart', (e) => {
+        if (isOnCard(e)) {
             isDraggingCard = true;
             return;
         }
         
         isDown = true;
-        container.classList.add('drag-scroll-active', 'no-user-select');
         startX = e.touches[0].pageX;
-        lastX = startX;
-        scrollLeft = container.scrollLeft;
-    });
+        const estado = obtenerEstadoScroll(container.dataset.containerId);
+        initialTranslate = estado.translateX;
+    }, { passive: false });
 
     document.addEventListener('touchend', () => {
         if (isDown) {
-            console.log(`${container.id} touchend - Reseteando estados`);
             resetDragState();
         }
     });
 
-    container.addEventListener('touchmove', (e) => {
-        if (!isDown) return;
+    board.addEventListener('touchmove', (e) => {
+        if (!isDown || isDraggingCard) return;
         
-        const x = e.touches[0].pageX;
-        const diff = x - lastX;
-        container.scrollLeft -= diff * 2;
+        e.preventDefault();
+        const currentX = e.touches[0].pageX;
+        const diff = currentX - startX;
+        const nuevoTranslate = initialTranslate + diff;
         
-        console.log(`Touch moviendo: diff=${diff}, scrollLeft=${container.scrollLeft}`);
-        lastX = x;
-    });
+        establecerPosicionContenedor(board, container, nuevoTranslate);
+    }, { passive: false });
+
+    // Evento de rueda del ratón
+    board.addEventListener('wheel', (e) => {
+        if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+            e.preventDefault();
+            const estado = obtenerEstadoScroll(container.dataset.containerId);
+            const nuevoTranslate = estado.translateX - e.deltaX;
+            establecerPosicionContenedor(board, container, nuevoTranslate);
+        }
+    }, { passive: false });
 }
 
 // Renderiza el tablero Kanban
 export function renderKanban(pedidos, options = {}) {
-    // --- Guardar translateX de cada grupo antes de limpiar ---
+    // Obtener referencias a los boards
     let mainBoard = document.getElementById('kanban-board');
     let complementaryBoard = document.getElementById('kanban-board-complementarias');
 
-    // NUEVO: Ajustar cualquier transformación existente que esté fuera de límites
-    function fixExcessiveTranslates() {
-        const containers = document.querySelectorAll('.kanban-columns-container');
-        containers.forEach(container => {
-            const board = container.closest('.kanban-board, #kanban-board, #kanban-board-complementarias');
-            if (board) {
-                const style = window.getComputedStyle(container);
-                const matrix = style.transform || style.webkitTransform;
-                if (matrix && matrix !== 'none') {
-                    const match = matrix.match(/matrix.*\((.+)\)/);
-                    if (match && match[1]) {
-                        const values = match[1].split(', ');
-                        const tx = parseFloat(values[4]) || 0;
-                        if (tx < -1120.5) {
-                            container.style.transform = `translateX(-1120.5px)`;
-                            if (container._scrollState) {
-                                container._scrollState.currentTranslate = -1120.5;
-                                container._scrollState.prevTranslate = -1120.5;
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    }
-    
-    // NUEVO: Ejecutar primero para corregir cualquier posición existente
-    fixExcessiveTranslates();
-
-    function getGroupTransforms(board) {
-        if (!board) return [];
-        return Array.from(board.querySelectorAll('.kanban-columns-container')).map(container => {
-            const style = window.getComputedStyle(container);
-            const matrix = style.transform || style.webkitTransform || style.mozTransform;
-            let translateX = 0;
-            if (matrix && matrix !== 'none') {
-                const match = matrix.match(/matrix.*\((.+)\)/);
-                if (match && match[1]) {
-                    const values = match[1].split(', ');
-                    translateX = parseFloat(values[4]) || 0;
-                    // NUEVO: No permitir valores más bajos que el límite absoluto
-                    if (translateX < -1120.5) {
-                        translateX = -1120.5;
-                    }
-                }
-            }
-            return translateX;
-        });
-    }
-    const prevTransformsMain = getGroupTransforms(mainBoard);
-    const prevTransformsComplementary = getGroupTransforms(complementaryBoard);
-
-    let prevScrollMain = mainBoard ? mainBoard.scrollLeft : 0;
-    let prevScrollComplementary = complementaryBoard ? complementaryBoard.scrollLeft : 0;
+    // Los estados se mantienen automáticamente en estadosScroll global
+    // No necesitamos duplicar el estado aquí
 
     let kanbanBoard;
     if (options.only === 'complementarias') {
@@ -342,46 +389,18 @@ export function renderKanban(pedidos, options = {}) {
     // Configurar el scroll para ambos tableros
     setupKanbanScrolling();
     
-    // Forzar corrección inmediata después de renderizar
-    fixAllContainerTranslates();
-
-    // MEJORADO: Función para validar y ajustar límites al restaurar translateX
-    function validateAndRestoreTranslates(board, prevTransforms) {
-        if (!board || !prevTransforms || !prevTransforms.length) return;
-        
-        const containers = board.querySelectorAll('.kanban-columns-container');
-        containers.forEach((container, idx) => {
-            if (idx >= prevTransforms.length) return;
-            
-            // Usar la función global para aplicar los límites
-            let tx = prevTransforms[idx] || 0;
-            setContainerPosition(board, container, tx);
-        });
-    }
-
-    // Aplicar restauración validada
+    // Restaurar estados de scroll usando la fuente única de verdad
     requestAnimationFrame(() => {
-        validateAndRestoreTranslates(mainBoard, prevTransformsMain);
-        validateAndRestoreTranslates(complementaryBoard, prevTransformsComplementary);
-        
-        // Forzar nuevamente después de la animación
-        setTimeout(fixAllContainerTranslates, 100);
-    });
-
-    // Restaurar scroll nativo - solo necesario para compatibilidad
-    if (mainBoard) {
-        requestAnimationFrame(() => { mainBoard.scrollLeft = prevScrollMain; });
-    }
-    if (complementaryBoard) {
-        requestAnimationFrame(() => { complementaryBoard.scrollLeft = prevScrollComplementary; });
-    }
-    
-    // Observar nuevos contenedores
-    setTimeout(() => {
-        document.querySelectorAll('.kanban-columns-container').forEach(container => {
-            observer.observe(container, { attributes: true });
+        estadosScroll.forEach((estado, containerId) => {
+            const container = document.querySelector(`[data-container-id="${containerId}"]`);
+            if (container) {
+                const board = container.closest('#kanban-board, #kanban-board-complementarias');
+                if (board) {
+                    establecerPosicionContenedor(board, container, estado.translateX);
+                }
+            }
         });
-    }, 200);
+    });
 }
 
 function createKanbanGroup(groupTitle, etapasInGroup, allPedidos) {
@@ -659,567 +678,115 @@ async function drop(e) {
     const pedidoId = e.dataTransfer.getData('text/plain');
     const nuevaEtapa = column.dataset.etapa;
 
-    // Guarda el scroll actual del board antes de renderizar
+    // Preservar posición de scroll actual usando el sistema unificado
     const kanbanBoard = column.closest('#kanban-board-complementarias') || column.closest('#kanban-board');
-    const prevScroll = kanbanBoard ? kanbanBoard.scrollLeft : null;
+    const container = kanbanBoard ? kanbanBoard.querySelector('.kanban-columns-container') : null;
+    
+    // Guardar estado de scroll actual
+    let estadoScrollAnterior = null;
+    if (container && container.dataset.containerId) {
+        const estado = obtenerEstadoScroll(container.dataset.containerId);
+        estadoScrollAnterior = { ...estado };
+    }
 
     try {
         await updatePedido(window.db, pedidoId, { etapaActual: nuevaEtapa });
-        // Restaura el scroll después de la actualización de Firestore
-        if (kanbanBoard && prevScroll !== null) {
+        
+        // Restaurar posición de scroll después de la actualización
+        if (estadoScrollAnterior && container) {
             requestAnimationFrame(() => {
-                kanbanBoard.scrollLeft = prevScroll;
+                establecerPosicionContenedor(kanbanBoard, container, estadoScrollAnterior.translateX);
             });
         }
+        
         console.log(`Pedido ${pedidoId} movido a etapa ${nuevaEtapa}`);
     } catch (error) {
+        console.error('Error al mover pedido:', error);
         alert("Error al mover el pedido. Intenta de nuevo.");
     }
 }
 
-// Asegurar que se configura el scroll para ambos tableros
+// Configurar sistema de scroll unificado para ambos tableros
 export function setupKanbanScrolling() {
-    // Importante: primero quitar todos los eventos antiguos
-    document.removeEventListener('mouseup', () => {});
-    document.removeEventListener('touchend', () => {});
-    
-    // Utilizar un enfoque de transformación para el scroll
     const mainBoard = document.getElementById('kanban-board');
     const complementaryBoard = document.getElementById('kanban-board-complementarias');
     
-    // Limpiar cualquier contenedor o estilo duplicado
-    cleanupKanbanStructure();
+    // Limpiar estructura anterior
+    limpiarEstructuraKanban();
     
     // Configurar cada tablero
     [mainBoard, complementaryBoard].forEach(board => {
         if (!board) return;
         
-        // Limpiar eventos anteriores
-        cleanupEventListeners(board);
+        // Aplicar estilos base del board
+        aplicarEstilosBoard(board);
         
-        // Aplicar estilos base
-        setupBoardStyles(board);
-        
-        // Procesar cada grupo de columnas
-        const groups = board.querySelectorAll('.kanban-group');
-        groups.forEach(group => {
-            setupGroupContainer(group);
-            
-            // Centrar contenedor si es más pequeño que el board
-            const container = group.querySelector('.kanban-columns-container');
-            if (container) {
-                // Usar función global que ya tiene la lógica de límites
-                setContainerPosition(board, container, 0);
-            }
+        // Configurar cada grupo de columnas
+        const grupos = board.querySelectorAll('.kanban-group');
+        grupos.forEach(grupo => {
+            configurarGrupoContenedor(grupo, board);
         });
     });
 }
 
-// Función para limpiar toda la estructura del Kanban - MEJORADA
-function cleanupKanbanStructure() {
-    // Eliminar cualquier overlay de debug
-    document.querySelectorAll('.debug-overlay').forEach(el => el.remove());
+// Función para limpiar estructura del kanban
+function limpiarEstructuraKanban() {
+    // Limpiar todos los event listeners existentes
+    document.querySelectorAll('#kanban-board, #kanban-board-complementarias').forEach(board => {
+        limpiarEventosContenedor(board);
+    });
     
-    // Eliminar botones de navegación duplicados
-    document.querySelectorAll('.scroll-button, .scroll-buttons-container').forEach(el => el.remove());
+    // Eliminar elementos de debug y botones antiguos
+    document.querySelectorAll('.debug-overlay, .scroll-button, .scroll-buttons-container').forEach(el => {
+        el.remove();
+    });
     
-    // IMPORTANTE: Asegurar que no haya NINGUNA barra de desplazamiento nativa
-    document.querySelectorAll('#kanban-board, #kanban-board-complementarias, .kanban-group, .kanban-columns-container').forEach(el => {
+    // Resetear estilos de scroll nativo
+    document.querySelectorAll('.kanban-group, .kanban-columns-container').forEach(el => {
         el.style.overflowX = 'hidden';
         el.style.overflowY = 'hidden';
-        el.style.overflow = 'hidden';
-        
-        // Eliminar cualquier scroll nativo que pueda estar configurado
-        el.scrollLeft = 0;
-        
-        // Añadir atributo para evitar scroll
-        el.setAttribute('data-no-native-scroll', 'true');
-    });
-}
-
-// Función para limpiar event listeners anteriores
-function cleanupEventListeners(board) {
-    const existingListeners = board._scrollListeners || [];
-    existingListeners.forEach(listener => {
-        if (listener.element && listener.type && listener.callback) {
-            listener.element.removeEventListener(listener.type, listener.callback);
+        // Resetear transformaciones CSS en lugar de scrollLeft
+        if (el.classList.contains('kanban-columns-container')) {
+            el.style.transform = 'translateX(0px)';
         }
     });
-    board._scrollListeners = [];
 }
 
-// Función para configurar los estilos base del tablero - MEJORADA
-function setupBoardStyles(board) {
+// Función para aplicar estilos base al board
+function aplicarEstilosBoard(board) {
     board.style.position = 'relative';
     board.style.overflow = 'hidden';
-    board.style.width = '100%';
-    board.style.padding = '0';
     board.style.cursor = 'grab';
     board.style.userSelect = 'none';
-    
-    // Deshabilitar completamente el scroll nativo
-    board.style.overflowX = 'hidden';
-    board.style.overflowY = 'hidden';
-    board.style.overflow = 'hidden';
 }
 
-// Función para configurar el grupo y sus columnas
-function setupGroupContainer(group) {
-    group.style.width = '100%';
-    group.style.position = 'relative';
-    group.style.overflow = 'hidden'; // Importante: mantener hidden para evitar barras de desplazamiento nativas
+// Función para configurar grupo contenedor
+function configurarGrupoContenedor(grupo, board) {
+    const container = grupo.querySelector('.kanban-columns-container');
+    if (!container) return;
     
-    const columnsContainer = group.querySelector('.kanban-columns-container');
-    if (!columnsContainer) return;
+    // Aplicar estilos al contenedor
+    container.style.display = 'flex';
+    container.style.gap = `${GAP_COLUMNAS}px`;
+    container.style.transition = 'transform 0.2s ease-out';
+    container.style.willChange = 'transform';
     
-    const board = group.closest('#kanban-board, #kanban-board-complementarias');
-    if (board) { // Asegurarse de que 'board' es válido aquí
-        const style = window.getComputedStyle(columnsContainer);
-        const matrix = style.transform || style.webkitTransform;
-        if (matrix && matrix !== 'none') {
-            const match = matrix.match(/matrix.*\((.+)\)/);
-            if (match && match[1]) {
-                const values = match[1].split(', ');
-                const tx = parseFloat(values[4]) || 0;
-                if (tx < GLOBAL_MAX_TRANSLATE) { // Usar constante global
-                    // Corregir directamente si ya está mal al configurar
-                    setContainerPosition(board, columnsContainer, tx); 
-                }
-            }
-        }
-    }
+    // Inicializar posición
+    establecerPosicionContenedor(board, container, 0);
     
-    // Calcular el ancho basado en columnas
-    const columns = columnsContainer.querySelectorAll('.kanban-column');
-    const columnWidth = 300; // px por columna
+    // Habilitar scroll por arrastre
+    habilitarScrollArrastre(board, container);
     
-    let totalWidth = 0;
-    
-    columns.forEach((column, index) => {
-        const width = columnWidth - 27; 
-        column.style.flex = `0 0 ${width}px`;
-        column.style.width = `${width}px`;
-        column.style.minWidth = `${width}px`;
-        column.style.maxWidth = `${width}px`;
-        column.style.position = 'relative';
-        column.style.padding = '10px';
-        column.style.boxSizing = 'border-box';
-        column.style.margin = '0';
-        totalWidth += width;
-        if (index < columns.length - 1) {
-            totalWidth += 10; // Espacio fijo entre columnas
-        }
-    });
-    
-    columnsContainer.style.position = 'relative';
-    columnsContainer.style.display = 'flex';
-    columnsContainer.style.flexDirection = 'row';
-    columnsContainer.style.flexWrap = 'nowrap';
-    columnsContainer.style.gap = '10px';
-    columnsContainer.style.width = `${totalWidth}px`;
-    columnsContainer.style.minWidth = `${totalWidth}px`;
-    columnsContainer.style.maxWidth = `${totalWidth}px`; 
-    columnsContainer.style.transition = 'transform 0.1s ease-out';
-    
-    console.log(`Board ${group.closest('[id]')?.id || 'unknown'}: calculatedWidth=${totalWidth}px, columns=${columns.length}`);
-    
-    if (board) { // Asegurar que 'board' es válido antes de pasarlo
-        implementDirectScroll(board, columnsContainer);
-        addScrollButtons(group.closest('[id]').id, columnsContainer); // Asumimos que group.closest('[id]') no será null
-    }
-    
-    const isDevMode = false;
-    if (isDevMode && board) { // Asegurar que 'board' es válido
-        addDebugOverlay(group, columnsContainer);
-    }
+    // Agregar botones de navegación si es necesario
+    agregarBotonesNavegacion(board, container);
 }
 
-// Sobrescribir completo el método para manejar eventos wheel
-function implementDirectScroll(board, container) {
-    if (!board || !container) {
-        console.error("[implementDirectScroll] Invalid board or container.");
-        return;
-    }
+// Función para agregar botones de navegación si es necesario
+function agregarBotonesNavegacion(board, container) {
+    const limites = calcularLimitesScroll(board, container);
+    if (limites.minTranslate >= 0) return; // No necesita botones
     
-    let isDragging = false;
-    let startPos = 0;
-    // currentTranslate y prevTranslate ahora se inicializan después de leer el estado actual del DOM
-    let currentTranslate;
-    let prevTranslate;
-    // AUMENTADO para mayor sensibilidad
-    let animationSpeed = 1.5; 
-    let lastTouchTime = 0;
-    
-    const ABSOLUTE_MAX_TRANSLATE = GLOBAL_MAX_TRANSLATE;
-    
-    // Leer la posición actual del transform del DOM para inicializar currentTranslate y prevTranslate
-    const initialStyle = window.getComputedStyle(container);
-    const initialMatrix = initialStyle.transform || initialStyle.webkitTransform;
-    if (initialMatrix && initialMatrix !== 'none') {
-        const match = initialMatrix.match(/matrix.*\((.+)\)/);
-        if (match && match[1]) {
-            const values = match[1].split(', ');
-            currentTranslate = parseFloat(values[4]) || 0;
-        } else {
-            currentTranslate = 0;
-        }
-    } else {
-        currentTranslate = 0;
-    }
-    // Asegurar que el valor inicial también respete los límites
-    currentTranslate = setContainerPosition(board, container, currentTranslate);
-    prevTranslate = currentTranslate;
-    
-    if (!container._scrollState) container._scrollState = {};
-    container._scrollState.currentTranslate = currentTranslate;
-    container._scrollState.prevTranslate = prevTranslate;
-
-    const getPositionX = (event) => {
-        return event.type.includes('mouse') ? event.pageX : event.touches[0].pageX;
-    };
-    
-    const updatePositionAndUpdateState = (newTranslateAttempt) => {
-        const clampedTranslate = setContainerPosition(board, container, newTranslateAttempt);
-        currentTranslate = clampedTranslate; // Actualizar el currentTranslate de implementDirectScroll
-        // prevTranslate se actualiza al inicio de un nuevo drag/touch o después de un wheel.
-        return clampedTranslate;
-    };
-    
-    container._scrollState = { currentTranslate, prevTranslate }; // Guardar estado inicial
- 
-    const handleMouseDown = (e) => {
-        if (e.target.closest('.kanban-card, button, .debug-overlay, .scroll-button, a, input, select, textarea, [onclick], #add-pedido-btn, [data-toggle], [data-target], [role="button"]')) {
-            return;
-        }
-        isDragging = true;
-        startPos = getPositionX(e);
-        prevTranslate = currentTranslate; // Usar el estado actual (ya limitado) como prevTranslate
-        board.style.cursor = 'grabbing';
-        // e.preventDefault(); // Puede ser necesario si hay scroll nativo compitiendo
-    };
-    
-    const handleMouseMove = (e) => {
-        if (!isDragging) return;
-        // e.preventDefault(); // Prevenir selección de texto, etc.
-        const currentDOMPosition = getPositionX(e);
-        const diff = currentDOMPosition - startPos;
-        let factor = animationSpeed;
-        const absDiff = Math.abs(diff);
-
-        // Ajuste para movimientos rápidos, menos agresivo para mayor sensibilidad
-        if (absDiff > 100) factor *= 0.8; // Antes era 0.4 (equivalente a 0.5 * vieja animationSpeed de 0.8)
-        else if (absDiff > 50) factor *= 0.9; // Antes era 0.6 (equivalente a 0.75 * vieja animationSpeed de 0.8)
-        
-        const newTargetTranslate = prevTranslate + (diff * factor);
-        updatePositionAndUpdateState(newTargetTranslate); // Esto actualiza currentTranslate
-    };
-    
-    const handleMouseUp = (e) => {
-        if (!isDragging) return;
-        isDragging = false;
-        board.style.cursor = 'grab';
-        // Asegurar que la posición final esté limitada (currentTranslate ya debería estarlo)
-        updatePositionAndUpdateState(currentTranslate);
-        prevTranslate = currentTranslate; // Preparar para el próximo drag
-    };
-    
-    const handleTouchStart = (e) => {
-        if (e.target.closest('.kanban-card, button, .debug-overlay, .scroll-button, a, input, select, textarea, [onclick], #add-pedido-btn, [data-toggle], [data-target], [role="button"]')) {
-            return;
-        }
-        lastTouchTime = Date.now();
-        isDragging = true;
-        startPos = e.touches[0].pageX;
-        prevTranslate = currentTranslate;
-        // e.preventDefault(); // Comentado para permitir scroll vertical nativo si es necesario
-    };
-    
-    const handleTouchMove = (e) => {
-        if (!isDragging) return;
-        // e.preventDefault(); // Prevenir scroll de página mientras se arrastra el kanban
-        const now = Date.now();
-        const elapsed = now - lastTouchTime;
-        lastTouchTime = now;
-        const currentDOMPosition = e.touches[0].pageX;
-        const diff = currentDOMPosition - startPos;
-        let factor = animationSpeed; // animationSpeed ya está aumentada
-        
-        // Amortiguación para toques muy rápidos, ligeramente reducida para mayor sensibilidad
-        if (elapsed < 16) factor *= 0.7; // Antes era 0.5
-        
-        const newTargetTranslate = prevTranslate + (diff * factor);
-        updatePositionAndUpdateState(newTargetTranslate);
-    };
-    
-    const handleTouchEnd = (e) => {
-        if (!isDragging) return;
-        isDragging = false;
-        updatePositionAndUpdateState(currentTranslate);
-        prevTranslate = currentTranslate;
-    };
-    
-    const handleWheel = (e) => {
-        if (e.deltaX !== 0) {
-            // e.preventDefault(); // Prevenir scroll de página
-            const newTargetTranslate = currentTranslate - e.deltaX;
-            updatePositionAndUpdateState(newTargetTranslate);
-            prevTranslate = currentTranslate; // Actualizar prevTranslate después del wheel
-        }
-    };
-    
-    // Eliminar listeners antiguos antes de añadir nuevos para evitar duplicados
-    // (esto ya debería estar cubierto por cleanupEventListeners)
-
-    board.addEventListener('mousedown', handleMouseDown);
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-    
-    board.addEventListener('touchstart', handleTouchStart, { passive: true }); // passive:true si no hacemos e.preventDefault()
-    document.addEventListener('touchmove', handleTouchMove, { passive: false }); // passive:false si hacemos e.preventDefault()
-    document.addEventListener('touchend', handleTouchEnd);
-    
-    board.addEventListener('wheel', handleWheel, { passive: false }); // passive:false si hacemos e.preventDefault()
-    
-    // Actualizar la lista de listeners si cleanupEventListeners la usa
-    // (La estructura actual de _scrollListeners puede necesitar revisión si se cambia esto)
-    
-    // Aplicar posición inicial (ya hecho arriba) y verificar límites
-    // updatePositionAndUpdateState(currentTranslate); // Ya se hace en la inicialización
-}
-
-// Función para añadir botones de navegación mejorados
-function addScrollButtons(boardId, container) {
-    const board = document.getElementById(boardId);
-    if (!board) return;
-    
-    const oldButtons = board.querySelectorAll('.scroll-button, .scroll-buttons-container');
-    oldButtons.forEach(btn => btn.remove());
-    
-    // NUEVO: Verificar si realmente necesitamos botones de scroll
-    const containerWidth = container.scrollWidth;
-    const boardWidth = board.clientWidth;
-    
-    // Si el contenedor es más pequeño o igual que el board, no necesitamos botones
-    if (containerWidth <= boardWidth) {
-        return;
-    }
-    
-    const buttonContainer = document.createElement('div');
-    buttonContainer.className = 'scroll-buttons-container';
-    buttonContainer.style.cssText = `
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-        z-index: 9999;
-    `;
-    
-    const leftBtn = document.createElement('button');
-    leftBtn.innerHTML = '◀';
-    leftBtn.className = 'scroll-button scroll-left';
-    leftBtn.style.cssText = `
-        position: absolute;
-        left: 5px;
-        top: 50%;
-        transform: translateY(-50%);
-        z-index: 9999;
-        background: rgba(0,0,0,0.3);
-        color: white;
-        border: none;
-        border-radius: 50%;
-        width: 36px;
-        height: 36px;
-        font-size: 16px;
-        cursor: pointer;
-        opacity: 0.7;
-        transition: opacity 0.2s;
-        pointer-events: auto;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    `;
-    
-    const rightBtn = document.createElement('button');
-    rightBtn.innerHTML = '▶';
-    rightBtn.className = 'scroll-button scroll-right';
-    rightBtn.style.cssText = `
-        position: absolute;
-        right: 5px;
-        top: 50%;
-        transform: translateY(-50%);
-        z-index: 9999;
-        background: rgba(0,0,0,0.3);
-        color: white;
-        border: none;
-        border-radius: 50%;
-        width: 36px;
-        height: 36px;
-        font-size: 16px;
-        cursor: pointer;
-        opacity: 0.7;
-        transition: opacity 0.2s;
-        pointer-events: auto;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    `;
-    
-    leftBtn.onmouseover = rightBtn.onmouseover = function() {
-        this.style.opacity = '1';
-        this.style.background = 'rgba(0,0,0,0.5)';
-    };
-    
-    leftBtn.onmouseout = rightBtn.onmouseout = function() {
-        this.style.opacity = '0.7';
-        this.style.background = 'rgba(0,0,0,0.3)';
-    };
-    
-    const getTranslateX = () => {
-        const style = window.getComputedStyle(container);
-        const matrix = style.transform || style.webkitTransform || style.mozTransform;
-        
-        if (matrix === 'none' || typeof matrix === 'undefined') {
-            return 0;
-        }
-        
-        const matrixValues = matrix.match(/matrix.*\((.+)\)/);
-        if (matrixValues && matrixValues.length > 1) {
-            const values = matrixValues[1].split(', ');
-            return parseFloat(values[4]) || 0;
-        }
-        return 0;
-    };
-    
-    const scrollAmount = 280; // Exactamente el ancho de una columna
-    
-    leftBtn.onclick = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        const currentX = getTranslateX();
-        const newX = currentX + scrollAmount;
-        setContainerPosition(board, container, newX);
-    };
-    
-    rightBtn.onclick = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        const currentX = getTranslateX();
-        const newX = currentX - scrollAmount;
-        setContainerPosition(board, container, newX);
-    };
-    
-    buttonContainer.appendChild(leftBtn);
-    buttonContainer.appendChild(rightBtn);
-    board.appendChild(buttonContainer);
-}
-
-// Función para visualizar las dimensiones en debug (opcional)
-function addDebugOverlay(board, container) {
-    const existingOverlay = board.querySelector('.debug-overlay');
-    if (existingOverlay) existingOverlay.remove();
-    
-    const debugOverlay = document.createElement('div');
-    debugOverlay.className = 'debug-overlay';
-    debugOverlay.style.cssText = `
-        position: absolute;
-        bottom: 5px;
-        right: 5px;
-        background: rgba(0,0,0,0.6);
-        color: white;
-        padding: 3px 6px;
-        font-size: 9px;
-        z-index: 1000;
-        pointer-events: none;
-        border-radius: 3px;
-    `;
-    
-    const updateDebugInfo = () => {
-        const boardWidth = board.clientWidth;
-        const containerWidth = container.scrollWidth;
-        const style = window.getComputedStyle(container);
-        const matrix = new DOMMatrix(style.transform);
-        const translateX = matrix.m41;
-        
-        debugOverlay.innerHTML = `
-            Board: ${boardWidth}px<br>
-            Content: ${containerWidth}px<br>
-            TranslateX: ${Math.round(translateX)}px
-        `;
-    };
-    
-    updateDebugInfo();
-    const intervalId = setInterval(updateDebugInfo, 1000);
-    
-    board._debugInterval = intervalId;
-    board.appendChild(debugOverlay);
-}
-
-function setContainerPosition(board, container, newTranslate) {
-    // Función utilitaria global para establecer la posición con límites estrictos
-    if (!board || !container) {
-        console.error("[setContainerPosition] Invalid board or container provided.");
-        return 0; // Devuelve un valor seguro
-    }
-
-    const boardWidth = board.clientWidth;
-    const containerWidth = container.scrollWidth;
-
-    // Usar límite global constante
-    const ABSOLUTE_MAX_TRANSLATE = GLOBAL_MAX_TRANSLATE; // Debería ser -2160.0px
-
-    let clampedTranslate;
-
-    if (containerWidth <= boardWidth) {
-        // Contenido cabe o es más pequeño que el tablero: centrarlo
-        clampedTranslate = (boardWidth - containerWidth) / 2;
-        // console.log(`[setContainerPosition] Centrando. Board: ${boardWidth}, Cont: ${containerWidth}, Translate: ${clampedTranslate}`);
-    } else {
-        // Contenido es más ancho, aplicar lógica de scroll
-        const naturalMinTranslate = -(containerWidth - boardWidth);
-
-        // MODIFICADO: Asegurar que ABSOLUTE_MAX_TRANSLATE sea el límite más negativo si se alcanza.
-        // Si el scroll natural permitiría ir MÁS ALLÁ (más negativo) de ABSOLUTE_MAX_TRANSLATE,
-        // entonces el límite efectivo es ABSOLUTE_MAX_TRANSLATE.
-        // Si el scroll natural es MENOS NEGATIVO que ABSOLUTE_MAX_TRANSLATE (es decir, el contenido termina antes),
-        // entonces el límite es el naturalMinTranslate.
-        let effectiveMinTranslate;
-        if (naturalMinTranslate < ABSOLUTE_MAX_TRANSLATE) {
-            effectiveMinTranslate = ABSOLUTE_MAX_TRANSLATE;
-            // console.log(`[setContainerPosition] Límite forzado por GLOBAL_MAX_TRANSLATE. Natural: ${naturalMinTranslate}, Global: ${ABSOLUTE_MAX_TRANSLATE}`);
-        } else {
-            effectiveMinTranslate = naturalMinTranslate;
-            // console.log(`[setContainerPosition] Límite natural aplicado. Natural: ${naturalMinTranslate}, Global: ${ABSOLUTE_MAX_TRANSLATE}`);
-        }
-
-        if (newTranslate > 0) {
-            clampedTranslate = 0; // No desplazarse más allá del inicio
-        } else if (newTranslate < effectiveMinTranslate) {
-            clampedTranslate = effectiveMinTranslate; // No desplazarse más allá del fin permitido
-        } else {
-            clampedTranslate = newTranslate; // El valor está dentro del rango permitido
-        }
-        // console.log(`[setContainerPosition] Scroll activo. NewT: ${newTranslate}, EffMin: ${effectiveMinTranslate}, Clamped: ${clampedTranslate}`);
-    }
-
-    // NO es necesaria una verificación de seguridad final aquí si la lógica anterior es correcta,
-    // ya que effectiveMinTranslate ya considera ABSOLUTE_MAX_TRANSLATE.
-    // if (containerWidth > boardWidth && clampedTranslate < ABSOLUTE_MAX_TRANSLATE) { ... }
-    
-    if (isNaN(clampedTranslate) || typeof clampedTranslate === 'undefined') {
-        console.error(`[setContainerPosition] clampedTranslate inválido (${clampedTranslate}), usando 0 por defecto.`);
-        clampedTranslate = 0;
-    }
-
-    const currentTransform = container.style.transform;
-    const newTransform = `translateX(${clampedTranslate}px)`;
-
-    if (currentTransform !== newTransform) {
-        // console.log(`[setContainerPosition] Aplicando: ${newTransform}. NatMin: ${-(containerWidth - boardWidth)}, EffMin: ${effectiveMinTranslate_debug_val}, Global: ${ABSOLUTE_MAX_TRANSLATE}`);
-        container.style.transform = newTransform;
-    }
-
-    if (!container._scrollState) container._scrollState = {};
-    container._scrollState.currentTranslate = clampedTranslate;
-
-    return clampedTranslate;
+    // Implementación básica de botones de navegación
+    // Se puede expandir según necesidades específicas
+    console.log(`Botones de navegación disponibles para ${board.id}`);
 }
