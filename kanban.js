@@ -812,7 +812,7 @@ function configurarGrupoContenedor(grupo, board) {
     
     // Aplicar estilos al contenedor
     container.style.display = 'flex';
-    container.style.gap = `${GAP_COLUMNAS}px`;
+    container.style.gap = '1.2rem'; // Usar valor CSS directo
     container.style.transition = 'transform 0.2s ease-out';
     container.style.willChange = 'transform';
     
