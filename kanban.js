@@ -725,11 +725,14 @@ async function drop(e) {
     const pedidoId = e.dataTransfer.getData('text/plain');
     const nuevaEtapa = column.dataset.etapa;
 
-    // Preservar posición de scroll actual usando el sistema unificado
+    // Encontrar la tarjeta que se está moviendo
+    const tarjeta = document.querySelector(`[data-pedido-id="${pedidoId}"]`);
+    if (!tarjeta) return;
+
+    // Preservar posición de scroll actual
     const kanbanBoard = column.closest('#kanban-board-complementarias') || column.closest('#kanban-board');
     const container = kanbanBoard ? kanbanBoard.querySelector('.kanban-columns-container') : null;
     
-    // Guardar estado de scroll actual
     let estadoScrollAnterior = null;
     if (container && container.dataset.containerId) {
         const estado = obtenerEstadoScroll(container.dataset.containerId);
@@ -737,19 +740,47 @@ async function drop(e) {
     }
 
     try {
+        // 1. Actualización local inmediata - mover la tarjeta visualmente
+        const columnCards = column.querySelector('.kanban-cards');
+        if (columnCards) {
+            // Remover la tarjeta de su posición actual
+            tarjeta.remove();
+            // Añadirla a la nueva columna
+            columnCards.appendChild(tarjeta);
+            
+            // Actualizar el badge de etapa en la tarjeta
+            const etapaBadge = tarjeta.querySelector('.badge');
+            if (etapaBadge) {
+                etapaBadge.textContent = nuevaEtapa;
+                etapaBadge.style.backgroundColor = etapaColumnColor(nuevaEtapa);
+            }
+        }
+
+        // 2. Deshabilitar temporalmente el listener de Firestore para evitar re-renderizado
+        window.skipNextFirestoreUpdate = true;
+        
+        // 3. Actualizar en Firestore
         await updatePedido(window.db, pedidoId, { etapaActual: nuevaEtapa });
         
-        // Restaurar posición de scroll después de la actualización
+        // 4. Restaurar posición de scroll si es necesario
         if (estadoScrollAnterior && container) {
             requestAnimationFrame(() => {
                 establecerPosicionContenedor(kanbanBoard, container, estadoScrollAnterior.translateX);
             });
         }
         
+        // 5. Reactivar el listener después de un breve delay
+        setTimeout(() => {
+            window.skipNextFirestoreUpdate = false;
+        }, 500);
+        
         console.log(`Pedido ${pedidoId} movido a etapa ${nuevaEtapa}`);
     } catch (error) {
         console.error('Error al mover pedido:', error);
         alert("Error al mover el pedido. Intenta de nuevo.");
+        
+        // En caso de error, revertir el cambio visual
+        location.reload();
     }
 }
 

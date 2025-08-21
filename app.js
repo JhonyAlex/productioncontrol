@@ -63,6 +63,12 @@ document.addEventListener('DOMContentLoaded', () => {
         // --- Actualiza todas las vistas en tiempo real ---
         window.currentPedidos = pedidos;
         
+        // Si se está haciendo una actualización local (drag and drop), omitir el re-renderizado
+        if (window.skipNextFirestoreUpdate) {
+            console.log('Omitiendo re-renderizado automático - actualización local en progreso');
+            return;
+        }
+        
         // Actualiza Kanban si la pestaña de impresión o complementarias está activa
         const tabImpresion = document.getElementById('tab-kanban-impresion');
         const tabComplementarias = document.getElementById('tab-kanban-complementarias');
