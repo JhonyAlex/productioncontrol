@@ -250,17 +250,156 @@ body {
     box-shadow: 0 1px 3px rgba(60, 72, 88, 0.04);
 }
 
-/* List View Styles */
-#list-view .table th, #list-view .table td {
-    font-size: 0.98rem;
-    vertical-align: middle;
-    background: rgba(255,255,255,0.95);
+/* List View Styles - Diseño Profesional y Minimalista */
+#list-view {
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e5e7eb;
+    overflow: hidden;
+    margin-bottom: 2rem;
 }
+
+#list-view .table {
+    margin-bottom: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
 #list-view .table th {
-    background: linear-gradient(90deg, #e9ecef 70%, #f3f6fb 100%);
-    color: #495057;
+    background-color: #f8fafc;
+    color: #374151;
     font-weight: 600;
-    border-bottom: 2px solid #dde3ea;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 16px 12px;
+    border-bottom: 2px solid #e5e7eb;
+    border-right: 1px solid #f1f5f9;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    white-space: nowrap;
+}
+
+#list-view .table th:last-child {
+    border-right: none;
+}
+
+#list-view .table td {
+    background-color: #ffffff;
+    color: #1f2937;
+    font-size: 0.875rem;
+    padding: 12px;
+    border-bottom: 1px solid #f1f5f9;
+    border-right: 1px solid #f8fafc;
+    vertical-align: middle;
+    transition: background-color 0.15s ease;
+}
+
+#list-view .table td:last-child {
+    border-right: none;
+}
+
+#list-view .table tbody tr:hover td {
+    background-color: #f9fafb;
+}
+
+#list-view .table tbody tr:nth-child(even) td {
+    background-color: #fafbfc;
+}
+
+#list-view .table tbody tr:nth-child(even):hover td {
+    background-color: #f3f4f6;
+}
+
+/* Estilos para botones de acción en la tabla */
+#list-view .btn {
+    font-size: 0.75rem;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+    border: 1px solid transparent;
+    transition: all 0.15s ease;
+}
+
+#list-view .btn-primary {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+    color: #ffffff;
+}
+
+#list-view .btn-primary:hover {
+    background-color: #2563eb;
+    border-color: #2563eb;
+    transform: translateY(-1px);
+}
+
+#list-view .btn-danger {
+    background-color: #ef4444;
+    border-color: #ef4444;
+    color: #ffffff;
+}
+
+#list-view .btn-danger:hover {
+    background-color: #dc2626;
+    border-color: #dc2626;
+    transform: translateY(-1px);
+}
+
+/* Estilos para badges de etapa */
+#list-view .badge {
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive design para la tabla */
+@media (max-width: 768px) {
+    #list-view {
+        border-radius: 0;
+        margin: 0 -15px;
+        box-shadow: none;
+        border-left: none;
+        border-right: none;
+    }
+    
+    #list-view .table th,
+    #list-view .table td {
+        padding: 8px 6px;
+        font-size: 0.8rem;
+    }
+    
+    #list-view .table th {
+        font-size: 0.75rem;
+    }
+}
+
+/* Scroll horizontal suave para tablas anchas */
+#list-view {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+#list-view::-webkit-scrollbar {
+    height: 8px;
+}
+
+#list-view::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+}
+
+#list-view::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+#list-view::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
 }
 
 /* Toolbar Styles */
