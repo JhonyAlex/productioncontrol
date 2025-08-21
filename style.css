@@ -66,33 +66,34 @@ body {
     -ms-user-select: none !important;
 }
 
-.kanban-group {
+/* Contenedor principal del kanban - consolidado desde .kanban-group */
+.kanban-columns-container {
+    /* Propiedades heredadas de .kanban-group eliminado */
     padding: 1.2rem;
     flex-shrink: 0;
     max-width: 100%;
     overflow: hidden;
-}
-.kanban-group:hover {
-    box-shadow: 0 4px 16px rgba(60, 72, 88, 0.13);
-}
-
-.kanban-group h4 {
-    text-align: center;
-    margin-bottom: 1rem;
-    color: #3b4252;
-    font-weight: 600;
-    letter-spacing: 0.02em;
-}
-
-.kanban-columns-container {
+    
+    /* Propiedades originales del contenedor de columnas */
     display: flex;
     gap: 1.2rem;
-    overflow: hidden;
     max-width: 100vw;
     white-space: nowrap;
     /* Evita que se desborde - scroll manejado por transformaciones CSS */
     box-sizing: border-box;
     transition: transform 0.2s ease-out;
+}
+
+.kanban-columns-container:hover {
+    box-shadow: 0 4px 16px rgba(60, 72, 88, 0.13);
+}
+
+.kanban-columns-container h4 {
+    text-align: center;
+    margin-bottom: 1rem;
+    color: #3b4252;
+    font-weight: 600;
+    letter-spacing: 0.02em;
     will-change: transform;
 }
 

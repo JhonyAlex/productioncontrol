@@ -62,7 +62,8 @@ function calcularLimitesScroll(board, container) {
     });
     
     // Obtener padding real del contenedor padre (kanban-group)
-    const grupoKanban = container.closest('.kanban-group');
+    // Ya no necesitamos buscar .kanban-group - el container es el elemento principal
+const grupoKanban = container;
     let paddingReal = PADDING_CONTENEDOR;
     if (grupoKanban) {
         const estilosGrupo = window.getComputedStyle(grupoKanban);
@@ -449,13 +450,17 @@ export function renderKanban(pedidos, options = {}) {
 }
 
 function createKanbanGroup(groupTitle, etapasInGroup, allPedidos) {
-    const groupDiv = document.createElement('div');
-    groupDiv.className = 'kanban-group';
-    groupDiv.style.width = '100%';
-    groupDiv.style.overflowX = 'hidden'; // Mantener hidden para evitar barras de desplazamiento nativas
-    
+    // Eliminar contenedor .kanban-group redundante - usar directamente .kanban-columns-container
     const columnsContainer = document.createElement('div');
     columnsContainer.className = 'kanban-columns-container';
+    
+    // Mover propiedades del .kanban-group eliminado al contenedor principal
+    columnsContainer.style.width = '100%';
+    columnsContainer.style.overflowX = 'hidden'; // Mantener hidden para evitar barras de desplazamiento nativas
+    columnsContainer.style.padding = '1.2rem';
+    columnsContainer.style.flexShrink = '0';
+    columnsContainer.style.maxWidth = '100%';
+    columnsContainer.style.overflow = 'hidden';
     
     const columnWidth = 300; // ancho fijo por columna
     const columnContentWidth = columnWidth - 27; 
@@ -502,8 +507,7 @@ function createKanbanGroup(groupTitle, etapasInGroup, allPedidos) {
         columnsContainer.appendChild(columnDiv);
     });
 
-    groupDiv.appendChild(columnsContainer);
-    return groupDiv;
+    return columnsContainer;
 }
 
 // NUEVO: color de columna por cliente más frecuente o primero
@@ -767,10 +771,10 @@ export function setupKanbanScrolling() {
         aplicarEstilosBoard(board);
         
         // Configurar cada grupo de columnas
-        const grupos = board.querySelectorAll('.kanban-group');
-        grupos.forEach(grupo => {
-            configurarGrupoContenedor(grupo, board);
-        });
+        const containers = board.querySelectorAll('.kanban-columns-container');
+    containers.forEach(container => {
+        configurarGrupoContenedor(container, board);
+    });
     });
 }
 
@@ -787,7 +791,7 @@ function limpiarEstructuraKanban() {
     });
     
     // Resetear estilos de scroll nativo
-    document.querySelectorAll('.kanban-group, .kanban-columns-container').forEach(el => {
+    document.querySelectorAll('.kanban-columns-container').forEach(el => {
         el.style.overflowX = 'hidden';
         el.style.overflowY = 'hidden';
         // Resetear transformaciones CSS en lugar de scrollLeft
@@ -806,8 +810,8 @@ function aplicarEstilosBoard(board) {
 }
 
 // Función para configurar grupo contenedor
-function configurarGrupoContenedor(grupo, board) {
-    const container = grupo.querySelector('.kanban-columns-container');
+function configurarGrupoContenedor(container, board) {
+    // Ahora recibe directamente el container (ya no hay .kanban-group)
     if (!container) return;
     
     // Aplicar estilos al contenedor
