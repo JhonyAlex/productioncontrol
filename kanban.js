@@ -661,6 +661,7 @@ export function addDragAndDropListeners() {
         column.removeEventListener('dragover', dragOver);
         column.removeEventListener('dragenter', dragEnter);
         column.removeEventListener('dragleave', dragLeave);
+        column.removeEventListener('drop', drop);
         column.addEventListener('dragover', dragOver);
         column.addEventListener('dragenter', dragEnter);
         column.addEventListener('dragleave', dragLeave);
@@ -726,7 +727,7 @@ async function drop(e) {
     const nuevaEtapa = column.dataset.etapa;
 
     // Encontrar la tarjeta que se está moviendo
-    const tarjeta = document.querySelector(`[data-pedido-id="${pedidoId}"]`);
+    const tarjeta = document.querySelector(`[data-id="${pedidoId}"]`);
     if (!tarjeta) return;
 
     // Preservar posición de scroll actual
@@ -756,11 +757,14 @@ async function drop(e) {
             }
         }
 
-        // 2. Deshabilitar temporalmente el listener de Firestore para evitar re-renderizado
-        window.skipNextFirestoreUpdate = true;
-        
-        // 3. Actualizar en Firestore
+        // 2. Actualizar en Firestore
         await updatePedido(window.db, pedidoId, { etapaActual: nuevaEtapa });
+        
+        // 3. Deshabilitar temporalmente el listener de Firestore para evitar re-renderizado
+        window.skipNextFirestoreUpdate = true;
+        setTimeout(() => {
+            window.skipNextFirestoreUpdate = false;
+        }, 100);
         
         // 4. Restaurar posición de scroll si es necesario
         if (estadoScrollAnterior && container) {
@@ -768,11 +772,6 @@ async function drop(e) {
                 establecerPosicionContenedor(kanbanBoard, container, estadoScrollAnterior.translateX);
             });
         }
-        
-        // 5. Reactivar el listener después de un breve delay
-        setTimeout(() => {
-            window.skipNextFirestoreUpdate = false;
-        }, 500);
         
         console.log(`Pedido ${pedidoId} movido a etapa ${nuevaEtapa}`);
     } catch (error) {
