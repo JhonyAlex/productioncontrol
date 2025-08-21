@@ -210,6 +210,32 @@ function stopInactivityTimer() {
 // --- FIN NUEVO ---
 
 export function observeAuthState(auth, domRefs, unsubscribePedidosRef) {
+    // Detectar si estamos en localhost para saltarse la autenticación
+    const esLocalhost = window.location.hostname === 'localhost' || 
+                       window.location.hostname === '127.0.0.1' || 
+                       window.location.hostname === '' ||
+                       window.location.protocol === 'file:';
+    
+    if (esLocalhost) {
+        // En localhost, saltarse la autenticación
+        const { loginContainer, appContainer, userEmailSpan, mainContent } = domRefs;
+        if (!loginContainer || !appContainer || !userEmailSpan || !mainContent) {
+            setTimeout(() => observeAuthState(auth, domRefs, unsubscribePedidosRef), 50);
+            return;
+        }
+        
+        if (!appLoaded) {
+            appLoaded = true;
+            loginContainer.style.display = 'none';
+            appContainer.style.display = 'block';
+            userEmailSpan.textContent = 'usuario.localhost@test.com';
+            loadMainAppData();
+            // No iniciar temporizador de inactividad en localhost
+        }
+        return;
+    }
+    
+    // Comportamiento normal para producción
     onAuthStateChanged(auth, (user) => {
         const { loginContainer, appContainer, userEmailSpan, mainContent } = domRefs;
         if (!loginContainer || !appContainer || !userEmailSpan || !mainContent) {
