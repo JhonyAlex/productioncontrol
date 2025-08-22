@@ -709,36 +709,37 @@ function restaurarEstadoScrollPreciso(estadoScroll) {
 function dragStart(e) {
     const card = e.target.closest('.kanban-card');
     if (!card || !card.dataset.pedidoId) {
+        console.warn('Drag iniciado en elemento inválido');
         e.preventDefault();
         draggedItemData = null;
         return;
     }
     
-    // Capturar estado de scroll preciso al inicio del drag
+    const fromColumn = card.closest('.kanban-column');
+    const fromColId = fromColumn ? fromColumn.dataset.etapa : null;
+    
+    console.log(`Drag Start: ${card.dataset.pedidoId} desde columna ${fromColId}`);
+    
+    // Capturar estado de scroll actual (simplificado)
     scrollStateBeforeDrop = capturarEstadoScrollPreciso();
     
-    // Obtener información del tablero y scroll actual
-    const kanbanBoard = card.closest('#kanban-board, #kanban-board-complementarias');
-    const container = kanbanBoard ? kanbanBoard.querySelector('.kanban-columns-container') : null;
-    const fromColumn = card.closest('.kanban-column');
-    
-    let boardsScroll = null;
-    if (container && container.dataset.containerId) {
-        const estado = obtenerEstadoScroll(container.dataset.containerId);
-        boardsScroll = { ...estado };
-    }
-    
-    // Guardar referencias directas completas
+    // Guardar referencias simples y directas
     draggedItemData = {
         id: card.dataset.pedidoId,
-        el: card, // Referencia directa al nodo DOM
-        fromColId: fromColumn ? fromColumn.dataset.etapa : null,
-        boardsScroll: boardsScroll
+        el: card,
+        fromColId: fromColId
     };
     
+    // Configurar el dataTransfer
     e.dataTransfer.setData('text/plain', card.dataset.pedidoId);
-    setTimeout(() => card.classList.add('dragging'), 0);
-    console.log(`Drag Start: ${draggedItemData.id} desde columna ${draggedItemData.fromColId}`);
+    e.dataTransfer.effectAllowed = 'move';
+    
+    // Añadir clase visual con delay para evitar problemas de render
+    setTimeout(() => {
+        if (card.parentNode) {
+            card.classList.add('dragging');
+        }
+    }, 0);
 }
 
 function dragEnd(e) {
@@ -784,87 +785,103 @@ async function drop(e) {
     const pedidoId = e.dataTransfer.getData('text/plain');
     const nuevaEtapa = column.dataset.etapa;
 
-    // NUEVO: Sistema robusto de referencias directas
-    if (!draggedItemData || draggedItemData.id !== pedidoId) {
-        console.warn('No hay datos de drag válidos, abortando drop');
-        draggedItemData = null; // Limpiar datos inválidos
+    console.log(`Drop iniciado: ${pedidoId} -> ${nuevaEtapa}`);
+
+    // Verificar datos de drag válidos - ser más flexible
+    if (!draggedItemData) {
+        console.warn('No hay draggedItemData, usando fallback');
+        draggedItemData = {
+            id: pedidoId,
+            el: document.querySelector(`[data-pedido-id="${pedidoId}"]`),
+            fromColId: null
+        };
+    }
+
+    // Verificar que tenemos los datos mínimos necesarios
+    if (!draggedItemData.id || draggedItemData.id !== pedidoId) {
+        console.error('Datos de drag inválidos:', draggedItemData);
+        draggedItemData = null;
         return;
     }
 
-    let tarjeta = draggedItemData.el; // Usar referencia directa
-    const targetCol = column; // Las tarjetas están directamente en la columna, no en un contenedor .kanban-cards
+    let tarjeta = draggedItemData.el;
     
-    // Verificar que el nodo y la columna destino existen
-    if (!tarjeta || !targetCol) {
-        console.log('Fallback 1: Búsqueda local en tablero actual');
-        // Fallback 1: Buscar solo dentro del tablero actual
-        const kanbanBoard = column.closest('#kanban-board, #kanban-board-complementarias');
-        if (kanbanBoard) {
-            tarjeta = kanbanBoard.querySelector(`[data-pedido-id="${pedidoId}"]`);
-            if (!tarjeta) {
-                console.warn('Fallback 1 falló: No se encontró la tarjeta en el tablero actual');
-                // Fallback 2: Re-render global con preservación de scroll
-                await ejecutarReRenderGlobalConScroll();
-                draggedItemData = null; // Limpiar datos después del fallback
-                return;
-            }
-        } else {
-            console.warn('No se encontró el tablero, ejecutando re-render global');
-            await ejecutarReRenderGlobalConScroll();
-            draggedItemData = null; // Limpiar datos después del fallback
+    // Si no tenemos referencia directa, buscar la tarjeta
+    if (!tarjeta || !tarjeta.parentNode) {
+        console.log('Buscando tarjeta por ID...');
+        tarjeta = document.querySelector(`[data-pedido-id="${pedidoId}"]`);
+        if (!tarjeta) {
+            console.error('No se encontró la tarjeta');
+            draggedItemData = null;
             return;
         }
     }
 
-    // El estado de scroll ya fue capturado en dragStart con mayor precisión
+    const targetCol = column;
+    
+    // Verificar que no estamos moviendo a la misma columna
+    const currentColumn = tarjeta.closest('.kanban-column');
+    if (currentColumn && currentColumn.dataset.etapa === nuevaEtapa) {
+        console.log('Movimiento a la misma columna, ignorando');
+        draggedItemData = null;
+        return;
+    }
 
     try {
-        // 1. Actualización selectiva usando referencia directa del nodo
-        // Mover la tarjeta directamente usando appendChild (automáticamente la remueve de su posición anterior)
-        // Verificar que targetCol es válido antes de hacer appendChild
-         if (!targetCol) {
-             throw new Error('targetCol es null - no se puede mover la tarjeta');
-         }
-         targetCol.appendChild(tarjeta);
-        console.log('Actualización selectiva: nodo movido directamente');
+        // Capturar la columna origen antes de mover
+        const fromColId = currentColumn ? currentColumn.dataset.etapa : draggedItemData.fromColId;
         
-        // Actualizar data-col-id de la tarjeta
-         tarjeta.dataset.colId = nuevaEtapa;
+        // 1. Mover la tarjeta directamente
+        targetCol.appendChild(tarjeta);
+        console.log('Tarjeta movida visualmente');
+        
+        // 2. Actualizar data-col-id de la tarjeta
+        tarjeta.dataset.colId = nuevaEtapa;
          
-         // Actualizar el badge de etapa en la tarjeta
-         const etapaBadge = tarjeta.querySelector('.badge');
-         if (etapaBadge) {
-             etapaBadge.textContent = nuevaEtapa;
-             etapaBadge.style.backgroundColor = etapaColumnColor(nuevaEtapa);
-         }
-         
-         // Actualizar contadores de las columnas afectadas
-         if (draggedItemData.fromColId && draggedItemData.fromColId !== nuevaEtapa) {
-             actualizarContadorColumna(draggedItemData.fromColId);
-         }
-         actualizarContadorColumna(nuevaEtapa);
+        // 3. Actualizar contadores de las columnas afectadas
+        if (fromColId && fromColId !== nuevaEtapa) {
+            actualizarContadorColumna(fromColId);
+        }
+        actualizarContadorColumna(nuevaEtapa);
 
-        // 2. Actualizar en Firestore
+        // 4. Marcar actualización local para evitar re-render innecesario
+        window.lastLocalUpdate = {
+            timestamp: Date.now(),
+            type: 'move',
+            pedidoId: pedidoId,
+            fromStage: fromColId,
+            toStage: nuevaEtapa
+        };
+
+        // 5. Actualizar en Firestore
         await updatePedido(window.db, pedidoId, { etapaActual: nuevaEtapa });
         
-        console.log('Actualización directa completada exitosamente');
+        console.log('Actualización en Firestore completada');
         
-        // 3. Restaurar posición de scroll usando el estado capturado al inicio del drag
-         if (scrollStateBeforeDrop) {
-             restaurarEstadoScrollPreciso(scrollStateBeforeDrop);
-             scrollStateBeforeDrop = null; // Limpiar después de usar
-         }
+        // 6. Mantener scroll position - no hacer nada, dejar que el estado actual se mantenga
+        console.log(`Pedido ${pedidoId} movido exitosamente de ${fromColId} a ${nuevaEtapa}`);
         
-        console.log(`Pedido ${pedidoId} movido a etapa ${nuevaEtapa}`);
     } catch (error) {
         console.error('Error al mover pedido:', error);
-        alert("Error al mover el pedido. Intenta de nuevo.");
         
-        // En caso de error, revertir el cambio visual
-        location.reload();
+        // En caso de error, intentar revertir el cambio visual sin recargar la página
+        try {
+            // Buscar la columna origen
+            const originalColumn = document.querySelector(`[data-etapa="${draggedItemData.fromColId}"]`);
+            if (originalColumn && tarjeta.parentNode !== originalColumn) {
+                originalColumn.appendChild(tarjeta);
+                tarjeta.dataset.colId = draggedItemData.fromColId;
+                console.log('Cambio visual revertido');
+            }
+        } catch (revertError) {
+            console.error('Error al revertir cambio visual:', revertError);
+        }
+        
+        alert("Error al mover el pedido. El cambio ha sido revertido.");
     } finally {
         // Limpiar draggedItemData al final de la operación
         draggedItemData = null;
+        scrollStateBeforeDrop = null;
     }
 }
 
