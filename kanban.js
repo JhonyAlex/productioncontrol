@@ -769,7 +769,7 @@ async function drop(e) {
         
         // 4. Programar limpieza del marcador y verificación de actualización visual
         setTimeout(() => {
-            // Si después de 800ms no se ha actualizado la vista, forzar re-renderizado
+            // Si después de 800ms no se ha actualizado la vista, forzar re-renderizado preservando estado
             if (window.lastLocalUpdate && window.lastLocalUpdate.pedidoId === pedidoId) {
                 console.log('Forzando actualización visual - no se detectó actualización automática');
                 
@@ -777,10 +777,32 @@ async function drop(e) {
                 const tabComplementarias = document.getElementById('tab-kanban-complementarias');
                 
                 if (tabImpresion && tabImpresion.classList.contains('active')) {
+                    // Preservar estado de scroll en estadosScroll antes del re-renderizado
+                    const kanbanBoard = document.getElementById('kanban-board');
+                    if (kanbanBoard) {
+                        const container = kanbanBoard.querySelector('.kanban-columns-container');
+                        if (container && container.dataset.containerId) {
+                            const estadoActual = obtenerEstadoScroll(container.dataset.containerId);
+                            // Actualizar estadosScroll con el estado actual
+                            estadosScroll.set(container.dataset.containerId, estadoActual);
+                        }
+                    }
+                    
                     import('./kanban.js').then(mod => {
                         mod.renderKanban(window.currentPedidos, { only: 'impresion' });
                     });
                 } else if (tabComplementarias && tabComplementarias.classList.contains('active')) {
+                    // Preservar estado de scroll en estadosScroll antes del re-renderizado
+                    const kanbanBoard = document.getElementById('kanban-board-complementarias');
+                    if (kanbanBoard) {
+                        const container = kanbanBoard.querySelector('.kanban-columns-container');
+                        if (container && container.dataset.containerId) {
+                            const estadoActual = obtenerEstadoScroll(container.dataset.containerId);
+                            // Actualizar estadosScroll con el estado actual
+                            estadosScroll.set(container.dataset.containerId, estadoActual);
+                        }
+                    }
+                    
                     import('./kanban.js').then(mod => {
                         mod.renderKanban(window.currentPedidos, { only: 'complementarias' });
                     });
