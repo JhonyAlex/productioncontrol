@@ -69,14 +69,76 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
+        // Preservar estado visual antes de actualizar
+        let estadoVisualPreservado = null;
+        
         // Actualiza Kanban si la pestaña de impresión o complementarias está activa
         const tabImpresion = document.getElementById('tab-kanban-impresion');
         const tabComplementarias = document.getElementById('tab-kanban-complementarias');
         const tabLista = document.getElementById('tab-lista');
+        
         if (tabImpresion && tabImpresion.classList.contains('active')) {
-            import('./kanban.js').then(mod => mod.renderKanban(pedidos, { only: 'impresion' }));
+            // Preservar estado de scroll del kanban de impresión
+            const kanbanBoard = document.getElementById('kanban-board');
+            if (kanbanBoard) {
+                const container = kanbanBoard.querySelector('.kanban-columns-container');
+                if (container && container.dataset.containerId) {
+                    estadoVisualPreservado = {
+                        tipo: 'kanban-impresion',
+                        containerId: container.dataset.containerId,
+                        scrollLeft: container.scrollLeft,
+                        transform: container.style.transform
+                    };
+                }
+            }
+            import('./kanban.js').then(mod => {
+                mod.renderKanban(pedidos, { only: 'impresion' });
+                // Restaurar estado visual después del renderizado
+                if (estadoVisualPreservado) {
+                    requestAnimationFrame(() => {
+                        const newContainer = document.querySelector(`[data-container-id="${estadoVisualPreservado.containerId}"]`);
+                        if (newContainer) {
+                            if (estadoVisualPreservado.transform) {
+                                newContainer.style.transform = estadoVisualPreservado.transform;
+                            }
+                            if (estadoVisualPreservado.scrollLeft) {
+                                newContainer.scrollLeft = estadoVisualPreservado.scrollLeft;
+                            }
+                        }
+                    });
+                }
+            });
         } else if (tabComplementarias && tabComplementarias.classList.contains('active')) {
-            import('./kanban.js').then(mod => mod.renderKanban(pedidos, { only: 'complementarias' }));
+            // Preservar estado de scroll del kanban de complementarias
+            const kanbanBoard = document.getElementById('kanban-board-complementarias');
+            if (kanbanBoard) {
+                const container = kanbanBoard.querySelector('.kanban-columns-container');
+                if (container && container.dataset.containerId) {
+                    estadoVisualPreservado = {
+                        tipo: 'kanban-complementarias',
+                        containerId: container.dataset.containerId,
+                        scrollLeft: container.scrollLeft,
+                        transform: container.style.transform
+                    };
+                }
+            }
+            import('./kanban.js').then(mod => {
+                mod.renderKanban(pedidos, { only: 'complementarias' });
+                // Restaurar estado visual después del renderizado
+                if (estadoVisualPreservado) {
+                    requestAnimationFrame(() => {
+                        const newContainer = document.querySelector(`[data-container-id="${estadoVisualPreservado.containerId}"]`);
+                        if (newContainer) {
+                            if (estadoVisualPreservado.transform) {
+                                newContainer.style.transform = estadoVisualPreservado.transform;
+                            }
+                            if (estadoVisualPreservado.scrollLeft) {
+                                newContainer.scrollLeft = estadoVisualPreservado.scrollLeft;
+                            }
+                        }
+                    });
+                }
+            });
         }
         
         // Actualiza lista si la pestaña lista está activa

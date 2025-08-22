@@ -757,16 +757,19 @@ async function drop(e) {
             }
         }
 
-        // 2. Actualizar en Firestore
+        // 2. Deshabilitar temporalmente el listener de Firestore ANTES de la actualización
+        window.skipNextFirestoreUpdate = true;
+        
+        // 3. Actualizar en Firestore
         await updatePedido(window.db, pedidoId, { etapaActual: nuevaEtapa });
         
-        // 3. Deshabilitar temporalmente el listener de Firestore para evitar re-renderizado
-        window.skipNextFirestoreUpdate = true;
+        // 4. Restaurar el listener después de un delay optimizado
         setTimeout(() => {
             window.skipNextFirestoreUpdate = false;
-        }, 100);
+            console.log('Listener de Firestore reactivado');
+        }, 200);
         
-        // 4. Restaurar posición de scroll si es necesario
+        // 5. Restaurar posición de scroll si es necesario
         if (estadoScrollAnterior && container) {
             requestAnimationFrame(() => {
                 establecerPosicionContenedor(kanbanBoard, container, estadoScrollAnterior.translateX);
