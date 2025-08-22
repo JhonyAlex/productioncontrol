@@ -860,13 +860,21 @@ async function drop(e) {
     let tarjeta = draggedItemData.el; // Usar referencia directa
     const targetCol = column.querySelector('.kanban-cards');
     
+    // Debug: Verificar estado de draggedItemData.el
+    console.log('Debug - draggedItemData.el:', tarjeta);
+    console.log('Debug - tarjeta en DOM:', tarjeta && document.contains(tarjeta));
+    console.log('Debug - targetCol:', targetCol);
+    
     // Verificar que el nodo y la columna destino existen
     if (!tarjeta || !targetCol) {
         console.log('Fallback 1: Búsqueda local en tablero actual');
+        console.log('Debug - Razón del fallback: tarjeta=', !!tarjeta, 'targetCol=', !!targetCol);
         // Fallback 1: Buscar solo dentro del tablero actual
         const kanbanBoard = column.closest('#kanban-board, #kanban-board-complementarias');
+        console.log('Debug - kanbanBoard encontrado:', !!kanbanBoard);
         if (kanbanBoard) {
             tarjeta = kanbanBoard.querySelector(`[data-pedido-id="${pedidoId}"]`);
+            console.log('Debug - Tarjeta encontrada en búsqueda local:', !!tarjeta);
             if (!tarjeta) {
                 console.warn('Fallback 1 falló: No se encontró la tarjeta en el tablero actual');
                 // Fallback 2: Re-render global con preservación de scroll
