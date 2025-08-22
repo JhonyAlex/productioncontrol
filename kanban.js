@@ -564,6 +564,9 @@ function createKanbanCard(pedido) {
     card.id = `pedido-${pedido.id}`;
     card.draggable = true;
     card.dataset.id = pedido.id;
+    // NUEVO: Añadir data attributes requeridos para el sistema robusto de drag and drop
+    card.dataset.pedidoId = pedido.id;
+    card.dataset.colId = pedido.etapaActual;
     card.style.wordBreak = 'break-word';
     card.style.overflowWrap = 'anywhere';
     card.style.maxWidth = '100%';
@@ -670,25 +673,45 @@ export function addDragAndDropListeners() {
     console.log(`Listeners D&D añadidos a ${cards.length} tarjetas y ${columns.length} columnas.`);
 }
 
-let draggedItemId = null;
+// NUEVO: Sistema robusto de referencias directas para drag and drop
+let draggedItemData = null;
 
 function dragStart(e) {
     const card = e.target.closest('.kanban-card');
-    if (!card || !card.dataset.id) {
+    if (!card || !card.dataset.pedidoId) {
         e.preventDefault();
-        draggedItemId = null;
+        draggedItemData = null;
         return;
     }
-    draggedItemId = card.dataset.id;
-    e.dataTransfer.setData('text/plain', draggedItemId);
+    
+    // Obtener información del tablero y scroll actual
+    const kanbanBoard = card.closest('#kanban-board, #kanban-board-complementarias');
+    const container = kanbanBoard ? kanbanBoard.querySelector('.kanban-columns-container') : null;
+    const fromColumn = card.closest('.kanban-column');
+    
+    let boardsScroll = null;
+    if (container && container.dataset.containerId) {
+        const estado = obtenerEstadoScroll(container.dataset.containerId);
+        boardsScroll = { ...estado };
+    }
+    
+    // Guardar referencias directas completas
+    draggedItemData = {
+        id: card.dataset.pedidoId,
+        el: card, // Referencia directa al nodo DOM
+        fromColId: fromColumn ? fromColumn.dataset.etapa : null,
+        boardsScroll: boardsScroll
+    };
+    
+    e.dataTransfer.setData('text/plain', card.dataset.pedidoId);
     setTimeout(() => card.classList.add('dragging'), 0);
-    console.log(`Drag Start: ${draggedItemId}`);
+    console.log(`Drag Start: ${draggedItemData.id} desde columna ${draggedItemData.fromColId}`);
 }
 
 function dragEnd(e) {
     const card = e.target.closest('.kanban-card');
     if (card) card.classList.remove('dragging');
-    draggedItemId = null;
+    draggedItemData = null;
     console.log("Drag End");
 }
 
@@ -726,9 +749,34 @@ async function drop(e) {
     const pedidoId = e.dataTransfer.getData('text/plain');
     const nuevaEtapa = column.dataset.etapa;
 
-    // Encontrar la tarjeta que se está moviendo
-    const tarjeta = document.querySelector(`[data-id="${pedidoId}"]`);
-    if (!tarjeta) return;
+    // NUEVO: Sistema robusto de referencias directas
+    if (!draggedItemData || draggedItemData.id !== pedidoId) {
+        console.warn('No hay datos de drag válidos, abortando drop');
+        return;
+    }
+
+    let tarjeta = draggedItemData.el; // Usar referencia directa
+    const targetCol = column.querySelector('.kanban-cards');
+    
+    // Verificar que el nodo y la columna destino existen
+    if (!tarjeta || !targetCol) {
+        console.log('Fallback 1: Búsqueda local en tablero actual');
+        // Fallback 1: Buscar solo dentro del tablero actual
+        const kanbanBoard = column.closest('#kanban-board, #kanban-board-complementarias');
+        if (kanbanBoard) {
+            tarjeta = kanbanBoard.querySelector(`[data-pedido-id="${pedidoId}"]`);
+            if (!tarjeta) {
+                console.warn('Fallback 1 falló: No se encontró la tarjeta en el tablero actual');
+                // Fallback 2: Re-render global con preservación de scroll
+                await ejecutarReRenderGlobalConScroll();
+                return;
+            }
+        } else {
+            console.warn('No se encontró el tablero, ejecutando re-render global');
+            await ejecutarReRenderGlobalConScroll();
+            return;
+        }
+    }
 
     // Preservar posición de scroll actual
     const kanbanBoard = column.closest('#kanban-board-complementarias') || column.closest('#kanban-board');
@@ -741,21 +789,26 @@ async function drop(e) {
     }
 
     try {
-        // 1. Actualización local inmediata - mover la tarjeta visualmente
-        const columnCards = column.querySelector('.kanban-cards');
-        if (columnCards) {
-            // Remover la tarjeta de su posición actual
-            tarjeta.remove();
-            // Añadirla a la nueva columna
-            columnCards.appendChild(tarjeta);
-            
-            // Actualizar el badge de etapa en la tarjeta
-            const etapaBadge = tarjeta.querySelector('.badge');
-            if (etapaBadge) {
-                etapaBadge.textContent = nuevaEtapa;
-                etapaBadge.style.backgroundColor = etapaColumnColor(nuevaEtapa);
-            }
-        }
+        // 1. Actualización selectiva usando referencia directa del nodo
+        // Mover la tarjeta directamente usando appendChild (automáticamente la remueve de su posición anterior)
+        targetCol.appendChild(tarjeta);
+        console.log('Actualización selectiva: nodo movido directamente');
+        
+        // Actualizar data-col-id de la tarjeta
+         tarjeta.dataset.colId = nuevaEtapa;
+         
+         // Actualizar el badge de etapa en la tarjeta
+         const etapaBadge = tarjeta.querySelector('.badge');
+         if (etapaBadge) {
+             etapaBadge.textContent = nuevaEtapa;
+             etapaBadge.style.backgroundColor = etapaColumnColor(nuevaEtapa);
+         }
+         
+         // Actualizar contadores de las columnas afectadas
+         if (draggedItemData.fromColId && draggedItemData.fromColId !== nuevaEtapa) {
+             actualizarContadorColumna(draggedItemData.fromColId);
+         }
+         actualizarContadorColumna(nuevaEtapa);
 
         // 2. Marcar esta actualización como local para evitar conflictos
         window.lastLocalUpdate = {
@@ -876,6 +929,50 @@ export function setupKanbanScrolling() {
         configurarGrupoContenedor(container, board);
     });
     });
+}
+
+// NUEVO: Función para ejecutar re-render global preservando scroll
+async function ejecutarReRenderGlobalConScroll() {
+    console.log('Ejecutando re-render global con preservación de scroll');
+    
+    // Preservar estados de scroll actuales
+    const estadosPreservados = new Map();
+    document.querySelectorAll('.kanban-columns-container[data-container-id]').forEach(container => {
+        const containerId = container.dataset.containerId;
+        const estado = obtenerEstadoScroll(containerId);
+        estadosPreservados.set(containerId, { ...estado });
+    });
+    
+    // Determinar qué tablero re-renderizar
+    const tabImpresion = document.getElementById('tab-kanban-impresion');
+    const tabComplementarias = document.getElementById('tab-kanban-complementarias');
+    
+    try {
+        if (tabImpresion && tabImpresion.classList.contains('active')) {
+            const mod = await import('./kanban.js');
+            mod.renderKanban(window.currentPedidos, { only: 'impresion' });
+        } else if (tabComplementarias && tabComplementarias.classList.contains('active')) {
+            const mod = await import('./kanban.js');
+            mod.renderKanban(window.currentPedidos, { only: 'complementarias' });
+        }
+        
+        // Restaurar estados de scroll después del re-render
+        requestAnimationFrame(() => {
+            estadosPreservados.forEach((estado, containerId) => {
+                const container = document.querySelector(`[data-container-id="${containerId}"]`);
+                if (container) {
+                    const board = container.closest('#kanban-board, #kanban-board-complementarias');
+                    if (board) {
+                        establecerPosicionContenedor(board, container, estado.translateX);
+                    }
+                }
+            });
+        });
+        
+        console.log('Re-render global completado con scroll preservado');
+    } catch (error) {
+        console.error('Error en re-render global:', error);
+    }
 }
 
 // Función para limpiar estructura del kanban
