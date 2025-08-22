@@ -799,8 +799,7 @@ async function drop(e) {
 
     console.log(`Drop iniciado: ${pedidoId} -> ${nuevaEtapa}`);
 
-<<<<<<< HEAD
-    // Verificar datos de drag válidos - ser más flexible
+    // Verificar datos de drag válidos - intentar fallback si falta
     if (!draggedItemData) {
         console.warn('No hay draggedItemData, usando fallback');
         draggedItemData = {
@@ -809,22 +808,14 @@ async function drop(e) {
             fromColId: null
         };
     }
-
-    // Verificar que tenemos los datos mínimos necesarios
-    if (!draggedItemData.id || draggedItemData.id !== pedidoId) {
-        console.error('Datos de drag inválidos:', draggedItemData);
-        draggedItemData = null;
-=======
-    // NUEVO: Sistema robusto de referencias directas
+    // Validar coherencia del drag; si sigue inválido, abortar
     if (!draggedItemData || draggedItemData.id !== pedidoId) {
-        console.warn('No hay datos de drag válidos, abortando drop');
-        draggedItemData = null; // Limpiar datos inválidos
->>>>>>> b618776 (feat(kanban): agregar manejo de containerId y captura de estado de scroll en DnD)
+        console.warn('Datos de drag inválidos, abortando drop');
+        draggedItemData = null;
         return;
     }
 
     let tarjeta = draggedItemData.el;
-    
     // Si no tenemos referencia directa, buscar la tarjeta
     if (!tarjeta || !tarjeta.parentNode) {
         console.log('Buscando tarjeta por ID...');
@@ -877,15 +868,14 @@ async function drop(e) {
         
         console.log('Actualización en Firestore completada');
         
-        // 6. Mantener scroll position - no hacer nada, dejar que el estado actual se mantenga
+        // 6. Mantener scroll position
         console.log(`Pedido ${pedidoId} movido exitosamente de ${fromColId} a ${nuevaEtapa}`);
         
     } catch (error) {
         console.error('Error al mover pedido:', error);
         
-        // En caso de error, intentar revertir el cambio visual sin recargar la página
+        // En caso de error, revertir el cambio visual
         try {
-            // Buscar la columna origen
             const originalColumn = document.querySelector(`[data-etapa="${draggedItemData.fromColId}"]`);
             if (originalColumn && tarjeta.parentNode !== originalColumn) {
                 originalColumn.appendChild(tarjeta);
@@ -898,7 +888,7 @@ async function drop(e) {
         
         alert("Error al mover el pedido. El cambio ha sido revertido.");
     } finally {
-        // Limpiar draggedItemData al final de la operación
+        // Limpiar estado de drag
         draggedItemData = null;
         scrollStateBeforeDrop = null;
     }
@@ -1039,6 +1029,16 @@ function agregarBotonesNavegacion(board, container) {
 function actualizarContadorColumna(etapa) {
     if (!etapa) return;
     
+    const columna = document.querySelector(`[data-etapa="${etapa}"]`);
+    if (!columna) return;
+    
+    const contadorElemento = columna.querySelector('.column-count');
+    const tarjetas = columna.querySelectorAll('.kanban-card');
+    
+    if (contadorElemento) {
+        contadorElemento.textContent = `(${tarjetas.length})`;
+    }
+}
     const columna = document.querySelector(`[data-etapa="${etapa}"]`);
     if (!columna) return;
     
