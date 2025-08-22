@@ -110,7 +110,7 @@ function establecerPosicionContenedor(board, container, nuevoTranslate) {
         return 0;
     }
     
-    const { minTranslate, maxTranslate } = calcularLimitesScroll(board, container);
+    const { minTranslate, maxTranslate } = obtenerLimitesConCache(board, container);
     
     // Aplicar límites
     let translateLimitado = Math.max(maxTranslate, Math.min(minTranslate, nuevoTranslate));
@@ -130,6 +130,29 @@ function establecerPosicionContenedor(board, container, nuevoTranslate) {
     return translateLimitado;
 }
 
+// Cache para límites de scroll para evitar recálculos repetidos
+const limitesScrollCache = new Map();
+
+// Función para obtener límites con cache
+function obtenerLimitesConCache(board, container) {
+    const cacheKey = `${board.id}-${container.dataset.containerId}`;
+    
+    // Verificar si hay cambios en el contenido que requieran recálculo
+    const columnas = container.querySelectorAll('.kanban-column');
+    const currentHash = `${columnas.length}-${container.offsetWidth}`;
+    
+    const cached = limitesScrollCache.get(cacheKey);
+    if (cached && cached.hash === currentHash) {
+        return cached.limites;
+    }
+    
+    // Recalcular y guardar en cache
+    const limites = calcularLimitesScroll(board, container);
+    limitesScrollCache.set(cacheKey, { limites, hash: currentHash });
+    
+    return limites;
+}
+
 // Función principal para habilitar scroll por arrastre
 function habilitarScrollArrastre(board, container) {
     if (!board || !container) {
@@ -140,6 +163,15 @@ function habilitarScrollArrastre(board, container) {
     const containerId = container.dataset.containerId || `container-${Date.now()}`;
     if (!container.dataset.containerId) {
         container.dataset.containerId = containerId;
+    }
+    
+    console.log(`Configurando drag-to-scroll para ${board.id}`);
+    
+    // Verificar si el contenedor realmente necesita scroll usando cache
+    const limites = obtenerLimitesConCache(board, container);
+    if (limites.minTranslate >= 0) {
+        console.log(`Container ${containerId}: no necesita scroll`);
+        return;
     }
     
     const estado = obtenerEstadoScroll(containerId);
@@ -249,111 +281,6 @@ function limpiarEventosContenedor(board) {
     // Resetear propiedades de arrastre
     board.style.cursor = 'grab';
     board.classList.remove('drag-scroll-active', 'no-user-select');
-    
-    console.log(`Configurando drag-to-scroll para ${board.id}`);
-    
-    // Verificar si el contenedor realmente necesita scroll
-    const container = board.querySelector('.kanban-columns-container');
-    if (!container) return;
-    
-    const limites = calcularLimitesScroll(board, container);
-    if (limites.minTranslate >= 0) {
-        console.log(`Container ${container.id}: no necesita scroll`);
-        return;
-    }
-    
-    let isDown = false;
-    let startX;
-    let initialTranslate;
-    let isDraggingCard = false;
-
-    function isOnCard(e) {
-        return !!e.target.closest('.kanban-card, button, .scroll-button');
-    }
-
-    function resetDragState() {
-        isDown = false;
-        isDraggingCard = false;
-        board.style.cursor = 'grab';
-    }
-
-    // Eventos de mouse
-    board.addEventListener('mousedown', (e) => {
-        if (isOnCard(e)) {
-            isDraggingCard = true;
-            return;
-        }
-        
-        isDown = true;
-        startX = e.pageX;
-        const estado = obtenerEstadoScroll(container.dataset.containerId);
-        initialTranslate = estado.translateX;
-        board.style.cursor = 'grabbing';
-        e.preventDefault();
-    });
-
-    document.addEventListener('mouseup', () => {
-        if (isDown) {
-            resetDragState();
-        }
-    });
-    
-    board.addEventListener('mouseleave', () => {
-        if (isDown) {
-            resetDragState();
-        }
-    });
-
-    board.addEventListener('mousemove', (e) => {
-        if (!isDown || isDraggingCard) return;
-        
-        e.preventDefault();
-        const currentX = e.pageX;
-        const diff = currentX - startX;
-        const nuevoTranslate = initialTranslate + diff;
-        
-        establecerPosicionContenedor(board, container, nuevoTranslate);
-    });
-
-    // Eventos táctiles
-    board.addEventListener('touchstart', (e) => {
-        if (isOnCard(e)) {
-            isDraggingCard = true;
-            return;
-        }
-        
-        isDown = true;
-        startX = e.touches[0].pageX;
-        const estado = obtenerEstadoScroll(container.dataset.containerId);
-        initialTranslate = estado.translateX;
-    }, { passive: false });
-
-    document.addEventListener('touchend', () => {
-        if (isDown) {
-            resetDragState();
-        }
-    });
-
-    board.addEventListener('touchmove', (e) => {
-        if (!isDown || isDraggingCard) return;
-        
-        e.preventDefault();
-        const currentX = e.touches[0].pageX;
-        const diff = currentX - startX;
-        const nuevoTranslate = initialTranslate + diff;
-        
-        establecerPosicionContenedor(board, container, nuevoTranslate);
-    }, { passive: false });
-
-    // Evento de rueda del ratón
-    board.addEventListener('wheel', (e) => {
-        if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
-            e.preventDefault();
-            const estado = obtenerEstadoScroll(container.dataset.containerId);
-            const nuevoTranslate = estado.translateX - e.deltaX;
-            establecerPosicionContenedor(board, container, nuevoTranslate);
-        }
-    }, { passive: false });
 }
 
 // Renderiza el tablero Kanban
@@ -1006,6 +933,9 @@ function limpiarEstructuraKanban() {
         limpiarEventosContenedor(board);
     });
     
+    // Limpiar cache de límites de scroll
+    limitesScrollCache.clear();
+    
     // Eliminar elementos de debug y botones antiguos
     document.querySelectorAll('.debug-overlay, .scroll-button, .scroll-buttons-container').forEach(el => {
         el.remove();
@@ -1053,7 +983,7 @@ function configurarGrupoContenedor(container, board) {
 
 // Función para agregar botones de navegación si es necesario
 function agregarBotonesNavegacion(board, container) {
-    const limites = calcularLimitesScroll(board, container);
+    const limites = obtenerLimitesConCache(board, container);
     if (limites.minTranslate >= 0) return; // No necesita botones
     
     // Implementación básica de botones de navegación
