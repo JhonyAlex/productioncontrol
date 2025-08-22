@@ -703,6 +703,8 @@ function dragStart(e) {
         boardsScroll: boardsScroll
     };
     
+
+    
     e.dataTransfer.setData('text/plain', card.dataset.pedidoId);
     setTimeout(() => card.classList.add('dragging'), 0);
     console.log(`Drag Start: ${draggedItemData.id} desde columna ${draggedItemData.fromColId}`);
@@ -711,8 +713,10 @@ function dragStart(e) {
 function dragEnd(e) {
     const card = e.target.closest('.kanban-card');
     if (card) card.classList.remove('dragging');
-    draggedItemData = null;
-    console.log("Drag End");
+    
+    // IMPORTANTE: No limpiar draggedItemData aquí porque drop aún no se ha ejecutado
+    // draggedItemData se limpiará en la función drop después de usarse
+    console.log("Drag End - manteniendo draggedItemData para drop");
 }
 
 function dragOver(e) {
@@ -752,6 +756,7 @@ async function drop(e) {
     // NUEVO: Sistema robusto de referencias directas
     if (!draggedItemData || draggedItemData.id !== pedidoId) {
         console.warn('No hay datos de drag válidos, abortando drop');
+        draggedItemData = null; // Limpiar datos inválidos
         return;
     }
 
@@ -769,11 +774,13 @@ async function drop(e) {
                 console.warn('Fallback 1 falló: No se encontró la tarjeta en el tablero actual');
                 // Fallback 2: Re-render global con preservación de scroll
                 await ejecutarReRenderGlobalConScroll();
+                draggedItemData = null; // Limpiar datos después del fallback
                 return;
             }
         } else {
             console.warn('No se encontró el tablero, ejecutando re-render global');
             await ejecutarReRenderGlobalConScroll();
+            draggedItemData = null; // Limpiar datos después del fallback
             return;
         }
     }
@@ -854,13 +861,9 @@ async function drop(e) {
                             const tabComplementarias = document.getElementById('tab-kanban-complementarias');
                             
                             if (tabImpresion && tabImpresion.classList.contains('active')) {
-                                import('./kanban.js').then(mod => {
-                                    mod.renderKanban(window.currentPedidos, { only: 'impresion' });
-                                });
+                                renderKanban(window.currentPedidos, { only: 'impresion' });
                             } else if (tabComplementarias && tabComplementarias.classList.contains('active')) {
-                                import('./kanban.js').then(mod => {
-                                    mod.renderKanban(window.currentPedidos, { only: 'complementarias' });
-                                });
+                                renderKanban(window.currentPedidos, { only: 'complementarias' });
                             }
                         }
                     } else {
@@ -873,13 +876,9 @@ async function drop(e) {
                     const tabComplementarias = document.getElementById('tab-kanban-complementarias');
                     
                     if (tabImpresion && tabImpresion.classList.contains('active')) {
-                        import('./kanban.js').then(mod => {
-                            mod.renderKanban(window.currentPedidos, { only: 'impresion' });
-                        });
+                        renderKanban(window.currentPedidos, { only: 'impresion' });
                     } else if (tabComplementarias && tabComplementarias.classList.contains('active')) {
-                        import('./kanban.js').then(mod => {
-                            mod.renderKanban(window.currentPedidos, { only: 'complementarias' });
-                        });
+                        renderKanban(window.currentPedidos, { only: 'complementarias' });
                     }
                 }
             }
@@ -905,6 +904,9 @@ async function drop(e) {
         
         // En caso de error, revertir el cambio visual
         location.reload();
+    } finally {
+        // Limpiar draggedItemData al final de la operación
+        draggedItemData = null;
     }
 }
 
@@ -949,11 +951,9 @@ async function ejecutarReRenderGlobalConScroll() {
     
     try {
         if (tabImpresion && tabImpresion.classList.contains('active')) {
-            const mod = await import('./kanban.js');
-            mod.renderKanban(window.currentPedidos, { only: 'impresion' });
+            renderKanban(window.currentPedidos, { only: 'impresion' });
         } else if (tabComplementarias && tabComplementarias.classList.contains('active')) {
-            const mod = await import('./kanban.js');
-            mod.renderKanban(window.currentPedidos, { only: 'complementarias' });
+            renderKanban(window.currentPedidos, { only: 'complementarias' });
         }
         
         // Restaurar estados de scroll después del re-render
