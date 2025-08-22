@@ -757,19 +757,44 @@ async function drop(e) {
             }
         }
 
-        // 2. Deshabilitar temporalmente el listener de Firestore ANTES de la actualización
-        window.skipNextFirestoreUpdate = true;
+        // 2. Marcar esta actualización como local para evitar conflictos
+        window.lastLocalUpdate = {
+            pedidoId: pedidoId,
+            timestamp: Date.now(),
+            etapa: nuevaEtapa
+        };
         
         // 3. Actualizar en Firestore
         await updatePedido(window.db, pedidoId, { etapaActual: nuevaEtapa });
         
-        // 4. Restaurar el listener después de un delay optimizado
+        // 4. Programar limpieza del marcador y verificación de actualización visual
         setTimeout(() => {
-            window.skipNextFirestoreUpdate = false;
-            console.log('Listener de Firestore reactivado');
-        }, 200);
+            // Si después de 800ms no se ha actualizado la vista, forzar re-renderizado
+            if (window.lastLocalUpdate && window.lastLocalUpdate.pedidoId === pedidoId) {
+                console.log('Forzando actualización visual - no se detectó actualización automática');
+                
+                const tabImpresion = document.getElementById('tab-kanban-impresion');
+                const tabComplementarias = document.getElementById('tab-kanban-complementarias');
+                
+                if (tabImpresion && tabImpresion.classList.contains('active')) {
+                    import('./kanban.js').then(mod => {
+                        mod.renderKanban(window.currentPedidos, { only: 'impresion' });
+                    });
+                } else if (tabComplementarias && tabComplementarias.classList.contains('active')) {
+                    import('./kanban.js').then(mod => {
+                        mod.renderKanban(window.currentPedidos, { only: 'complementarias' });
+                    });
+                }
+            }
+        }, 800);
         
-        // 5. Restaurar posición de scroll si es necesario
+        // 5. Limpiar el marcador de actualización local después de un delay mayor
+        setTimeout(() => {
+            window.lastLocalUpdate = null;
+            console.log('Marcador de actualización local limpiado');
+        }, 1500);
+        
+        // 6. Restaurar posición de scroll si es necesario
         if (estadoScrollAnterior && container) {
             requestAnimationFrame(() => {
                 establecerPosicionContenedor(kanbanBoard, container, estadoScrollAnterior.translateX);

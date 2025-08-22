@@ -63,10 +63,14 @@ document.addEventListener('DOMContentLoaded', () => {
         // --- Actualiza todas las vistas en tiempo real ---
         window.currentPedidos = pedidos;
         
-        // Si se está haciendo una actualización local (drag and drop), omitir el re-renderizado
-        if (window.skipNextFirestoreUpdate) {
-            console.log('Omitiendo re-renderizado automático - actualización local en progreso');
-            return;
+        // Verificar si esta actualización es resultado de una acción local reciente
+        if (window.lastLocalUpdate) {
+            const tiempoTranscurrido = Date.now() - window.lastLocalUpdate.timestamp;
+            // Si la actualización es muy reciente (menos de 500ms), es probable que sea nuestra actualización local
+            if (tiempoTranscurrido < 500) {
+                console.log('Omitiendo re-renderizado - actualización local reciente detectada');
+                return;
+            }
         }
         
         // Preservar estado visual antes de actualizar
