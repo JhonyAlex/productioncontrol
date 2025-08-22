@@ -387,7 +387,16 @@ function createKanbanGroup(groupTitle, etapasInGroup, allPedidos) {
     // Eliminar contenedor .kanban-group redundante - usar directamente .kanban-columns-container
     const columnsContainer = document.createElement('div');
     columnsContainer.className = 'kanban-columns-container';
-    
+
+    // NUEVO: asignar un containerId estable por grupo
+    try {
+        const isComplementarias = Array.isArray(etapasComplementarias) && etapasInGroup === etapasComplementarias;
+        columnsContainer.dataset.containerId = isComplementarias ? 'complementarias' : 'impresion';
+    } catch (e) {
+        // Fallback: asegurar un ID aunque no haya comparación posible
+        columnsContainer.dataset.containerId = groupTitle || 'kanban-container';
+    }
+
     // Mover propiedades del .kanban-group eliminado al contenedor principal
     columnsContainer.style.overflowX = 'hidden'; // Mantener hidden para evitar barras de desplazamiento nativas
     columnsContainer.style.padding = '1.2rem';
@@ -781,12 +790,16 @@ async function drop(e) {
     const column = e.target.closest('.kanban-column');
     if (!column) return;
 
+    // NUEVO: capturar estado de scroll antes de mutar el DOM
+    scrollStateBeforeDrop = capturarEstadoScrollPreciso();
+
     column.classList.remove('drag-over');
     const pedidoId = e.dataTransfer.getData('text/plain');
     const nuevaEtapa = column.dataset.etapa;
 
     console.log(`Drop iniciado: ${pedidoId} -> ${nuevaEtapa}`);
 
+<<<<<<< HEAD
     // Verificar datos de drag válidos - ser más flexible
     if (!draggedItemData) {
         console.warn('No hay draggedItemData, usando fallback');
@@ -801,6 +814,12 @@ async function drop(e) {
     if (!draggedItemData.id || draggedItemData.id !== pedidoId) {
         console.error('Datos de drag inválidos:', draggedItemData);
         draggedItemData = null;
+=======
+    // NUEVO: Sistema robusto de referencias directas
+    if (!draggedItemData || draggedItemData.id !== pedidoId) {
+        console.warn('No hay datos de drag válidos, abortando drop');
+        draggedItemData = null; // Limpiar datos inválidos
+>>>>>>> b618776 (feat(kanban): agregar manejo de containerId y captura de estado de scroll en DnD)
         return;
     }
 
@@ -986,18 +1005,19 @@ function aplicarEstilosBoard(board) {
 
 // Función para configurar grupo contenedor
 function configurarGrupoContenedor(container, board) {
-    // Ahora recibe directamente el container (ya no hay .kanban-group)
     if (!container) return;
-    
+
     // Aplicar estilos al contenedor
     container.style.display = 'flex';
     container.style.gap = '1.2rem'; // Usar valor CSS directo
     container.style.transition = 'transform 0.2s ease-out';
     container.style.willChange = 'transform';
     
-    // Inicializar posición
-    establecerPosicionContenedor(board, container, 0);
-    
+    // Inicializar posición usando el estado almacenado si existe
+    const containerId = container.dataset.containerId;
+    const estado = containerId && estadosScroll.has(containerId) ? estadosScroll.get(containerId) : null;
+    establecerPosicionContenedor(board, container, (estado && typeof estado.translateX === 'number') ? estado.translateX : 0);
+
     // Habilitar scroll por arrastre después de que el DOM esté completamente renderizado
     requestAnimationFrame(() => {
         habilitarScrollArrastre(board, container);
