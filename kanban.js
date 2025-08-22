@@ -699,6 +699,29 @@ let draggedItemData = null;
 // Variable global para preservar estado de scroll durante drag and drop
 let scrollStateBeforeDrop = null;
 
+// Función para obtener el translateX actual de un contenedor
+function obtenerTranslateX(container) {
+    if (!container) return 0;
+    
+    // Primero intentar obtener del estado guardado
+    const containerId = container.dataset.containerId;
+    if (containerId && estadosScroll.has(containerId)) {
+        const estado = estadosScroll.get(containerId);
+        return estado.translateX || 0;
+    }
+    
+    // Si no está en el estado, extraer del CSS transform
+    const transform = container.style.transform;
+    if (transform && transform.includes('translateX')) {
+        const match = transform.match(/translateX\(([^)]+)px\)/);
+        if (match && match[1]) {
+            return parseFloat(match[1]) || 0;
+        }
+    }
+    
+    return 0;
+}
+
 // Función para capturar estado de scroll con precisión
 function capturarEstadoScrollPreciso() {
     const estadoScroll = {};
