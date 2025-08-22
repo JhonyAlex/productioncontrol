@@ -858,23 +858,15 @@ async function drop(e) {
     }
 
     let tarjeta = draggedItemData.el; // Usar referencia directa
-    const targetCol = column.querySelector('.kanban-cards');
-    
-    // Debug: Verificar estado de draggedItemData.el
-    console.log('Debug - draggedItemData.el:', tarjeta);
-    console.log('Debug - tarjeta en DOM:', tarjeta && document.contains(tarjeta));
-    console.log('Debug - targetCol:', targetCol);
+    const targetCol = column; // Las tarjetas están directamente en la columna, no en un contenedor .kanban-cards
     
     // Verificar que el nodo y la columna destino existen
     if (!tarjeta || !targetCol) {
         console.log('Fallback 1: Búsqueda local en tablero actual');
-        console.log('Debug - Razón del fallback: tarjeta=', !!tarjeta, 'targetCol=', !!targetCol);
         // Fallback 1: Buscar solo dentro del tablero actual
         const kanbanBoard = column.closest('#kanban-board, #kanban-board-complementarias');
-        console.log('Debug - kanbanBoard encontrado:', !!kanbanBoard);
         if (kanbanBoard) {
             tarjeta = kanbanBoard.querySelector(`[data-pedido-id="${pedidoId}"]`);
-            console.log('Debug - Tarjeta encontrada en búsqueda local:', !!tarjeta);
             if (!tarjeta) {
                 console.warn('Fallback 1 falló: No se encontró la tarjeta en el tablero actual');
                 // Fallback 2: Re-render global con preservación de scroll
@@ -895,7 +887,11 @@ async function drop(e) {
     try {
         // 1. Actualización selectiva usando referencia directa del nodo
         // Mover la tarjeta directamente usando appendChild (automáticamente la remueve de su posición anterior)
-        targetCol.appendChild(tarjeta);
+        // Verificar que targetCol es válido antes de hacer appendChild
+         if (!targetCol) {
+             throw new Error('targetCol es null - no se puede mover la tarjeta');
+         }
+         targetCol.appendChild(tarjeta);
         console.log('Actualización selectiva: nodo movido directamente');
         
         // Actualizar data-col-id de la tarjeta
