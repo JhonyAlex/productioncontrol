@@ -499,7 +499,11 @@ function createKanbanGroup(groupTitle, etapasInGroup, allPedidos) {
 
         pedidosInEtapa.forEach(pedido => {
             const card = createKanbanCard(pedido);
-            columnDiv.appendChild(card);
+            if (card) {
+                columnDiv.appendChild(card);
+            } else {
+                console.warn(`Tarjeta no creada para pedido ${pedido.id} - datos inválidos`);
+            }
         });
 
         columnsContainer.appendChild(columnDiv);
@@ -564,9 +568,25 @@ function createKanbanCard(pedido) {
     card.id = `pedido-${pedido.id}`;
     card.draggable = true;
     card.dataset.id = pedido.id;
+    
     // NUEVO: Añadir data attributes requeridos para el sistema robusto de drag and drop
+    // Validar que los datos requeridos existan
+    if (!pedido.id || !pedido.etapaActual) {
+        console.error('createKanbanCard: Faltan datos requeridos', { id: pedido.id, etapaActual: pedido.etapaActual });
+        return null;
+    }
+    
     card.dataset.pedidoId = pedido.id;
     card.dataset.colId = pedido.etapaActual;
+    
+    // Validación adicional: verificar que los atributos se establecieron correctamente
+    if (!card.dataset.pedidoId || !card.dataset.colId) {
+        console.error('createKanbanCard: Error al establecer data attributes', {
+            pedidoId: card.dataset.pedidoId,
+            colId: card.dataset.colId
+        });
+        return null;
+    }
     card.style.wordBreak = 'break-word';
     card.style.overflowWrap = 'anywhere';
     card.style.maxWidth = '100%';
@@ -676,6 +696,59 @@ export function addDragAndDropListeners() {
 // NUEVO: Sistema robusto de referencias directas para drag and drop
 let draggedItemData = null;
 
+// Variable global para preservar estado de scroll durante drag and drop
+let scrollStateBeforeDrop = null;
+
+// Función para capturar estado de scroll con precisión
+function capturarEstadoScrollPreciso() {
+    const estadoScroll = {};
+    
+    // Capturar scroll de ambos tableros
+    const mainBoard = document.getElementById('kanban-board');
+    const complementaryBoard = document.getElementById('kanban-board-complementarias');
+    
+    [mainBoard, complementaryBoard].forEach(board => {
+        if (board) {
+            const container = board.querySelector('.kanban-columns-container');
+            if (container && container.dataset.containerId) {
+                const containerId = container.dataset.containerId;
+                estadoScroll[containerId] = {
+                    scrollLeft: container.scrollLeft,
+                    translateX: obtenerTranslateX(container),
+                    timestamp: performance.now()
+                };
+            }
+        }
+    });
+    
+    return estadoScroll;
+}
+
+// Función para restaurar estado de scroll con requestAnimationFrame
+function restaurarEstadoScrollPreciso(estadoScroll) {
+    if (!estadoScroll) return;
+    
+    requestAnimationFrame(() => {
+        Object.keys(estadoScroll).forEach(containerId => {
+            const container = document.querySelector(`[data-container-id="${containerId}"]`);
+            if (container) {
+                const estado = estadoScroll[containerId];
+                
+                // Restaurar scrollLeft
+                container.scrollLeft = estado.scrollLeft;
+                
+                // Restaurar translateX si existe
+                if (estado.translateX !== undefined) {
+                    const board = container.closest('#kanban-board, #kanban-board-complementarias');
+                    if (board) {
+                        establecerPosicionContenedor(board, container, estado.translateX);
+                    }
+                }
+            }
+        });
+    });
+}
+
 function dragStart(e) {
     const card = e.target.closest('.kanban-card');
     if (!card || !card.dataset.pedidoId) {
@@ -683,6 +756,9 @@ function dragStart(e) {
         draggedItemData = null;
         return;
     }
+    
+    // Capturar estado de scroll preciso al inicio del drag
+    scrollStateBeforeDrop = capturarEstadoScrollPreciso();
     
     // Obtener información del tablero y scroll actual
     const kanbanBoard = card.closest('#kanban-board, #kanban-board-complementarias');
@@ -702,8 +778,6 @@ function dragStart(e) {
         fromColId: fromColumn ? fromColumn.dataset.etapa : null,
         boardsScroll: boardsScroll
     };
-    
-
     
     e.dataTransfer.setData('text/plain', card.dataset.pedidoId);
     setTimeout(() => card.classList.add('dragging'), 0);
@@ -785,15 +859,7 @@ async function drop(e) {
         }
     }
 
-    // Preservar posición de scroll actual
-    const kanbanBoard = column.closest('#kanban-board-complementarias') || column.closest('#kanban-board');
-    const container = kanbanBoard ? kanbanBoard.querySelector('.kanban-columns-container') : null;
-    
-    let estadoScrollAnterior = null;
-    if (container && container.dataset.containerId) {
-        const estado = obtenerEstadoScroll(container.dataset.containerId);
-        estadoScrollAnterior = { ...estado };
-    }
+    // El estado de scroll ya fue capturado en dragStart con mayor precisión
 
     try {
         // 1. Actualización selectiva usando referencia directa del nodo
@@ -817,85 +883,16 @@ async function drop(e) {
          }
          actualizarContadorColumna(nuevaEtapa);
 
-        // 2. Marcar esta actualización como local para evitar conflictos
-        window.lastLocalUpdate = {
-            pedidoId: pedidoId,
-            timestamp: Date.now(),
-            etapa: nuevaEtapa
-        };
-        
-        // 3. Actualizar en Firestore
+        // 2. Actualizar en Firestore
         await updatePedido(window.db, pedidoId, { etapaActual: nuevaEtapa });
         
-        // 4. Programar limpieza del marcador y verificación de actualización visual
-        setTimeout(() => {
-            // Si después de 800ms no se ha actualizado la vista, forzar actualización selectiva
-            if (window.lastLocalUpdate && window.lastLocalUpdate.pedidoId === pedidoId) {
-                console.log('Forzando actualización visual selectiva - no se detectó actualización automática');
-                
-                // Buscar la tarjeta en el DOM y verificar si está en la etapa correcta
-                const tarjeta = document.querySelector(`[data-pedido-id="${pedidoId}"]`);
-                if (tarjeta) {
-                    const columnaActual = tarjeta.closest('.kanban-column');
-                    const etapaActual = columnaActual ? columnaActual.dataset.etapa : null;
-                    
-                    // Si la tarjeta no está en la etapa correcta, moverla
-                    if (etapaActual !== window.lastLocalUpdate.etapa) {
-                        console.log(`Moviendo tarjeta ${pedidoId} de ${etapaActual} a ${window.lastLocalUpdate.etapa}`);
-                        
-                        // Buscar la columna de destino
-                        const columnaDestino = document.querySelector(`[data-etapa="${window.lastLocalUpdate.etapa}"] .kanban-cards`);
-                        if (columnaDestino) {
-                            // Mover la tarjeta visualmente
-                            columnaDestino.appendChild(tarjeta);
-                            
-                            // Actualizar contadores de las columnas afectadas
-                            actualizarContadorColumna(etapaActual);
-                            actualizarContadorColumna(window.lastLocalUpdate.etapa);
-                            
-                            console.log('Actualización visual selectiva completada');
-                        } else {
-                            console.warn('No se encontró la columna de destino, realizando re-render completo como fallback');
-                            // Fallback: re-render completo solo si no se puede hacer la actualización selectiva
-                            const tabImpresion = document.getElementById('tab-kanban-impresion');
-                            const tabComplementarias = document.getElementById('tab-kanban-complementarias');
-                            
-                            if (tabImpresion && tabImpresion.classList.contains('active')) {
-                                renderKanban(window.currentPedidos, { only: 'impresion' });
-                            } else if (tabComplementarias && tabComplementarias.classList.contains('active')) {
-                                renderKanban(window.currentPedidos, { only: 'complementarias' });
-                            }
-                        }
-                    } else {
-                        console.log('La tarjeta ya está en la etapa correcta, no se requiere actualización');
-                    }
-                } else {
-                    console.warn('No se encontró la tarjeta en el DOM, realizando re-render completo como fallback');
-                    // Fallback: re-render completo solo si no se encuentra la tarjeta
-                    const tabImpresion = document.getElementById('tab-kanban-impresion');
-                    const tabComplementarias = document.getElementById('tab-kanban-complementarias');
-                    
-                    if (tabImpresion && tabImpresion.classList.contains('active')) {
-                        renderKanban(window.currentPedidos, { only: 'impresion' });
-                    } else if (tabComplementarias && tabComplementarias.classList.contains('active')) {
-                        renderKanban(window.currentPedidos, { only: 'complementarias' });
-                    }
-                }
-            }
-        }, 800);
+        console.log('Actualización directa completada exitosamente');
         
-        // 5. Limpiar el marcador de actualización local después de un delay mayor
-        setTimeout(() => {
-            window.lastLocalUpdate = null;
-            console.log('Marcador de actualización local limpiado');
-        }, 1500);
-        
-        // 6. Restaurar posición de scroll si es necesario
-        if (estadoScrollAnterior && container) {
-            requestAnimationFrame(() => {
-                establecerPosicionContenedor(kanbanBoard, container, estadoScrollAnterior.translateX);
-            });
-        }
+        // 3. Restaurar posición de scroll usando el estado capturado al inicio del drag
+         if (scrollStateBeforeDrop) {
+             restaurarEstadoScrollPreciso(scrollStateBeforeDrop);
+             scrollStateBeforeDrop = null; // Limpiar después de usar
+         }
         
         console.log(`Pedido ${pedidoId} movido a etapa ${nuevaEtapa}`);
     } catch (error) {
