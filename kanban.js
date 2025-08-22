@@ -769,43 +769,65 @@ async function drop(e) {
         
         // 4. Programar limpieza del marcador y verificación de actualización visual
         setTimeout(() => {
-            // Si después de 800ms no se ha actualizado la vista, forzar re-renderizado preservando estado
+            // Si después de 800ms no se ha actualizado la vista, forzar actualización selectiva
             if (window.lastLocalUpdate && window.lastLocalUpdate.pedidoId === pedidoId) {
-                console.log('Forzando actualización visual - no se detectó actualización automática');
+                console.log('Forzando actualización visual selectiva - no se detectó actualización automática');
                 
-                const tabImpresion = document.getElementById('tab-kanban-impresion');
-                const tabComplementarias = document.getElementById('tab-kanban-complementarias');
-                
-                if (tabImpresion && tabImpresion.classList.contains('active')) {
-                    // Preservar estado de scroll en estadosScroll antes del re-renderizado
-                    const kanbanBoard = document.getElementById('kanban-board');
-                    if (kanbanBoard) {
-                        const container = kanbanBoard.querySelector('.kanban-columns-container');
-                        if (container && container.dataset.containerId) {
-                            const estadoActual = obtenerEstadoScroll(container.dataset.containerId);
-                            // Actualizar estadosScroll con el estado actual
-                            estadosScroll.set(container.dataset.containerId, estadoActual);
-                        }
-                    }
+                // Buscar la tarjeta en el DOM y verificar si está en la etapa correcta
+                const tarjeta = document.querySelector(`[data-pedido-id="${pedidoId}"]`);
+                if (tarjeta) {
+                    const columnaActual = tarjeta.closest('.kanban-column');
+                    const etapaActual = columnaActual ? columnaActual.dataset.etapa : null;
                     
-                    import('./kanban.js').then(mod => {
-                        mod.renderKanban(window.currentPedidos, { only: 'impresion' });
-                    });
-                } else if (tabComplementarias && tabComplementarias.classList.contains('active')) {
-                    // Preservar estado de scroll en estadosScroll antes del re-renderizado
-                    const kanbanBoard = document.getElementById('kanban-board-complementarias');
-                    if (kanbanBoard) {
-                        const container = kanbanBoard.querySelector('.kanban-columns-container');
-                        if (container && container.dataset.containerId) {
-                            const estadoActual = obtenerEstadoScroll(container.dataset.containerId);
-                            // Actualizar estadosScroll con el estado actual
-                            estadosScroll.set(container.dataset.containerId, estadoActual);
+                    // Si la tarjeta no está en la etapa correcta, moverla
+                    if (etapaActual !== window.lastLocalUpdate.etapa) {
+                        console.log(`Moviendo tarjeta ${pedidoId} de ${etapaActual} a ${window.lastLocalUpdate.etapa}`);
+                        
+                        // Buscar la columna de destino
+                        const columnaDestino = document.querySelector(`[data-etapa="${window.lastLocalUpdate.etapa}"] .kanban-cards`);
+                        if (columnaDestino) {
+                            // Mover la tarjeta visualmente
+                            columnaDestino.appendChild(tarjeta);
+                            
+                            // Actualizar contadores de las columnas afectadas
+                            actualizarContadorColumna(etapaActual);
+                            actualizarContadorColumna(window.lastLocalUpdate.etapa);
+                            
+                            console.log('Actualización visual selectiva completada');
+                        } else {
+                            console.warn('No se encontró la columna de destino, realizando re-render completo como fallback');
+                            // Fallback: re-render completo solo si no se puede hacer la actualización selectiva
+                            const tabImpresion = document.getElementById('tab-kanban-impresion');
+                            const tabComplementarias = document.getElementById('tab-kanban-complementarias');
+                            
+                            if (tabImpresion && tabImpresion.classList.contains('active')) {
+                                import('./kanban.js').then(mod => {
+                                    mod.renderKanban(window.currentPedidos, { only: 'impresion' });
+                                });
+                            } else if (tabComplementarias && tabComplementarias.classList.contains('active')) {
+                                import('./kanban.js').then(mod => {
+                                    mod.renderKanban(window.currentPedidos, { only: 'complementarias' });
+                                });
+                            }
                         }
+                    } else {
+                        console.log('La tarjeta ya está en la etapa correcta, no se requiere actualización');
                     }
+                } else {
+                    console.warn('No se encontró la tarjeta en el DOM, realizando re-render completo como fallback');
+                    // Fallback: re-render completo solo si no se encuentra la tarjeta
+                    const tabImpresion = document.getElementById('tab-kanban-impresion');
+                    const tabComplementarias = document.getElementById('tab-kanban-complementarias');
                     
-                    import('./kanban.js').then(mod => {
-                        mod.renderKanban(window.currentPedidos, { only: 'complementarias' });
-                    });
+                    if (tabImpresion && tabImpresion.classList.contains('active')) {
+                        import('./kanban.js').then(mod => {
+                            mod.renderKanban(window.currentPedidos, { only: 'impresion' });
+                        });
+                    } else if (tabComplementarias && tabComplementarias.classList.contains('active')) {
+                        import('./kanban.js').then(mod => {
+                            mod.renderKanban(window.currentPedidos, { only: 'complementarias' });
+                        });
+                    }
                 }
             }
         }, 800);
@@ -916,4 +938,19 @@ function agregarBotonesNavegacion(board, container) {
     // Implementación básica de botones de navegación
     // Se puede expandir según necesidades específicas
     console.log(`Botones de navegación disponibles para ${board.id}`);
+}
+
+// Función para actualizar el contador de una columna específica
+function actualizarContadorColumna(etapa) {
+    if (!etapa) return;
+    
+    const columna = document.querySelector(`[data-etapa="${etapa}"]`);
+    if (!columna) return;
+    
+    const contadorElemento = columna.querySelector('.column-count');
+    const tarjetas = columna.querySelectorAll('.kanban-card');
+    
+    if (contadorElemento) {
+        contadorElemento.textContent = `(${tarjetas.length})`;
+    }
 }
