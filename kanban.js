@@ -34,7 +34,14 @@ function calcularLimitesScroll(board, container) {
         return { minTranslate: 0, maxTranslate: 0 };
     }
     
-    const anchoBoard = board.clientWidth;
+    let anchoBoard = board.clientWidth;
+    
+    // Si el board no tiene ancho (aún no renderizado), intentar obtenerlo del padre o usar viewport
+    if (anchoBoard === 0) {
+        anchoBoard = board.parentElement?.clientWidth || window.innerWidth - 40;
+        console.warn(`[calcularLimitesScroll] Board sin ancho, usando fallback: ${anchoBoard}px`);
+    }
+    
     const columnas = container.querySelectorAll('.kanban-column');
     
     if (columnas.length === 0) {
@@ -974,11 +981,11 @@ function configurarGrupoContenedor(container, board) {
     // Inicializar posición
     establecerPosicionContenedor(board, container, 0);
     
-    // Habilitar scroll por arrastre
-    habilitarScrollArrastre(board, container);
-    
-    // Agregar botones de navegación si es necesario
-    agregarBotonesNavegacion(board, container);
+    // Habilitar scroll por arrastre después de que el DOM esté completamente renderizado
+    requestAnimationFrame(() => {
+        habilitarScrollArrastre(board, container);
+        agregarBotonesNavegacion(board, container);
+    });
 }
 
 // Función para agregar botones de navegación si es necesario
