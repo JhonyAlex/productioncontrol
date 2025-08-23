@@ -974,14 +974,13 @@ function limpiarEstructuraKanban() {
         el.remove();
     });
     
-    // Resetear estilos de scroll nativo
+    // Resetear estilos de scroll nativo sin perder el estado de transform
     document.querySelectorAll('.kanban-columns-container').forEach(el => {
         el.style.overflowX = 'hidden';
         el.style.overflowY = 'hidden';
-        // Resetear transformaciones CSS en lugar de scrollLeft
-        if (el.classList.contains('kanban-columns-container')) {
-            el.style.transform = 'translateX(0px)';
-        }
+        // IMPORTANTE: no resetear el transform para preservar la vista
+        // Si no hay estado previo, el configurador lo establecerá.
+        // el.style.transform = 'translateX(0px)'; // eliminado
     });
 }
 
@@ -1029,16 +1028,6 @@ function agregarBotonesNavegacion(board, container) {
 function actualizarContadorColumna(etapa) {
     if (!etapa) return;
     
-    const columna = document.querySelector(`[data-etapa="${etapa}"]`);
-    if (!columna) return;
-    
-    const contadorElemento = columna.querySelector('.column-count');
-    const tarjetas = columna.querySelectorAll('.kanban-card');
-    
-    if (contadorElemento) {
-        contadorElemento.textContent = `(${tarjetas.length})`;
-    }
-}
     const columna = document.querySelector(`[data-etapa="${etapa}"]`);
     if (!columna) return;
     
